@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+{% block content %}
+
+{% if teams %}
+<h3>{{top}}Team Rankings</h3>
+<table class="table table-striped">
+  <thead>
+  <tr>
+    <th>Rank</th>
+    <th>Name</th>
+    <th>Top Lane</th>
+    <th>Jungler</th>
+    <th>Mid Lane</th>
+    <th>AD Carry</th>
+    <th>Support</th>
+    <th>Fantasy Points</th>
+  </tr>
+  </thead>
+  {% for team in teams %}
+  <tr>
+    <td>{{team.disp_rank}}</td>
+    <td>
+      <b><a href="{{team.get_abs_url()}}">
+        {{team.disp_name()|safe}}
+      </a></b>
+    </td>
+    {% for player in team.players %}
+    <td>
+      <a href="{{player.get_abs_url()}}">{{player.username}}</a>
+      ({{player.points}})
+    </td>
+    {% endfor %}
+    <td><b>{{team.points}}</b></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if players %}
+<h3>{{top}}Player Rankings</h3>
+<table class="table table-striped">
+  <thead>
+  <tr>
+    <th>Rank</th>
+    <th>Name</th>
+    <th>Team</th>
+    <th>Position</th>
+    <th>KDA Ratio</th>
+    <th>Fantasy Points</th>
+  </tr>
+  </thead>
+  {% for player in players %}
+  <tr>
+    <td>{{player.disp_rank}}</td>
+    <td><b><a href="{{player.get_abs_url()}}">{{player.username}}</a></b></td>
+    <td><a href="{{player.team.get_abs_url()}}">{{player.team.name}}</a></td>
+    <td>{{player.position}}</td>
+    <td>{{player.kda}}</td>
+    <td><b>{{player.points}}</b></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+{% if users %}
+<h3>{{top}}Fantasy Team Rankings</h3>
+<table class="table table-striped">
+  <thead>
+  <tr>
+    <th>Rank</th>
+    <th>Name</th>
+    <th colspan="5">Players...</th>
+    <th>Fantasy Points</th>
+  </tr>
+  </thead>
+  {% for team in users %}
+  <tr>
+    <td>{{team.disp_rank}}</td>
+    <td><b><a href="{{team.get_abs_url()}}">{{team.username}}</a></b></td>
+    {% for player in team.players %}
+    <td>
+      <a href="{{player.get_abs_url()}}">{{player.username}}</a>
+      ({{player.points}})
+    </td>
+    {% endfor %}
+    <td><b>{{team.points}}</b></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock %}
