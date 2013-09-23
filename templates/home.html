@@ -2,57 +2,78 @@
 
 {% block title %}Home{% endblock %}
 {% block content %}
-<br>
-<div class="container header-col header-col-preview">
-  <h3>Featurelet is....</h3>
-  <ul>
-    <li>An end-user oriented companion to your issue tracker</li>
-    <li>Driving project direction from user opinion, promoting lean development</li>
-    <li>A way to fund smaller open source projects and grow them rapidly</li>
-  </ul>
-</div>
-<div class="panel header-col-user">
+<div class="panel">
+  <div class="container header-col header-col-header">
+    <div class="row">
+      <div class="col-lg-6 indent-quote">
+        <br><br>
+        <br><br>
+        <br><br>
+        <h2 class="bs-masthead">Crowd-source your user opinion to drive lean, agile development</h2>
+      </div>
+      <div class="col-lg-5">
+          <h3 class="indent-quote">Sign Up</h3>
+          {{ form|safe }}
+        <p class="col-lg-offset-4" style="padding-left:10px;">
+        <b>&#8213;OR&#8213;</b>
+        </p>
+        <a href="/login/github" class="col-lg-offset-4" style="padding-left:10px;">
+          <button type="button" class="btn btn-danger btn-sm"><i class="icon-github icon-li icon-large"></i>&nbsp; Sign in with Github</button>
+        </a>
+      </div>
+    </div>
+  </div>
   <div class="col-sm-6 header-col header-col-maint">
-    <h3>For project maintainers</h3>
-    <h4>Drive rapid development by having an easy feeback mechanism for end users</h4>
-    <ul class="icons-ul">
-      <li><i class="icon-thumbs-up icon-li icon-large"></i>Gauge user interest with voting</li>
-      <li><i class="icon-sitemap icon-li icon-large"></i>Simple and intuitive interface lowers barrier to contribution</li>
-      <li><i class="icon-gear icon-li icon-large"></i>Integration with existing issue trackers makes transition smooth</li>
-    </ul>
-    <h4>Grow your open source project</h4>
-    <ul class="icons-ul">
-      <li><i class="icon-dollar icon-li icon-large"></i>Users can vote on improvements with a monetary contribution towards its completion in small amounts</li>
-      <li><i class="icon-beer icon-li icon-large"></i>Crowdfund the development of your side project or tool, keeping it alive and relevant</li>
-    </ul>
+    <h3 class="indent-quote">For project maintainers</h3>
+    <div class="row" style="padding-left:15px;">
+      <div class="col-lg-10">
+        <h3><i class="icon-thumbs-up"></i> &nbsp;Integrated voting</h3>
+        <p>Voting and goal setting allows non-technical users to let their voice be heard and helps you follow user interest for more lean development. Users can vote for free or with money, you decide.</p>
+      </div>
+    </div>
+    <div class="row" style="padding-left:15px;">
+      <div class="col-lg-10">
+        <h3><i class="icon-dollar"></i> &nbsp;Grow your project</h3>
+        <p>Generate impetus for your side projects by allowing people to show their interst with money</p>
+      </div>
+    </div>
+    <div class="row" style="padding-left:15px;">
+      <div class="col-lg-10">
+        <h3><i class="icon-gear"></i> &nbsp;Built in</h3>
+        <p>Designed to work alongside your issue tracker to avoid duplicating work</p>
+      </div>
+    </div>
   </div>
   <div class="col-sm-6 header-col header-col-user">
-    <h3>For end users</h3>
-    <h4>Help grow projects you're interested in</h4>
-    <ul class="icons-ul">
-      <li><i class="icon-group icon-li icon-large"></i>Vote on improvements relevant to your needs and track them to completion</li>
-      <li><i class="icon-plus icon-li icon-large"></i>Fund your favourite project with micro-contributions or regular votes</li>
-    </ul>
-    <h4>Engage in a community</h4>
-    <ul class="icons-ul">
-      <li><i class="icon-flag icon-li icon-large"></i>Get notified of new releases for projects by watching them</li>
-      <li><i class="icon-comment icon-li icon-large"></i>Provide your feedback in a conversation with other users to established projects to help improve them</li>
-    </ul>
+    <h3 class="indent-quote">For users</h3>
+    <div class="row" style="padding-left:15px;">
+      <div class="col-lg-10">
+        <h3><i class="icon-comment"></i> &nbsp;Be heard</h3>
+        <p>Always wanted that one feature in a project? You can vote for that feature to be implemented, or even give a few dollars towards it.</p>
+      </div>
+    </div>
+    <div class="row" style="padding-left:15px;">
+      <div class="col-lg-10">
+        <h3><i class="icon-bullhorn"></i> &nbsp;Stay up to date</h3>
+        <p>Track projects that your intersted in easily and be notified of new releases and features</p>
+      </div>
+    </div>
+    <div class="row" style="padding-left:15px;">
+      <div class="col-lg-10">
+        <h3><i class="icon-beaker"></i> &nbsp;Drive innovation</h3>
+        <p>Micro-donations can be targeted at specific objectives or improvements in projects that interest you</p>
+      </div>
+    </div>
   </div>
   <div class="clearfix"></div>
 
-  <div class="container header-col header-col-norm">
-    <h3>Always free for open source</h3>
-    <p>Featurelet's full service is availible free of charge for open source projects.</p>
-    <br>
-    <a href="/login/github">
-      <button type="button" class="btn btn-danger btn-sm"><i class="icon-github icon-li icon-large"></i>&nbsp; Sign in with Github</button>
-    </a>
-    &nbsp;
-    <a href="/register">
-      <button type="button" class="btn btn-warning btn-sm"><i class="icon-edit-sign icon-li icon-large"></i>&nbsp; Sign up</button>
-    </a>
+  <div class="container header-col header-col-preview">
+    <div class="row">
+      <div class="col-lg-4 col-sm-6">
+        <h3><i class="icon-linux"></i> &nbsp;Open Source Friendly</h3>
+        <p>Featurelet is completely free for open source projects</p>
+      </div>
+    </div>
   </div>
-
 </div>
 {% endblock %}

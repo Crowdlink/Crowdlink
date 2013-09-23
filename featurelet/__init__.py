@@ -7,6 +7,7 @@ from featurelet.forms import *
 import cryptacular.bcrypt
 import os
 from jinja2 import FileSystemLoader
+from yota.renderers import JinjaRenderer
 
 
 app = Flask(__name__, static_folder='../static', static_url_path='/static')
@@ -14,6 +15,11 @@ root = os.path.abspath(os.path.dirname(__file__) + '/../')
 app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
 app.config["MONGODB_SETTINGS"] = {'DB': "featurelet"}
 app.config["SECRET_KEY"] = "KeepThisS3cr3t"
+
+# Patch out jinjarenderer to include templates that are local.
+JinjaRenderer.search_path.insert(
+    0, os.path.dirname(os.path.realpath(__file__)) + "/../templates/yota/")
+
 
 db = MongoEngine(app)
 user = "isaac"
@@ -42,7 +48,8 @@ def plans():
 
 @app.route("/")
 def hello():
-    return render_template('home.html')
+    form = RegisterForm()
+    return render_template('home.html', form=form.render())
 
 
 class User(db.Document):
