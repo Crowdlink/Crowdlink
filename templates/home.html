@@ -2,92 +2,57 @@
 
 {% block title %}Home{% endblock %}
 {% block content %}
+<br>
+<div class="container header-col header-col-preview">
+  <h3>Featurelet is....</h3>
+  <ul>
+    <li>An end-user oriented companion to your issue tracker</li>
+    <li>Driving project direction from user opinion, promoting lean development</li>
+    <li>A way to fund smaller open source projects and grow them rapidly</li>
+  </ul>
+</div>
+<div class="panel header-col-user">
+  <div class="col-sm-6 header-col header-col-maint">
+    <h3>For project maintainers</h3>
+    <h4>Drive rapid development by having an easy feeback mechanism for end users</h4>
+    <ul class="icons-ul">
+      <li><i class="icon-thumbs-up icon-li icon-large"></i>Gauge user interest with voting</li>
+      <li><i class="icon-sitemap icon-li icon-large"></i>Simple and intuitive interface lowers barrier to contribution</li>
+      <li><i class="icon-gear icon-li icon-large"></i>Integration with existing issue trackers makes transition smooth</li>
+    </ul>
+    <h4>Grow your open source project</h4>
+    <ul class="icons-ul">
+      <li><i class="icon-dollar icon-li icon-large"></i>Users can vote on improvements with a monetary contribution towards its completion in small amounts</li>
+      <li><i class="icon-beer icon-li icon-large"></i>Crowdfund the development of your side project or tool, keeping it alive and relevant</li>
+    </ul>
+  </div>
+  <div class="col-sm-6 header-col header-col-user">
+    <h3>For end users</h3>
+    <h4>Help grow projects you're interested in</h4>
+    <ul class="icons-ul">
+      <li><i class="icon-group icon-li icon-large"></i>Vote on improvements relevant to your needs and track them to completion</li>
+      <li><i class="icon-plus icon-li icon-large"></i>Fund your favourite project with micro-contributions or regular votes</li>
+    </ul>
+    <h4>Engage in a community</h4>
+    <ul class="icons-ul">
+      <li><i class="icon-flag icon-li icon-large"></i>Get notified of new releases for projects by watching them</li>
+      <li><i class="icon-comment icon-li icon-large"></i>Provide your feedback in a conversation with other users to established projects to help improve them</li>
+    </ul>
+  </div>
+  <div class="clearfix"></div>
 
-{% if teams %}
-<h3>{{top}}Team Rankings</h3>
-<table class="table table-striped">
-  <thead>
-  <tr>
-    <th>Rank</th>
-    <th>Name</th>
-    <th>Top Lane</th>
-    <th>Jungler</th>
-    <th>Mid Lane</th>
-    <th>AD Carry</th>
-    <th>Support</th>
-    <th>Fantasy Points</th>
-  </tr>
-  </thead>
-  {% for team in teams %}
-  <tr>
-    <td>{{team.disp_rank}}</td>
-    <td>
-      <b><a href="{{team.get_abs_url()}}">
-        {{team.disp_name()|safe}}
-      </a></b>
-    </td>
-    {% for player in team.players %}
-    <td>
-      <a href="{{player.get_abs_url()}}">{{player.username}}</a>
-      ({{player.points}})
-    </td>
-    {% endfor %}
-    <td><b>{{team.points}}</b></td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+  <div class="container header-col header-col-norm">
+    <h3>Always free for open source</h3>
+    <p>Featurelet's full service is availible free of charge for open source projects.</p>
+    <br>
+    <a href="/login/github">
+      <button type="button" class="btn btn-danger btn-sm"><i class="icon-github icon-li icon-large"></i>&nbsp; Sign in with Github</button>
+    </a>
+    &nbsp;
+    <a href="/register">
+      <button type="button" class="btn btn-warning btn-sm"><i class="icon-edit-sign icon-li icon-large"></i>&nbsp; Sign up</button>
+    </a>
+  </div>
 
-{% if players %}
-<h3>{{top}}Player Rankings</h3>
-<table class="table table-striped">
-  <thead>
-  <tr>
-    <th>Rank</th>
-    <th>Name</th>
-    <th>Team</th>
-    <th>Position</th>
-    <th>KDA Ratio</th>
-    <th>Fantasy Points</th>
-  </tr>
-  </thead>
-  {% for player in players %}
-  <tr>
-    <td>{{player.disp_rank}}</td>
-    <td><b><a href="{{player.get_abs_url()}}">{{player.username}}</a></b></td>
-    <td><a href="{{player.team.get_abs_url()}}">{{player.team.name}}</a></td>
-    <td>{{player.position}}</td>
-    <td>{{player.kda}}</td>
-    <td><b>{{player.points}}</b></td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
-
-{% if users %}
-<h3>{{top}}Fantasy Team Rankings</h3>
-<table class="table table-striped">
-  <thead>
-  <tr>
-    <th>Rank</th>
-    <th>Name</th>
-    <th colspan="5">Players...</th>
-    <th>Fantasy Points</th>
-  </tr>
-  </thead>
-  {% for team in users %}
-  <tr>
-    <td>{{team.disp_rank}}</td>
-    <td><b><a href="{{team.get_abs_url()}}">{{team.username}}</a></b></td>
-    {% for player in team.players %}
-    <td>
-      <a href="{{player.get_abs_url()}}">{{player.username}}</a>
-      ({{player.points}})
-    </td>
-    {% endfor %}
-    <td><b>{{team.points}}</b></td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+</div>
 {% endblock %}

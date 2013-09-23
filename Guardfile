@@ -12,3 +12,14 @@ end
 guard 'compass' do
   watch(%r{^.+\.sass$})
 end
+
+#guard 'less', :output => 'static/css' do
+#    watch("less/bootstrap/bootstrap.less")
+#end
+
+guard :shell do
+    watch(%r{^less/bootstrap/.+\.less$}) do
+        `recess ./less/bootstrap/bootstrap.less --compress > ./static/css/bootstrap.css`
+        puts "Recompiled bootstrap"
+    end
+end

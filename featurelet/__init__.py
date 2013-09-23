@@ -1,5 +1,5 @@
 import datetime
-from flask import Flask, Blueprint, render_template, url_for, request
+from flask import Flask, Blueprint, render_template, url_for, request, send_file
 import json
 from flask.ext.mongoengine import MongoEngine
 from flask.views import MethodView
@@ -10,8 +10,8 @@ from jinja2 import FileSystemLoader
 
 
 app = Flask(__name__, static_folder='../static', static_url_path='/static')
-print os.path.join(os.path.dirname(os.path.abspath(__file__) +'../templates'))
-app.jinja_loader = FileSystemLoader(os.path.join(os.path.dirname(os.path.abspath(__file__)) +'../templates'))
+root = os.path.abspath(os.path.dirname(__file__) + '/../')
+app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
 app.config["MONGODB_SETTINGS"] = {'DB': "featurelet"}
 app.config["SECRET_KEY"] = "KeepThisS3cr3t"
 
@@ -19,10 +19,25 @@ db = MongoEngine(app)
 user = "isaac"
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return send_file(os.path.join(root, 'static/favicon.ico'))
+
+
 @app.route("/u/<username>")
 def user(username=None):
     user = User.objects.get(username=username)
     return render_template('prof.html', user=user)
+
+
+@app.route("/register")
+def register():
+    return render_template('register.html')
+
+
+@app.route("/plans")
+def plans():
+    return render_template('plans.html')
 
 
 @app.route("/")
@@ -49,4 +64,4 @@ class User(db.Document):
 
 if __name__ == "__main__":
     app.debug = True
-    app.run()
+    app.run(host='0.0.0.0')

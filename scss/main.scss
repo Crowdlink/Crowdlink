@@ -1,12 +1,67 @@
-$blue: #3bbfce;
-$margin: 16px;
+@import "compass/css3/images";
 
-.content_navigation {
-  color: $blue;
+$footer-height:62px; 
+$brand-primary:         #2C3E50;
+$brand-success:         #1A9958;
+$brand-warning:         #F39C12;
+$brand-danger:          #E74C3C;
+$brand-info:            #3498DB;
+
+.header-col {
+  padding:25px 40px;
+  li {
+    padding:3px;
+  }
 }
 
-.border {
-  padding: $margin / 2;
-  margin: $margin / 2;
-  border: 2px $blue solid;
+.header-col-norm {
+  border-top:3px solid #ffffff;
+  background-color: #A9DFC4;
+}
+.header-col-preview {
+  border-bottom:3px solid #ffffff;
+  background-color: lighten($brand-warning, 30%);
+  padding:10px 40px;
+}
+.header-col-user {
+  background-color: lighten($brand-info, 30%);
+}
+
+.header-col-maint {
+  border-right:3px solid #ffffff;
+  background-color: lighten($brand-primary, 20%);
+  h3, h4, ul {
+    color:#efefef !important;
+  }
+  color:#efefef !important;
+}
+
+.logo {
+  padding:9px 20px 5px 20px;
+}
+
+html,
+body {
+  height: 100%;
+  /* The html and body elements cannot have any padding or margin. */
+}
+
+/* Wrapper for page content to push down footer */
+#wrap {
+  min-height: 100%;
+  height: auto !important;
+  height: 100%;
+  /* Negative indent footer by its height */
+  margin: 0 auto -1*$footer-height;
+  /* Pad bottom by footer height */
+  padding: 0 0 60px;
+}
+
+/* Set the fixed height of the footer here */
+#footer {
+  height: $footer-height;
+}
+
+.main-cont {
+  padding-top:50px;
 }
