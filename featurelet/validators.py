@@ -20,8 +20,8 @@ class UnicodeStringValidator(object):
 
     def __call__(self, username):
         if ' ' in username.data:
-            username.add_error({'message': self.space_message})
+            username.add_error({'message': self.spmsg})
         if len(username.data) < self.minval:
             username.add_error({'message': self.minmsg})
-        if len(username.data) < self.maxval:
+        if len(username.data) > self.maxval:
             username.add_error({'message': self.maxmsg})

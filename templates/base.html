@@ -29,8 +29,10 @@
                 <!-- <li{% if request.path == "/plans" %} class="active"{%endif%}><a href="/plans">Plans</a></li> -->
                 {% if user %}
                 <li{% if request.path == "/settings" %} class="active"{%endif%}><a href="/settings">Account</a></li>
-                {% endif %}
+                {% else %}
                 <li{% if request.path == "/signup" %} class="active"{%endif%}><a href="/signup">Sign Up</a></li>
+                <li{% if request.path == "/login" %} class="active"{%endif%}><a href="/login">Login</a></li>
+                {% endif %}
               </ul>
             </div><!--/.nav-collapse -->
           </div>
