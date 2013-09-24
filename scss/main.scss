@@ -17,12 +17,33 @@ $brand-info:            #3498DB;
   li {
     padding:3px;
   }
+  h3, h4 {
+    text-shadow: 1px 1px 3px rgba(100, 100, 100, 0.5);
+  }
+}
+
+.hr-header {
+  text-align:center;
+  border-bottom:2px solid #d5d5d5;
+  b {
+    display:inline-block;
+    font-size:18px;
+    position:relative;
+    top:12px;
+    background:#5D496F;
+    padding:0px 12px;
+  }
+}
+
+div h4.subtext {
+  color:#d0d0d0 !important;
+  padding:10px 10px 10px 70px;
 }
 
 .indent-quote {
   margin-left:70px;
   text-indent:-70px;
-  @include single-text-shadow;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6) !important;
 }
 
 .header-col-norm {
@@ -53,6 +74,7 @@ $brand-info:            #3498DB;
   background-color: lighten($brand-primary, 20%);
   h3, h4, ul {
     color:#efefef !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
   }
   color:#efefef !important;
 }

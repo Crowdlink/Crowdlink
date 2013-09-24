@@ -21,11 +21,13 @@
     <div
       {% if not errors %}style="display:none;"{% else %}
         {% if not errors[0]['error'] %} class="alert alert-success"{% else %}
-        class="alert alert-error" {% endif %}{% endif %}
+        class="alert alert-danger" {% endif %}{% endif %}
         id="{{ id }}_error">
-        {% if errors %}
-            {{ errors[0]['message'] }}
-        {% endif %}
+        {% for error in errors %}
+          <ul>
+            <li>{{ error['message'] }}</li>
+          </ul>
+        {% endfor %}
     </div>
     {% if title %}
     <h2>{{ title }}</h2>
