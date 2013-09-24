@@ -10,7 +10,7 @@ guard 'coffeescript', :input => '', :output => 'static/js' do
 end
 
 guard 'compass' do
-  watch(%r{^.+\.sass$})
+  watch(%r{^.+\.scss$})
 end
 
 #guard 'less', :output => 'static/css' do
