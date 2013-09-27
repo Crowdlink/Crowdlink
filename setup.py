@@ -7,8 +7,10 @@ requires = ['pymongo',
             'flask_mongoengine',
             'mongoengine',
             'flask-script',
+            'flask-login',
             'yota',
-            'cryptacular']
+            'cryptacular',
+            'Babel']
 
 setup(name='featurelet',
       version='0.1',

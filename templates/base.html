@@ -10,6 +10,9 @@
     {% endblock %}
   </head>
   <body>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://malsup.github.com/jquery.form.js"></script> 
+    <script src="/static/lib/js/yota.js"></script>
     <div id="wrap">
       <div class="navbar navbar-default navbar-fixed-top">
           <div class="container">
@@ -27,8 +30,9 @@
               <ul class="nav navbar-nav">
                 <li{% if request.path == "/" %} class="active"{%endif%}><a href="/">Home</a></li>
                 <!-- <li{% if request.path == "/plans" %} class="active"{%endif%}><a href="/plans">Plans</a></li> -->
-                {% if user %}
+                {% if g.user.is_authenticated() %}
                 <li{% if request.path == "/settings" %} class="active"{%endif%}><a href="/settings">Account</a></li>
+                <li><a href="/logout">Logout</a></li>
                 {% else %}
                 <li{% if request.path == "/signup" %} class="active"{%endif%}><a href="/signup">Sign Up</a></li>
                 <li{% if request.path == "/login" %} class="active"{%endif%}><a href="/login">Login</a></li>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col header-col-light-gray">
+    <div class="row">
+      <div class="col-md-7">
+        <h2>{{ user.username }}</h2>
+        <h4><b>Joined: </b>{{ user.created_at|date }}</h4>
+      </div>
+      <div class="col-md-5 text-right">
+        <h4><b>Waching</b></h4>
+        Users: 4<br>
+        Projects: 12<br>
+        Improvements: 12<br>
+      </div>
+    </div>
+  </div>
+</div>
+{% if proj %}
+<div class="row">
+  <div class="col header-col-light-gray col-md-8">
+    <div class="col-lg-7">
+      <b>No news to display for these projects...</b>
+    </div>
+  </div>
+  <div class="col header-col-light-gray col-md-4">
+    <h3>Projects</h3>
+    {% for project in proj %}
+    <b><a href="{{ project.get_abs_url() }}">{{project.name }}</a></b>
+    {% endfor%}
+  </div>
+</div>
+{% endif %}
+{% if proj_inter %}
+<div class="row">
+  <div class="col header-col-light-gray col-md-8">
+    <div class="col-lg-7">
+      <b>No news to display for these projects...</b>
+    </div>
+  </div>
+  <div class="col header-col-light-gray col-md-4">
+    <h3>Projects {{ user.username }} interacts with</h2>
+    {% for project in proj_inter %}
+    <b><a href="{{ project.get_abs_url() }}">{{project.name }}</a></b>
+    {% endfor%}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

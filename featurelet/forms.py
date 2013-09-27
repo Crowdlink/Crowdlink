@@ -1,33 +1,52 @@
+from flask import g
+
 from yota.nodes import *
 import yota
 from yota.validators import *
+
 from featurelet.validators import *
-from featurelet.models import User
+from featurelet.models import User, Project
 
 class RegisterForm(yota.Form):
     username = EntryNode(
-        css_class="form-control input-sm", validators=UnicodeStringValidator(minval=1))
+        css_class="input-sm", validators=UnicodeStringValidator(minval=3))
     password = PasswordNode(
-        css_class="form-control input-sm", validators=UnicodeStringValidator(minval=6))
-    password_confirm = PasswordNode(title="Confirm", css_class="form-control input-sm")
+        css_class="input-sm", validators=UnicodeStringValidator(minval=6))
+    password_confirm = PasswordNode(title="Confirm", css_class="input-sm")
     _valid_pass = Check(MatchingValidator(message="Password fields must match"), "password", "password_confirm")
-    email = EntryNode(css_class="form-control input-sm",
+    email = EntryNode(css_class="input-sm",
                       validators=EmailValidator())
 
-    submit = SubmitNode(title="Sign Up", css_class="btn-sm btn btn-success")
+    submit = SubmitNode(title="Sign Up", css_class="btn-sm btn btn-primary")
 
     def validator(self):
-
         # Check for unique username
         try:
             user = User.objects.get(username=self.username.data)
         except User.DoesNotExist:
             pass
         else:
-            self.username.add_error({'message': 'Username already in use!', "error": True})
+            self.username.add_error({'message': 'Username already in use!'})
 
+
+class NewProjectForm(yota.Form):
+    g_context = {'ajax': True, 'piecewise': True}
+    ptitle = EntryNode(title='Project Name', validators=MinMaxValidator(3, 64))
+    description = EntryNode(placeholder='(Optional)')
+    website = EntryNode(placeholder='(Optional)')
+    source = EntryNode(title="Souce Code Location", validators=RequiredValidator())
+    create = SubmitNode(title="Create", css_class="btn btn-primary")
+
+    def validator(self):
+        # Check for unique username
+        try:
+            project = Project.objects.get(maintainer=g.user.id, name=self.ptitle.data)
+        except Project.DoesNotExist:
+            pass
+        else:
+            self.username.add_error({'message': 'You already have a project named that'})
 
 class LoginForm(yota.Form):
     username = EntryNode(css_class="form-control input-sm")
     password = PasswordNode(css_class="form-control input-sm")
-    submit = SubmitNode(title="Login", css_class="btn-sm btn btn-success")
+    submit = SubmitNode(title="Login", css_class="btn-sm btn btn-primary")
