@@ -1,4 +1,5 @@
 from featurelet import db
+from featurelet.events import *
 
 import cryptacular.bcrypt
 import datetime
@@ -19,6 +20,12 @@ class Project(db.Document):
     name = db.StringField(max_length=64, min_length=3)
     website = db.StringField(max_length=2048, min_length=3)
     source_url = db.StringField(max_length=2048, min_length=3)
+    subscribers = db.ListField(db.GenericReferenceField())
+
+
+class Subscriber(db.Document):
+    username = db.ReferenceField('User')
+    subscribee = db.GenericReferenceField()
 
 
 class User(db.Document):
