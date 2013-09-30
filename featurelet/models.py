@@ -1,3 +1,5 @@
+from flask import url_for
+
 from featurelet import db
 from featurelet.events import *
 
@@ -18,9 +20,21 @@ class Project(db.Document):
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     maintainer = db.ReferenceField('User')
     name = db.StringField(max_length=64, min_length=3)
-    website = db.StringField(max_length=2048, min_length=3)
-    source_url = db.StringField(max_length=2048, min_length=3)
+    website = db.StringField(max_length=2048)
+    source_url = db.StringField(max_length=2048)
     subscribers = db.ListField(db.GenericReferenceField())
+    url_key = db.StringField(min_length=3, max_length=64)
+
+    def get_abs_url(self):
+        return url_for('main.view_project',
+                       username=self.maintainer.username,
+                       url_key=self.url_key)
+
+    def get_imrpovements(self):
+        return Improvements.objects(project=self)
+
+class Improvements(db.Document):
+    pass
 
 
 class Subscriber(db.Document):
@@ -29,10 +43,9 @@ class Subscriber(db.Document):
 
 
 class User(db.Document):
-    id = db.ObjectIdField()
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     _password = db.StringField(max_length=1023, required=True)
-    username = db.StringField(max_length=32, min_length=3, unique=True)
+    username = db.StringField(max_length=32, min_length=3, primary_key=True)
     emails = db.ListField(db.EmbeddedDocumentField('Email'))
 
     @property
@@ -41,14 +54,10 @@ class User(db.Document):
 
     @password.setter
     def password(self, val):
-        print val
         self._password = unicode(crypt.encode(val))
-        print self._password
 
     def check_password(self, password):
-        print self._password
-        print unicode(crypt.encode(password))
-        return self._password == unicode(crypt.encode(password))
+        return crypt.check(self._password, password)
 
     @property
     def primary_email(self):
@@ -68,9 +77,13 @@ class User(db.Document):
 
         return user
 
-    def get_absolute_url(self):
-        return url_for('user', username=unicode(self.username).encode('utf-8'))
+    def get_abs_url(self):
+        return url_for('main.user', username=unicode(self.username).encode('utf-8'))
 
+    def get_projects(self):
+        return Project.objects(maintainer=self)
+
+    # Authentication callbacks
     def is_authenticated(self):
         return True
 

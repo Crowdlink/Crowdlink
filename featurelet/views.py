@@ -6,6 +6,7 @@ from featurelet.models import User, Project
 from featurelet.forms import RegisterForm, LoginForm, NewProjectForm
 
 import json
+import mongoengine
 import os
 
 main = Blueprint('main', __name__, template_folder='../templates')
@@ -16,7 +17,7 @@ def before_request():
 
 @lm.user_loader
 def user_loader(id):
-    return User.objects.get(id=id)
+    return User.objects.get(username=id)
 
 @main.route("/favicon.ico")
 def favicon():
@@ -29,25 +30,38 @@ def account():
     return render_template('account.html')
 
 
+@main.route("/<username>/<url_key>")
+def view_project(username=None, url_key=None):
+    project = Project.objects.get(maintainer=User(username=username),
+                                  url_key=url_key)
+    return render_template('proj.html', project=project)
+
+
 @main.route("/new_project", methods=['GET', 'POST'])
 @login_required
 def new_project():
     form = NewProjectForm()
+    form.g_context.update({'user': g.user})
     if request.method == 'POST':
-        success, json = form.json_validate(request.form, piecewise=True)
-        if success:
+        if form.validate(request.form, piecewise=True):
             data = form.data_by_attr()
+            try:
+                proj = Project(
+                    maintainer=g.user.id,
+                    name=data['ptitle'],
+                    website=data['website'],
+                    source_url=data['source'],
+                    url_key=data['url_key'],
+                    description=data['description'])
+                proj.save()
+            except mongoengine.errors.OperationError:
+                form.start.add_error({'message': 'An unknown database error has occurred, this has been logged.'})
+            except mongoengine.errors.ValidationError:
+                form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged.'})
+            else:
+                form.set_json_success(redirect=proj.get_abs_url())
 
-        try:
-            proj = Project(maintainer=g.user.id,
-                           name=data['ptitle'],
-                           website=data['website'],
-                           source_url=data['source'],
-                           description=data['description'])
-        except mongoengine.errors.OperationError:
-            return form.update_success({'redirect': '/test/'})
-        else:
-            return json
+        return form.render_json()
 
     return render_template('new_project.html', form=form.render())
 
@@ -69,7 +83,7 @@ def login():
         return redirect(url_for('main.home'))
     form = LoginForm()
     if request.method == 'POST':
-        success, invalid_nodes = form.validate(request.form)
+        success = form.validate(request.form)
         data = form.data_by_attr()
         if success:
             try:
@@ -90,7 +104,7 @@ def signup():
     form = RegisterForm()
 
     if request.method == 'POST':
-        success, invalid_nodes = form.validate(request.form)
+        success = form.validate(request.form)
         data = form.data_by_attr()
         if success:
             user = User.create_user(data['username'], data['password'], data['email'])
@@ -107,10 +121,11 @@ def plans():
     return render_template('plans.html')
 
 
-@main.route("/")
+@main.route("/", methods=['GET', 'POST'])
 def home():
     if g.user is not None and g.user.is_authenticated():
-        return render_template('user_home.html')
+        projects = g.user.get_projects()
+        return render_template('user_home.html', projects=projects)
     else:
-        form = RegisterForm()
+        form = RegisterForm.get_sm()
         return render_template('home.html', form=form.render())

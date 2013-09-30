@@ -9,6 +9,11 @@
   </div>
   <div class="col header-col-gray col-md-4">
     <h3>Your projects</h3>
+    {% for project in projects %}
+    <ul>
+      <li><a href="{{project.get_abs_url() }}">{{ project.name }}</a></li>
+    </ul>
+    {% endfor %}
   </div>
     <a class="col header-col-light-green col-md-4" href="/new_project">Create a New Project</a>
   <div class="col header-col-gray col-md-4 pull-right">
