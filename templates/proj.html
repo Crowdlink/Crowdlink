@@ -19,8 +19,9 @@
   <div class="col-md-4">
     <br>
     <br>
-    <a class="col col-btn btn btn-info" href="/new_project">Suggest an Improvement</a>
+    <a class="col col-btn btn btn-info" href="/new_improvement/{{ project.url_key }}">Suggest an Improvement</a>
     <a class="col col-btn btn btn-success" href="/new_milestone/{{ project.url_key }}">Add a Milestone</a>
+    <a class="col col-btn btn btn-danger" href="/settings/{{ project.url_key }}">Project Settings</a>
   </div>
 </div>
 {% endblock %}

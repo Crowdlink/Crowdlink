@@ -55,6 +55,16 @@ class NewProjectForm(yota.Form):
         else:
             self.ptitle.add_error({'message': 'You already have a project named that'})
 
+
+class NewImprovementForm(yota.Form):
+    g_context = {'ajax': True, 'piecewise': True}
+    brief = EntryNode(validators=MinMaxValidator(3, 512))
+    description = TextareaNode(rows=15)
+    create = SubmitNode(title="Create", css_class="btn btn-primary")
+
+    def validator(self):
+        pass
+
 class LoginForm(yota.Form):
     username = EntryNode(css_class="form-control input-sm")
     password = PasswordNode(css_class="form-control input-sm")

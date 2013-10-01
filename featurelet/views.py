@@ -2,8 +2,8 @@ from flask import Blueprint, request, redirect, render_template, url_for, send_f
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
 from featurelet import root, lm, app
-from featurelet.models import User, Project
-from featurelet.forms import RegisterForm, LoginForm, NewProjectForm
+from featurelet.models import User, Project, Improvement
+from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm
 
 import json
 import mongoengine
@@ -37,13 +37,20 @@ def view_project(username=None, url_key=None):
     return render_template('proj.html', project=project)
 
 
+@main.route("/<purl_key>/<url_key>")
+def view_improvement(purl_key=None, url_key=None):
+    imp = Improvement.objects.get(url_key=url_key,
+                                  project=Project(url_key=purl_key))
+    return render_template('improvement.html', project=project)
+
+
 @main.route("/new_project", methods=['GET', 'POST'])
 @login_required
 def new_project():
     form = NewProjectForm()
     form.g_context.update({'user': g.user})
     if request.method == 'POST':
-        if form.validate(request.form, piecewise=True):
+        if form.validate(request.form):
             data = form.data_by_attr()
             try:
                 proj = Project(
@@ -64,6 +71,35 @@ def new_project():
         return form.render_json()
 
     return render_template('new_project.html', form=form.render())
+
+
+@main.route("/new_improvement/<purl_key>", methods=['GET', 'POST'])
+@login_required
+def new_improvement(purl_key=None):
+    # XXX Add check on the purl_key
+    form = NewImprovementForm()
+    if request.method == 'POST':
+        if form.validate(request.form):
+            data = form.data_by_attr()
+            try:
+                imp = Improvement(
+                    creator=g.user.id,
+                    project=Project(purl_key=purl_key),
+                    brief=data['brief'],
+                    description=data['description'])
+                imp.set_url_key()
+                imp.save()
+            except mongoengine.errors.OperationError:
+                form.start.add_error({'message': 'An unknown database error has occurred, this has been logged.'})
+            except mongoengine.errors.ValidationError:
+                form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged.'})
+            else:
+                form.set_json_success(redirect=imp.get_abs_url())
+
+        return form.render_json()
+
+    return render_template('new_improvement.html', form=form.render())
+
 
 
 @main.route("/u/<username>")

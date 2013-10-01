@@ -6,6 +6,7 @@ from featurelet.events import *
 import cryptacular.bcrypt
 import datetime
 import mongoengine
+import re
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
@@ -33,8 +34,20 @@ class Project(db.Document):
     def get_imrpovements(self):
         return Improvements.objects(project=self)
 
-class Improvements(db.Document):
-    pass
+class Improvement(db.Document):
+    brief = db.StringField(max_length=512, min_length=3)
+    description = db.StringField()
+    creator = db.ReferenceField('User')
+    project = db.ReferenceField(Project)
+    url_key = db.StringField()
+
+    def get_abs_url(self):
+        return url_for('main.view_improvement',
+                       purl_key=self.project.url_key,
+                       url_key=self.url_key)
+
+    def set_url_key(self):
+        self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100])
 
 
 class Subscriber(db.Document):
