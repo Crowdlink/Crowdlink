@@ -3,22 +3,28 @@
 {% block title %}Home{% endblock %}
 {% block content %}
 <div class="row">
-  <div class="col header-col-gray col-md-8">
-    <h3>Your feed</h3>
-    <b>There's nothing to see here... Start watching some projects</b>
+  <div class="col-md-8 no-gutter">
+    <div class="col">
+      <h3>Your feed</h3>
+      <b>There's nothing to see here... Start watching some projects</b>
+    </div>
   </div>
-  <div class="col header-col-gray col-md-4">
-    <h3>Your projects</h3>
-    {% for project in projects %}
-    <ul>
-      <li><a href="{{project.get_abs_url() }}">{{ project.name }}</a></li>
-    </ul>
-    {% endfor %}
-  </div>
-    <a class="col header-col-light-green col-md-4" href="/new_project">Create a New Project</a>
-  <div class="col header-col-gray col-md-4 pull-right">
-    <h3>Popular Projects</h3>
-    <b>Nothing to see here either</b>
+  <div class="col-md-4 no-gutter">
+    <div class="col">
+      <h3>Your projects</h3>
+      <ul class="list-group main-list">
+      {% for project in projects %}
+        <a href="{{project.get_abs_url() }}"><li class="list-group-item"><i class="icon-tasks"></i>&nbsp; {{ project.name }}</li></a>
+      {% else %}
+        <li class="list-group-item btn-info"><i class="icon-tasks"></i>&nbsp; No project to display</li>
+      {% endfor %}
+      </ul>
+    </div>
+    <a class="btn btn-info col-btn" href="/new_project">Create a New Project</a>
+    <div class="col">
+      <h3>Popular Projects</h3>
+      <b>Nothing to see here either</b>
+    </div>
   </div>
 </div>
 {% endblock %}

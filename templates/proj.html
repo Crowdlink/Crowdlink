@@ -2,28 +2,25 @@
 
 {% block title %}Home{% endblock %}
 {% block content %}
-<div class="col header-col-light-gray">
-  <h2>{{ project.name }}</h2>
-  <h4>
-    <b>Created </b>{{ project.created_at|date }}
-    ({{ project.created_at|date_ago }})
-  </h4>
-  <h4>
-    <b>Maintainer </b>
-    <a href="{{ project.maintainer.get_abs_url() }}">{{ project.maintainer.username }}</a>
-  </h4>
-</div>
-  <a class="col header-col-light-green col-md-4" href="/new_project">Create a New Project</a>
-<div class="col header-col-light-gray">
-</div>
-<div class="col header-col-light-gray">
-</div>
-<div class="col header-col-light-gray">
-</div>
-<div class="col header-col-light-gray">
-</div>
-<div class="col header-col-light-gray">
-</div>
-<div class="col header-col-light-gray">
+<div class="row">
+  <div class="col-md-8">
+    <div class="col">
+      <h2>{{ project.name }}</h2>
+      <h4>
+        <b>Created </b>{{ project.created_at|date }}
+        ({{ project.created_at|date_ago }})
+      </h4>
+      <h4>
+        <b>Maintainer </b>
+        <a href="{{ project.maintainer.get_abs_url() }}">{{ project.maintainer.username }}</a>
+      </h4>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <br>
+    <br>
+    <a class="col col-btn btn btn-info" href="/new_project">Suggest an Improvement</a>
+    <a class="col col-btn btn btn-success" href="/new_milestone/{{ project.url_key }}">Add a Milestone</a>
+  </div>
 </div>
 {% endblock %}

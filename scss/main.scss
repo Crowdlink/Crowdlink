@@ -24,8 +24,7 @@ $brand-info:            #3498DB;
 }
 
 .col {
-  padding: 25px 30px;
-  border: 3px solid #ffffff;
+  padding: 5px 25px 20px 25px;
 }
 
 a.col {
@@ -33,6 +32,20 @@ a.col {
     padding:10px 10px;
     text-align:center;
     font-weight:bold;
+}
+
+ul.main-list {
+  a:hover {
+      text-decoration:none !important;
+  }
+  li {
+    font-size:14pt;
+    color:#333;
+    padding: 8px 12px;
+    &:hover {
+      background-color:#ddd;
+    }
+  }
 }
 
 .hr-header {
@@ -51,6 +64,12 @@ a.col {
 div h4.subtext {
   color:#d0d0d0 !important;
   padding:10px 10px 10px 70px;
+}
+
+.col-btn {
+  width:100%;
+  border-radius:0px;
+  border:3px solid #fff !important;
 }
 
 .indent-quote {
