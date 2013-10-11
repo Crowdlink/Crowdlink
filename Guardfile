@@ -19,7 +19,7 @@ end
 
 guard :shell do
     watch(%r{^less/bootstrap/.+\.less$}) do
-        `recess ./less/bootstrap/bootstrap.less --compress > ./static/css/bootstrap.css`
+        `recess ./less/bootstrap/bootstrap.less --compile --compress > ./static/lib/css/bootstrap.min.css`
         puts "Recompiled bootstrap"
     end
 end
