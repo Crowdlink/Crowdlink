@@ -17,7 +17,10 @@ def before_request():
 
 @lm.user_loader
 def user_loader(id):
-    return User.objects.get(username=id)
+    try:
+        return User.objects.get(username=id)
+    except User.DoesNotExist:
+        pass
 
 @main.route("/favicon.ico")
 def favicon():

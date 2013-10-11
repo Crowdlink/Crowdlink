@@ -13,6 +13,7 @@ root = os.path.abspath(os.path.dirname(__file__) + '/../')
 
 # initialize our flask application
 app = Flask(__name__, static_folder='../static', static_url_path='/static')
+app.debug = True
 
 # Setup login stuff
 lm = LoginManager()
