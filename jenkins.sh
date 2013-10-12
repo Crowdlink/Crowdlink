@@ -10,6 +10,9 @@ docker rm `cat ../cid`  # also delete the old container
 # build and force a full package rebuild
 docker build -rm -t="$image" .
 if [ $? != 0 ]; then
+    # some kind of failure occured, so run our cleanup script
+    /home/jenkins/bin/docker-remove-untagged
+else
     # do the one time setup by invoking directly
     rm -f tmp
     docker run -cidfile="tmp" -dns="192.168.1.1" $image
@@ -24,7 +27,4 @@ if [ $? != 0 ]; then
     # populate vars and place in nginx lookup path
     perl -p -e 's/\$\{([^}]+)\}/defined $ENV{$1} ? $ENV{$1} : $&/eg' ci/nginx.conf > nginx.conf
     sudo service nginx reload
-else
-    # some kind of failure occured, so run our cleanup script
-    docker-remove-untagged
 fi
