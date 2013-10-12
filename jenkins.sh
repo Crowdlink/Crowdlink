@@ -9,6 +9,9 @@ docker stop `cat ../cid`
 docker rm `cat ../cid`  # also delete the old container
 # build and force a full package rebuild
 docker build -no-cache -rm -t="$image" .
+# a goofy way to detect if the image has been built or not. error codes
+# from build don't reflect successful image creation
+python -c "import commands; tmp=commands.getoutput('docker inspect $image'); ext = 0 if 'such image' not in tmp else 1; exit(ext);"
 if [ $? != 0 ]; then
     # some kind of failure occured, so run our cleanup script
     /home/jenkins/bin/docker-remove-untagged
