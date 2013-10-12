@@ -1,4 +1,4 @@
 Featurelet
 ==========
 
-Seamlessly gather your users feedback
+Seamlessly gather your users feedback.
