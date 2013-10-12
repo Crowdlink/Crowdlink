@@ -87,7 +87,7 @@ def new_improvement(purl_key=None):
         if form.validate(request.form):
             data = form.data_by_attr()
             try:
-                project = Project.objects.get(purl_key=purl_key)
+                project = Project.objects.get(url_key=purl_key)
                 imp = Improvement(
                     creator=g.user.id,
                     project=project,
@@ -121,8 +121,14 @@ def catch_error_graceful(form):
         form.start.add_error({'message': 'An unknown database error has occurred, this has been logged.'})
         log("An unknown operation error occurred")
     elif exc is mongoengine.errors.ValidationError:
-        form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged.'})
+        form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged with a high priority.'})
         log("A validation occurred.")
+    elif exc is mongoengine.errors.InvalidQueryError:
+        form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged with a high priority.'})
+        log("An inconsistency in the models was detected")
+    else:
+        form.start.add_error({'message': 'An unknown error has occurred'})
+        log("")
 
 
 

@@ -18,6 +18,7 @@ else
     docker run -cidfile="tmp" -dns="192.168.1.1" $image
     # Now commit that, and reset the command to something that will wait forever, holding open other processes
     docker commit -run="{\"Cmd\": [\"/srv/$project/start.sh\", \"true\"], \"PortSpecs\" : [\"22\", \"80\"]}" `cat tmp` $image
+    docker rm `cat tmp`  # remove our orphaned container
     cd ../
     cid=`docker run -d -dns="192.168.1.1" "$image"`
     echo "$cid" > cid

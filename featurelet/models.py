@@ -25,6 +25,7 @@ class Project(db.Document):
     source_url = db.StringField(max_length=2048)
     subscribers = db.ListField(db.GenericReferenceField())
     url_key = db.StringField(min_length=3, max_length=64)
+    meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
 
     def get_abs_url(self):
         return url_for('main.view_project',
