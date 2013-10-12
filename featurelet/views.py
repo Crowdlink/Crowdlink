@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, render_template, url_for, send_file, g
+from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
 from featurelet import root, lm, app
@@ -8,6 +8,8 @@ from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprove
 import json
 import mongoengine
 import os
+import sys
+
 
 main = Blueprint('main', __name__, template_folder='../templates')
 
@@ -85,23 +87,42 @@ def new_improvement(purl_key=None):
         if form.validate(request.form):
             data = form.data_by_attr()
             try:
+                project = Project.objects.get(purl_key=purl_key)
                 imp = Improvement(
                     creator=g.user.id,
-                    project=Project(purl_key=purl_key),
+                    project=project,
                     brief=data['brief'],
                     description=data['description'])
                 imp.set_url_key()
                 imp.save()
-            except mongoengine.errors.OperationError:
-                form.start.add_error({'message': 'An unknown database error has occurred, this has been logged.'})
-            except mongoengine.errors.ValidationError:
-                form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged.'})
+            except Exception:
+                catch_error_graceful(form)
             else:
                 form.set_json_success(redirect=imp.get_abs_url())
 
         return form.render_json()
 
     return render_template('new_improvement.html', form=form.render())
+
+def catch_error_graceful(form):
+    # grab current exception information
+    exc, txt, tb = sys.exc_info()
+
+    def log(msg):
+        from pprint import pformat
+        from traceback import format_exc
+        current_app.logger.warn(
+            "=============================================================\n" +
+            "{0}\nRequest dump: {1}\n{2}\n".format(msg, pformat(vars(request)), format_exc()) +
+            "=============================================================\n"
+        )
+
+    if exc is mongoengine.errors.OperationError:
+        form.start.add_error({'message': 'An unknown database error has occurred, this has been logged.'})
+        log("An unknown operation error occurred")
+    elif exc is mongoengine.errors.ValidationError:
+        form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged.'})
+        log("A validation occurred.")
 
 
 
@@ -129,6 +150,8 @@ def login():
                 user = User.objects.get(username=data['username'])
             except User.DoesNotExist:
                 pass
+            except Exception:
+                catch_error_graceful(form)
             else:
                 if user and user.check_password(data['password']):
                     login_user(user)
@@ -146,12 +169,17 @@ def signup():
         success = form.validate(request.form)
         data = form.data_by_attr()
         if success:
-            user = User.create_user(data['username'], data['password'], data['email'])
+            try:
+                user = User.create_user(data['username'], data['password'], data['email'])
+            except Exception:
+                catch_error_graceful(form)
+
             if user:
                 login_user(user)
                 return redirect(url_for('main.home'))
             else:
                 form.start.add_error({'message': 'Unknown database error, please retry.', 'error': True})
+
     return render_template('register.html', form=form.render())
 
 

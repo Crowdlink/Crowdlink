@@ -4,11 +4,11 @@ image="$project-$branch"
 
 # clone in our docker configuration for the project
 cd docker
-#docker rmi $image || true  # attempt a delete of the old image
+docker rmi $image || true  # attempt a delete of the old image
 docker stop `cat ../cid`
 docker rm `cat ../cid`  # also delete the old container
 # build and force a full package rebuild
-docker build -rm -t="$image" .
+docker build -no-cache -rm -t="$image" .
 if [ $? != 0 ]; then
     # some kind of failure occured, so run our cleanup script
     /home/jenkins/bin/docker-remove-untagged
