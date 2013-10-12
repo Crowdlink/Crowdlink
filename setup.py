@@ -8,7 +8,7 @@ requires = ['pymongo',
             'mongoengine',
             'flask-script',
             'flask-login',
-            'yota',
+            'yota>=0.3',
             'cryptacular',
             'Babel']
 
@@ -18,6 +18,7 @@ setup(name='featurelet',
       author='Isaac Cook',
       author_email='isaac@simpload.com',
       install_requires=requires,
+      dependency_links=["https://github.com/icook/yota/tarball/0.3#egg=yota-0.3"],
       url='http://www.python.org/sigs/distutils-sig/',
       packages=find_packages()
      )
