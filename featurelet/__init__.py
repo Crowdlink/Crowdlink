@@ -8,6 +8,7 @@ from yota import Form
 import babel.dates as dates
 import os
 import datetime
+import mongoengine
 
 root = os.path.abspath(os.path.dirname(__file__) + '/../')
 
@@ -25,7 +26,20 @@ app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
 # setup mongo connection information
 app.config["MONGODB_SETTINGS"] = {'DB': "featurelet"}
 app.config["SECRET_KEY"] = "KeepThisS3cr3t"
-db = MongoEngine(app)
+
+try:
+    db = MongoEngine(app)
+except mongoengine.connection.ConnectionError:
+    import mock
+    db = mock.Mock()
+    error_occured = True
+
+@app.before_first_request
+def first_req():
+    if error_occured:
+        # If there was a database failure, raise an exception to trigger the
+        # reload of the application when the first request comes in
+        raise AttributeError
 
 # patch yota to use bootstrap3
 JinjaRenderer.templ_type = 'bs3'
