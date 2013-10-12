@@ -66,10 +66,8 @@ def new_project():
                     url_key=data['url_key'],
                     description=data['description'])
                 proj.save()
-            except mongoengine.errors.OperationError:
-                form.start.add_error({'message': 'An unknown database error has occurred, this has been logged.'})
-            except mongoengine.errors.ValidationError:
-                form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged.'})
+            except Exception:
+                catch_error_graceful(form)
             else:
                 form.set_json_success(redirect=proj.get_abs_url())
 

@@ -26,6 +26,7 @@ app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
 # setup mongo connection information
 app.config["MONGODB_SETTINGS"] = {'DB': "featurelet"}
 app.config["SECRET_KEY"] = "KeepThisS3cr3t"
+error_occured = False
 
 try:
     db = MongoEngine(app)
