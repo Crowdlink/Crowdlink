@@ -47,13 +47,15 @@ class NewProjectForm(yota.Form):
     create = SubmitNode(title="Create", css_class="btn btn-primary")
 
     def validator(self):
-        # Check for unique username
+        # Check for unique project name
+        """
         try:
             project = Project.objects.get(maintainer=g.user.id, url_key=self.url_key.data)
         except Project.DoesNotExist:
             pass
         else:
             self.ptitle.add_error({'message': 'You already have a project named that'})
+        """
 
 
 class NewImprovementForm(yota.Form):

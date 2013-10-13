@@ -42,11 +42,12 @@ def view_project(username=None, url_key=None):
     return render_template('proj.html', project=project)
 
 
-@main.route("/<purl_key>/<url_key>")
-def view_improvement(purl_key=None, url_key=None):
+@main.route("/<user>/<purl_key>/<url_key>")
+def view_improvement(user=None, purl_key=None, url_key=None):
+    proj = Project.objects.get(url_key=purl_key, maintainer=user)
     imp = Improvement.objects.get(url_key=url_key,
-                                  project=Project(url_key=purl_key))
-    return render_template('improvement.html', project=project)
+                                  project=proj)
+    return render_template('improvement.html', improvement=imp)
 
 
 @main.route("/new_project", methods=['GET', 'POST'])
@@ -115,15 +116,18 @@ def catch_error_graceful(form):
             "=============================================================\n"
         )
 
-    if exc is mongoengine.errors.OperationError:
-        form.start.add_error({'message': 'An unknown database error has occurred, this has been logged.'})
-        log("An unknown operation error occurred")
-    elif exc is mongoengine.errors.ValidationError:
+    if exc is mongoengine.errors.ValidationError:
         form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged with a high priority.'})
         log("A validation occurred.")
     elif exc is mongoengine.errors.InvalidQueryError:
         form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged with a high priority.'})
         log("An inconsistency in the models was detected")
+    elif exc is mongoengine.errors.NotUniqueError:
+        form.start.add_error({'message': 'A duplication error happended on the datastore side, one of your values is not unique. This has been logged.'})
+        log("A duplicate check on the database side was not caught")
+    elif exc in (mongoengine.errors.OperationError, mongoengine.models.DoesNotExit):
+        form.start.add_error({'message': 'An unknown database error. This has been logged.'})
+        log("An unknown operation error occurred")
     else:
         form.start.add_error({'message': 'An unknown error has occurred'})
         log("")

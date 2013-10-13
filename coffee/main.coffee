@@ -13,3 +13,10 @@ window.bind_import = (id) ->
         dataType:'json'
     }
     $("#" + id).ajaxForm options
+
+
+# Simple fix for hash jumps with bootstrap
+shiftWindow = ->
+  scrollBy 0, -70
+setTimeout shiftWindow, 100  if location.hash
+window.addEventListener "hashchange", shiftWindow

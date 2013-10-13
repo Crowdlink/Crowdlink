@@ -39,12 +39,14 @@ class Improvement(db.Document):
     brief = db.StringField(max_length=512, min_length=3)
     description = db.StringField()
     creator = db.ReferenceField('User')
+    created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     project = db.ReferenceField(Project)
     url_key = db.StringField()
 
     def get_abs_url(self):
         return url_for('main.view_improvement',
                        purl_key=self.project.url_key,
+                       user=self.project.user,
                        url_key=self.url_key)
 
     def set_url_key(self):

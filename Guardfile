@@ -9,13 +9,20 @@ guard 'coffeescript', :input => '', :output => 'static/js' do
   watch(%r{^.+\.coffee$})
 end
 
-guard 'compass' do
-  watch(%r{^.+\.scss$})
-end
+#guard 'compass', :css_dir => 'static/css', :sass_dir => 'scss' do
+#  watch(%r{^.+\.scss$})
+#end
 
 #guard 'less', :output => 'static/css' do
 #    watch("less/bootstrap/bootstrap.less")
 #end
+
+guard :shell do
+    watch(%r{^scss/.+\.scss$}) do
+        `compass compile --force --css-dir="static/css" --sass-dir="scss" --images-dir="static/img" -s compressed`
+        puts "Recompiled sass"
+    end
+end
 
 guard :shell do
     watch(%r{^less/bootstrap/.+\.less$}) do

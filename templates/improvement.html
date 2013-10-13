@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}View Improvement "{{ improvement.brief }}"{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <div class="col">
+      <h2>{{ improvement.brief }}</h2>
+      <h4>
+        <b>Proposed </b>{{ improvement.created_at|date }}
+        ({{ improvement.created_at|date_ago }})
+      </h4>
+    </div>
+  </div>
+  <div class="col-md-4">
+  </div>
+</div>
+{% endblock %}
