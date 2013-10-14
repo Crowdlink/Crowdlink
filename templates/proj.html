@@ -24,4 +24,32 @@
     <a class="col col-btn btn btn-danger" href="/settings/{{ project.url_key }}">Project Settings</a>
   </div>
 </div>
+<div class="row">
+  <div class="col-md-8">
+    <table class="table table-hover">
+      <!--
+      <thead>
+        <tr>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      -->
+      <tbody>
+        {% for imp in project.get_improvements(): %}
+        <tr>
+          <td width="25"><a class="btn btn-xs btn-info" data-improvement="{{imp.url_key}}" data-type="vote">+1</a></td>
+          <td>{{imp.brief}}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="2"><b>No improvements to view, you should suggest one!</b></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

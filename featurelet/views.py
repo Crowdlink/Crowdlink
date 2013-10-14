@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app
+from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app, send_from_directory
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
 from featurelet import root, lm, app
@@ -24,6 +24,7 @@ def user_loader(id):
     except User.DoesNotExist:
         pass
 
+
 @main.route("/favicon.ico")
 def favicon():
     return send_file(os.path.join(root, 'static/favicon.ico'))
@@ -47,6 +48,8 @@ def view_improvement(user=None, purl_key=None, url_key=None):
     proj = Project.objects.get(url_key=purl_key, maintainer=user)
     imp = Improvement.objects.get(url_key=url_key,
                                   project=proj)
+    tmp = Project.objects(id=proj.id).update_one(inc__improvement_count=1)
+    current_app.logger.warn(tmp)
     return render_template('improvement.html', improvement=imp)
 
 
@@ -125,7 +128,7 @@ def catch_error_graceful(form):
     elif exc is mongoengine.errors.NotUniqueError:
         form.start.add_error({'message': 'A duplication error happended on the datastore side, one of your values is not unique. This has been logged.'})
         log("A duplicate check on the database side was not caught")
-    elif exc in (mongoengine.errors.OperationError, mongoengine.models.DoesNotExit):
+    elif exc in (mongoengine.errors.OperationError, mongoengine.errors.DoesNotExist):
         form.start.add_error({'message': 'An unknown database error. This has been logged.'})
         log("An unknown operation error occurred")
     else:
@@ -133,11 +136,11 @@ def catch_error_graceful(form):
         log("")
 
 
-
 @main.route("/u/<username>")
 def user(username=None):
     user = User.objects.get(username=username)
     return render_template('prof.html', user=user)
+
 
 @main.route("/logout")
 @login_required

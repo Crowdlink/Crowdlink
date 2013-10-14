@@ -16,11 +16,33 @@ class Email(db.EmbeddedDocument):
     primary = db.BooleanField(default=True)
 
 
+class Milestone(db.Document):
+    pass
+
+class Improvement(db.Document):
+    brief = db.StringField(max_length=512, min_length=3)
+    description = db.StringField()
+    creator = db.ReferenceField('User')
+    created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
+    project = db.ReferenceField('Project')
+    url_key = db.StringField(unique=True)
+
+    def get_abs_url(self):
+        return url_for('main.view_improvement',
+                       purl_key=self.project.url_key,
+                       user=self.project.maintainer.username,
+                       url_key=self.url_key)
+
+    def set_url_key(self):
+        self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100])
+
+
 class Project(db.Document):
     id = db.ObjectIdField()
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     maintainer = db.ReferenceField('User')
     name = db.StringField(max_length=64, min_length=3)
+    improvement_count = db.IntField(default=1)
     website = db.StringField(max_length=2048)
     source_url = db.StringField(max_length=2048)
     subscribers = db.ListField(db.GenericReferenceField())
@@ -32,26 +54,8 @@ class Project(db.Document):
                        username=self.maintainer.username,
                        url_key=self.url_key)
 
-    def get_imrpovements(self):
-        return Improvements.objects(project=self)
-
-class Improvement(db.Document):
-    brief = db.StringField(max_length=512, min_length=3)
-    description = db.StringField()
-    creator = db.ReferenceField('User')
-    created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
-    project = db.ReferenceField(Project)
-    url_key = db.StringField()
-
-    def get_abs_url(self):
-        return url_for('main.view_improvement',
-                       purl_key=self.project.url_key,
-                       user=self.project.user,
-                       url_key=self.url_key)
-
-    def set_url_key(self):
-        self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100])
-
+    def get_improvements(self):
+        return Improvement.objects(project=self)
 
 class Subscriber(db.Document):
     username = db.ReferenceField('User')

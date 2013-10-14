@@ -20,3 +20,7 @@ shiftWindow = ->
   scrollBy 0, -70
 setTimeout shiftWindow, 100  if location.hash
 window.addEventListener "hashchange", shiftWindow
+
+$("a[data-type='vote']").click(=>
+  alert('fun!')
+)

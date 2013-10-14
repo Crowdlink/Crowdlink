@@ -4,11 +4,13 @@ from setuptools import setup, find_packages
 
 requires = ['pymongo',
             'flask',
+            'mock',
             'flask_mongoengine',
             'mongoengine',
             'flask-script',
             'flask-login',
             'yota>=0.3',
+            'selenium',
             'cryptacular',
             'Babel']
 

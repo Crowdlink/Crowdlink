@@ -30,3 +30,10 @@ guard :shell do
         puts "Recompiled bootstrap"
     end
 end
+
+guard :shell do
+    watch(%r{^featurelet/.+\.py$}) do
+        `touch reload`
+        puts "Recompiled sass"
+    end
+end

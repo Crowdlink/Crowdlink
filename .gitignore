@@ -46,3 +46,7 @@ nosetests.xml
 .ropeproject
 .sass-cache
 tags
+
+reload
+uwsgi.pid
+uwsgi.log
