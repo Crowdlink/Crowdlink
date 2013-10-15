@@ -50,7 +50,7 @@ def view_improvement(user=None, purl_key=None, url_key=None):
                                   project=proj)
     tmp = Project.objects(id=proj.id).update_one(inc__improvement_count=1)
     current_app.logger.warn(tmp)
-    return render_template('improvement.html', improvement=imp)
+    return render_template('improvement.html', imp=imp)
 
 
 @main.route("/new_project", methods=['GET', 'POST'])
@@ -80,16 +80,16 @@ def new_project():
     return render_template('new_project.html', form=form.render())
 
 
-@main.route("/new_improvement/<purl_key>", methods=['GET', 'POST'])
+@main.route("/<maintainer>/<purl_key>/new_improvement", methods=['GET', 'POST'])
 @login_required
-def new_improvement(purl_key=None):
+def new_improvement(maintainer=None, purl_key=None):
     # XXX Add check on the purl_key
     form = NewImprovementForm()
     if request.method == 'POST':
         if form.validate(request.form):
             data = form.data_by_attr()
             try:
-                project = Project.objects.get(url_key=purl_key)
+                project = Project.objects.get(maintainer=maintainer, url_key=purl_key)
                 imp = Improvement(
                     creator=g.user.id,
                     project=project,

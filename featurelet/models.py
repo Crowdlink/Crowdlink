@@ -19,19 +19,29 @@ class Email(db.EmbeddedDocument):
 class Milestone(db.Document):
     pass
 
+
 class Improvement(db.Document):
     brief = db.StringField(max_length=512, min_length=3)
     description = db.StringField()
     creator = db.ReferenceField('User')
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     project = db.ReferenceField('Project')
+    vote_list = db.ListField(db.ReferenceField('User'))
+    votes = db.IntField(default=0)
     url_key = db.StringField(unique=True)
+    meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
 
     def get_abs_url(self):
         return url_for('main.view_improvement',
                        purl_key=self.project.url_key,
                        user=self.project.maintainer.username,
                        url_key=self.url_key)
+
+    def vote(self, user):
+        return Improvement.objects(project=self.project,
+                            url_key=self.url_key,
+                            vote_list__ne=user.username).\
+                    update_one(add_to_set__vote_list=user.username, inc__votes=1)
 
     def set_url_key(self):
         self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100])
@@ -117,4 +127,4 @@ class User(db.Document):
         return unicode(self.id)
 
     def __repr__(self):
-        return '<User %r>' % (self.nickname)
+        return '<User %r>' % (self.username)
