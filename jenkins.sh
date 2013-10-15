@@ -23,7 +23,7 @@ else
     docker commit -run="{\"Cmd\": [\"/srv/$project/start.sh\", \"true\"], \"PortSpecs\" : [\"22\", \"80\"]}" `cat tmp` $image
     docker rm `cat tmp`  # remove our orphaned container
     cd ../
-    cid=`docker run -d -dns="192.168.1.1" "$image"`
+    cid=`docker run -d -dns="192.168.125.1" "$image"`
     echo "$cid" > cid
     # export configs for the nginx config
     export port=`docker port $cid 80`
