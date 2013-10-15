@@ -1,5 +1,6 @@
 from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app, send_from_directory
 from flask.ext.login import login_user, logout_user, current_user, login_required
+from flask_oauth import OAuth
 
 from featurelet import root, lm, app
 from featurelet.models import User, Project, Improvement
@@ -43,13 +44,17 @@ def view_project(username=None, url_key=None):
     return render_template('proj.html', project=project)
 
 
+@main.route("/github")
+def github():
+    oauth = OAuth()
+    return render_template('proj.html')
+
+
 @main.route("/<user>/<purl_key>/<url_key>")
 def view_improvement(user=None, purl_key=None, url_key=None):
     proj = Project.objects.get(url_key=purl_key, maintainer=user)
     imp = Improvement.objects.get(url_key=url_key,
                                   project=proj)
-    tmp = Project.objects(id=proj.id).update_one(inc__improvement_count=1)
-    current_app.logger.warn(tmp)
     return render_template('improvement.html', imp=imp)
 
 

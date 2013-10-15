@@ -3,22 +3,38 @@
 {% block title %}View Improvement "{{ imp.brief }}"{% endblock %}
 {% block content %}
 <ol class="breadcrumb">
+  <li><a href="{{imp.project.maintainer.get_abs_url()}}">{{imp.project.maintainer}}</a></li>
   <li><a href="{{imp.project.get_abs_url()}}">{{ imp.project.name }}</a></li>
   <li><a href="">Improvements</a></li>
   <li class="active">{{imp.brief}}</li>
 </ol>
 <div class="row">
-  <div class="col-md-8">
-    <div class="col">
-      <h2>{{ imp.brief }}</h2>
-      <h4>
-        <b>Proposed on </b>{{ imp.created_at|date }}
-        ({{ imp.created_at|date_ago }})
-      </h4>
+    <div class="fit-width col-lg-2">
+        <h2><i class="icon-plus green pull-left" title="Improvement"></i></h2>&nbsp; 
     </div>
-  </div>
-  <div class="col-md-4">
-    <h3></h3>
+    <div class="col-lg-10">
+        <h2>
+            <span id="improvement-brief" data-url-key="{{imp.url_key}}" data-proj-id="{{imp.project.id}}" data-current="{{imp.brief}}"><span id="brief-text">{{ imp.brief }}</span>&nbsp;
+        <a class="icon-edit hover-icon" style="font-size:16pt;" id="improvement-brief-edit"></a>
+        </span>
+        </h2>
+    </div>
+</div>
+<br />
+<div class="row">
+    <div class="btn btn-sm btn-info"><i class="icon-eye-open"></i> &nbsp;Watch</div>
+    <div class="btn btn-sm btn-info"><i class="icon-arrow-up"></i> &nbsp;Upvote</div>
+</div>
+<br />
+<div class="row">
+  <h4>
+    <b>Proposed on </b>{{ imp.created_at|date }}
+    ({{ imp.created_at|date_ago }})
+  </h4>
+  <br>
+  <div class="row well center col-lg-11">
+      {{imp.md|safe}}
   </div>
 </div>
+{{ comment_form|safe }}
 {% endblock %}

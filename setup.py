@@ -12,6 +12,8 @@ requires = ['pymongo',
             'yota>=0.3',
             'selenium',
             'cryptacular',
+            'flask-oauthlib',
+            'markdown2',
             'Babel']
 
 setup(name='featurelet',

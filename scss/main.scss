@@ -48,6 +48,23 @@ ul.main-list {
   }
 }
 
+.hover-icon {
+  opacity:0.5;
+  color:#000;
+  cursor:pointer;
+  &:hover {
+    opacity:1.0;
+    text-decoration:none;
+  }
+}
+
+.col-btn {
+  width:100%;
+  border-radius:0px;
+  border:3px solid #fff !important;
+}
+
+/* Homepage styling */
 .hr-header {
   text-align:center;
   border-bottom:2px solid #d5d5d5;
@@ -65,19 +82,11 @@ div h4.subtext {
   color:#d0d0d0 !important;
   padding:10px 10px 10px 70px;
 }
-
-.col-btn {
-  width:100%;
-  border-radius:0px;
-  border:3px solid #fff !important;
-}
-
 .indent-quote {
   margin-left:70px;
   text-indent:-70px;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6) !important;
 }
-
 .header-col-gray {
   background-color: #dddddd;
 }
@@ -106,8 +115,13 @@ div h4.subtext {
   color:#efefef !important;
 }
 
+/* Header */
 .logo {
   padding:9px 20px 5px 20px;
+}
+
+.green {
+  color:#619532;
 }
 
 html,
@@ -136,7 +150,19 @@ body {
   padding-top:48px;
 }
 
+/* Utilities */
+/* Removes the padding around cols when desired */
 .no-gutter {
   padding-left:0px;
   padding-right:0px;
+}
+.fit-width {
+  width:1%;
+  white-space:nowrap;
+}
+
+.center {
+  float: none;
+  margin-left: auto;
+  margin-right: auto;
 }

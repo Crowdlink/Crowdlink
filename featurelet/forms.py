@@ -56,6 +56,15 @@ class NewProjectForm(yota.Form):
             self.ptitle.add_error({'message': 'You already have a project named that'})
 
 
+class CommentForm(yota.Form):
+    body = TextareaNode(rows=25,
+                        columns=100,
+                        css_class="form-control",
+                        template='epictext',
+                        validators=MinLengthValidator(10))
+    submit = SubmitNode(title="Add Comment")
+
+
 class NewImprovementForm(yota.Form):
     g_context = {'ajax': True, 'piecewise': True}
     brief = EntryNode(validators=MinMaxValidator(3, 512))

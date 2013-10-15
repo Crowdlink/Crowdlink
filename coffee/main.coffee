@@ -66,4 +66,48 @@ $(=>
     request.fail (jqXHR, textStatus) ->
         err()
   )
+
+  $("#improvement-brief-edit").click(edit_brief = ->
+    elm = $(this).parent()
+    holder = elm.html()
+    elm.html("<div class='col-lg-8'><input id='new-value' type='text' value='#{elm.data('current')}' class='form-control' /></div>"+
+    "<div class='btn btn-info icon-save' id='improvement-save'></div> "+
+    "<div class='btn btn-default icon-remove' id='improvement-cancel'></div>")
+    revert = ->
+      elm.html(holder)
+      elm.find("#brief-text").html(elm.data('current'))
+      elm.find("#improvement-brief-edit").click(edit_brief)
+
+
+    $("div#improvement-cancel").click(->
+      revert()
+    )
+
+    $("div#improvement-save").click ->
+      elm = $(this).parent()
+      request = $.ajax(
+          url: "#{api_root}improvement"
+          type: "POST"
+          data:JSON.stringify(
+              proj_id: elm.data("proj-id")
+              url_key: elm.data("url-key")
+              brief: elm.find("#new-value").val()
+          )
+          contentType: 'application/json'
+          dataType: "json"
+      )
+
+      request.done (jsonObj) ->
+        if jsonObj.success
+          elm.data('current', elm.find("#new-value").val())
+          revert()
+        else
+          if jsonObj.code == 'already_voted'
+            elm.html('<div class="btn btn-xs btn-success">Already Voted</div> ')
+          else
+            n = noty(text: "noty - a jquery notification library!")
+
+      request.fail (jqXHR, textStatus) ->
+        n = noty(text: "noty - a jquery notification library!")
+  )
 )

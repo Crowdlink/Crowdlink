@@ -16,18 +16,31 @@ root = os.path.abspath(os.path.dirname(__file__) + '/../')
 app = Flask(__name__, static_folder='../static', static_url_path='/static')
 app.debug = True
 
+# set our template path and configs
+app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
+app.config.from_pyfile('../application.cfg')
+
 # Setup login stuff
 lm = LoginManager()
 lm.init_app(app)
 lm.login_view = 'login'
 
-# set our template path
-app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
-# setup mongo connection information
-app.config["MONGODB_SETTINGS"] = {'DB': "featurelet"}
-app.config["SECRET_KEY"] = "KeepThisS3cr3t"
-error_occured = False
+# OAuth configuration
+github = oauth.remote_app(
+        'github',
+        consumer_key=app.config['GITHUB_CONSUMER_KEY'],
+        consumer_secret=app.config['GITHUB_CONSUMER_SECRET'],
+        request_token_params={'scope': 'user:email,repo'},
+        base_url='https://api.github.com/',
+        request_token_url=None,
+        access_token_method='POST',
+        access_token_url='https://github.com/login/oauth/access_token',
+        authorize_url='https://github.com/login/oauth/authorize'
+)
 
+
+# Try to force a server reload if we can't connect to mongodb. Inelegant
+error_occured = False
 try:
     db = MongoEngine(app)
 except mongoengine.connection.ConnectionError:
@@ -69,6 +82,14 @@ def format_datetime(value, format='medium'):
     elif format == 'medium':
         format="EE dd.MM.y"
     return dates.format_datetime(value, format)
+
+@app.template_filter('plural')
+def plural(value):
+    if value > 1:
+        return 's'
+    else:
+        return ''
+
 @app.template_filter('date_ago')
 def format_date_ago(time):
     """

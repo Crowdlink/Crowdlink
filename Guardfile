@@ -1,3 +1,5 @@
+require 'pathname'
+
 guard 'livereload', :apply_js_live => true, :appy_css_live => true do
   watch(%r{static/js/.+\.(js)$})
   watch(%r{static/css/.+\.(css)$})
@@ -33,7 +35,13 @@ end
 
 guard :shell do
     watch(%r{^featurelet/.+\.py$}) do
-        `touch reload`
-        puts "Recompiled sass"
+        pn = Pathname.new("uwsgi.pid")
+        if pn.exist?
+            puts "Reloaded uwsgi"
+            `touch reload`
+        else
+            `uwsgi --ini uwsgi.ini`
+            puts "Started uwsgi"
+        end
     end
 end

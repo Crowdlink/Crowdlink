@@ -7,6 +7,7 @@ import cryptacular.bcrypt
 import datetime
 import mongoengine
 import re
+import markdown2
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
@@ -36,6 +37,10 @@ class Improvement(db.Document):
                        purl_key=self.project.url_key,
                        user=self.project.maintainer.username,
                        url_key=self.url_key)
+
+    @property
+    def md(self):
+        return markdown2.markdown(self.description)
 
     def vote(self, user):
         return Improvement.objects(project=self.project,
@@ -125,6 +130,9 @@ class User(db.Document):
 
     def get_id(self):
         return unicode(self.id)
+
+    def __str__(self):
+        return self.username
 
     def __repr__(self):
         return '<User %r>' % (self.username)

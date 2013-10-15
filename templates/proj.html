@@ -42,12 +42,11 @@
       <tbody>
         {% for imp in project.get_improvements(): %}
         <tr>
-          <td width="25">
-            <a data-url-key="{{imp.url_key}}" data-proj-id="{{imp.project.id}}" data-type="vote">
-              <div class="btn btn-xs btn-info">+1</div>
-          </a></td>
-          <td>{{imp.votes}}</td>
-          <td>{{imp.brief}}</td>
+          <td class="fit-width">
+            <a data-url-key="{{imp.url_key}}" data-proj-id="{{imp.project.id}}" data-type="vote"><div class="btn btn-sm btn-info"><i class="icon-caret-up"></i></div></a>&nbsp;&nbsp;
+            <b>{{imp.votes}} vote{{imp.votes|plural}}</b>
+          </td>
+          <td><a href="{{imp.get_abs_url()}}">{{imp.brief}}</a></td>
         </tr>
         {% else %}
         <tr>
