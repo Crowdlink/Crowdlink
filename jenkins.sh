@@ -4,7 +4,7 @@ image="$project-$branch"
 
 # clone in our docker configuration for the project
 cd docker
-docker rmi $image || true  # attempt a delete of the old image
+docker rmi $imagee  # attempt a delete of the old image
 docker stop `cat ../cid`
 docker rm `cat ../cid`  # also delete the old container
 # build and force a full package rebuild
