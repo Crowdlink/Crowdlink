@@ -4,6 +4,7 @@ from flask.ext.login import LoginManager, current_user
 from jinja2 import FileSystemLoader
 from yota.renderers import JinjaRenderer
 from yota import Form
+from flask_oauthlib.client import OAuth
 
 import babel.dates as dates
 import os
@@ -26,6 +27,7 @@ lm.init_app(app)
 lm.login_view = 'login'
 
 # OAuth configuration
+oauth = OAuth(app)
 github = oauth.remote_app(
         'github',
         consumer_key=app.config['GITHUB_CONSUMER_KEY'],

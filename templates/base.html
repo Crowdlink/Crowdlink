@@ -22,7 +22,7 @@
               <ul class="nav nav-pills">
                 <!-- <li{% if request.path == "/plans" %} class="active"{%endif%}><a href="/plans">Plans</a></li> -->
                 {% if g.user.is_authenticated() %}
-                <li{% if request.path == "/settings" %} class="active"{%endif%}><a href="/settings">Account</a></li>
+                <li{% if request.path == "/account" %} class="active"{%endif%}><a href="/account">Account</a></li>
                 <li><a href="/logout">Logout</a></li>
                 {% else %}
                 <li{% if request.path == "/signup" %} class="active"{%endif%}><a href="/signup"><i class="icon-large icon-edit"></i><span class="hidden-xs"> Sign Up</span></a></li>

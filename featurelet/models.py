@@ -79,7 +79,7 @@ class Subscriber(db.Document):
 
 class User(db.Document):
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
-    _password = db.StringField(max_length=1023, required=True)
+    _password = db.StringField(max_length=128, min_length=5, required=True)
     username = db.StringField(max_length=32, min_length=3, primary_key=True)
     emails = db.ListField(db.EmbeddedDocumentField('Email'))
 

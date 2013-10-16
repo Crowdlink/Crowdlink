@@ -1,10 +1,9 @@
 from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app, send_from_directory
 from flask.ext.login import login_user, logout_user, current_user, login_required
-from flask_oauth import OAuth
 
-from featurelet import root, lm, app
+from featurelet import root, lm, app, oauth
 from featurelet.models import User, Project, Improvement
-from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm
+from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm, PasswordForm
 
 import json
 import mongoengine
@@ -31,10 +30,26 @@ def favicon():
     return send_file(os.path.join(root, 'static/favicon.ico'))
 
 
-@main.route("/account")
+@main.route("/account", methods=['GET', 'POST'])
 @login_required
 def account():
-    return render_template('account.html')
+    password_form = PasswordForm()
+    if request.method == 'POST':
+        # Handle new password logic
+        if request.form.get('_arg_form', None) == 'password':
+            if password_form.validate(request.form):
+                data = password_form.data_by_attr()
+                try:
+                    g.user.password = data['password']
+                    g.user.save()
+                    password_form.start.add_error(
+                        {'message': 'Password successfully updated',
+                         'type': 'success' })
+                except Exception:
+                    catch_error_graceful(password_form)
+
+    return render_template('account.html',
+                           password_form=password_form.render())
 
 
 @main.route("/<username>/<url_key>")
@@ -42,12 +57,6 @@ def view_project(username=None, url_key=None):
     project = Project.objects.get(maintainer=User(username=username),
                                   url_key=url_key)
     return render_template('proj.html', project=project)
-
-
-@main.route("/github")
-def github():
-    oauth = OAuth()
-    return render_template('proj.html')
 
 
 @main.route("/<user>/<purl_key>/<url_key>")

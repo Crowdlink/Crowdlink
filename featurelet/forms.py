@@ -8,8 +8,8 @@ from featurelet.validators import *
 from featurelet.models import User, Project
 
 class RegisterForm(yota.Form):
-    username = EntryNode(validators=UnicodeStringValidator(minval=3))
-    password = PasswordNode(validators=UnicodeStringValidator(minval=6))
+    username = EntryNode(validators=UnicodeStringValidator(minval=3, maxval=32))
+    password = PasswordNode(validators=UnicodeStringValidator(minval=5, maxval=32))
     password_confirm = PasswordNode(title="Confirm")
     _valid_pass = Check(MatchingValidator(message="Password fields must match"), "password", "password_confirm")
     email = EntryNode(validators=EmailValidator())
@@ -35,6 +35,18 @@ class RegisterForm(yota.Form):
             pass
         else:
             self.username.add_error({'message': 'Username already in use!'})
+
+
+class PasswordForm(yota.Form):
+    title = "Password"
+
+    hidden = {'form': 'password'}
+    password = PasswordNode(validators=UnicodeStringValidator(minval=5, maxval=32))
+    password_confirm = PasswordNode(title="Confirm")
+    _valid_pass = Check(MatchingValidator(message="Password fields must match"),
+                        "password",
+                        "password_confirm")
+    submit = SubmitNode(title="Update", css_class="btn-info btn")
 
 
 class NewProjectForm(yota.Form):

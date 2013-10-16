@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-2 l-sidebar">
+    <h3>Navigation</h3>
+    <div class="btn-group-vertical col-lg-12">
+      <button type="button" class="btn btn-default">General</button>
+      <button type="button" class="btn btn-default">Projects</button>
+    </div>
+  </div>
+  <div class="col-md-10">
+    <br />
+    <div class="col-md-7 center">
+      {{ password_form|safe }}
+    </div>
+  </div>
+</div>
+{% endblock %}
