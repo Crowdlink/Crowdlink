@@ -1,7 +1,7 @@
 from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app, send_from_directory
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
-from featurelet import root, lm, app, oauth
+from featurelet import root, lm, app, oauth, github
 from featurelet.models import User, Project, Improvement
 from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm, PasswordForm
 
@@ -9,6 +9,7 @@ import json
 import mongoengine
 import os
 import sys
+import base64
 
 
 main = Blueprint('main', __name__, template_folder='../templates')
@@ -50,6 +51,40 @@ def account():
 
     return render_template('account.html',
                            password_form=password_form.render())
+
+@main.route("/login/github/deauthorize")
+def unlink_github():
+    current_app.logger.warn(
+        github.get('authorizations', headers={"Authorization": "Basic %s" % current_app.config['GITHUB_ACCOUNT_KEY']}).data)
+    return (g.user.github_token, '')
+
+@github.tokengetter
+def get_github_oauth_token():
+    return (g.user.github_token, '')
+
+@main.route("/login/github")
+def github_init_auth():
+    return github.authorize(callback=url_for('main.github_auth', _external=True))
+
+@main.route("/login/github/authorize")
+@github.authorized_handler
+def github_auth(resp):
+    if resp is None:
+        return 'Access denied: reason=%s error=%s' % (
+            request.args['error_reason'],
+            request.args['error_description']
+        )
+    # if they're logged in
+    if 'access_token' not in resp:
+        return redirect(url_for('main.account'))
+    if g.user:
+        g.user.github_token = resp['access_token']
+        g.user.save()
+        g.github
+        return redirect(url_for('main.account'))
+    else:
+        # they're trying to login, or create an account
+        pass
 
 
 @main.route("/<username>/<url_key>")

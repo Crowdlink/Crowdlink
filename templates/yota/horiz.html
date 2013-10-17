@@ -1,0 +1,15 @@
+<div class="form-group">
+    {% block label %}
+      {% if label %}
+        <label class="col-lg-3 control-label" for="{{ id }}">{{ title }}</label>
+      {% endif %}
+    {% endblock %}
+    <div class="col-lg-8">
+      {% block control %}
+      {% endblock %}
+      <span style="height:5px; display:block;"></span>
+      {% block error %}
+        {% include "error.html" %}
+      {% endblock %}
+    </div>
+</div>

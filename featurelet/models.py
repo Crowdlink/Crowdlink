@@ -1,6 +1,6 @@
-from flask import url_for
+from flask import url_for, session
 
-from featurelet import db
+from featurelet import db, github
 from featurelet.events import *
 
 import cryptacular.bcrypt
@@ -82,6 +82,7 @@ class User(db.Document):
     _password = db.StringField(max_length=128, min_length=5, required=True)
     username = db.StringField(max_length=32, min_length=3, primary_key=True)
     emails = db.ListField(db.EmbeddedDocumentField('Email'))
+    github_token = db.StringField(unique=True)
 
     @property
     def password(self):
@@ -93,6 +94,13 @@ class User(db.Document):
 
     def check_password(self, password):
         return crypt.check(self._password, password)
+
+    @property
+    def github(self):
+        if 'github_user' not in session:
+            session['github_user'] = github.get('user').data
+        return session['github_user']
+
 
     @property
     def primary_email(self):

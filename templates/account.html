@@ -3,16 +3,49 @@
 {% block title %}Account Settings{% endblock %}
 {% block content %}
 <div class="row">
-  <div class="col-md-2 l-sidebar">
+  <div class="col-md-3 l-sidebar">
     <h3>Navigation</h3>
     <div class="btn-group-vertical col-lg-12">
       <button type="button" class="btn btn-default">General</button>
-      <button type="button" class="btn btn-default">Projects</button>
+      {% if not g.user.github_token %}
+      <button type="button" class="btn btn-default">
+        <a href="/login/github">
+          <i class="icon-github icon-li icon-large"></i>&nbsp; Link You Github
+        </a>
+      </button>
+      {% endif %}
     </div>
   </div>
-  <div class="col-md-10">
+  <div class="col-md-9">
     <br />
-    <div class="col-md-7 center">
+    <h3>Account Information</h3>
+    <table class="table">
+      <tr>
+        <th>Username</th>
+        <td>{{g.user.username}}</td>
+      </tr>
+      <tr>
+        <th>Primary Email</th>
+        <td>
+          {{g.user.primary_email.address}}
+          {% if g.user.primary_email.verified %}
+          <span class="label label-primary">Verified</span>
+          {% else %}
+          <span class="label label-danger">Un-verified</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% if g.user.github_token %}
+      <tr>
+        <th>Github Account</th>
+        <td>
+          {{g.user.github['login']}} {{g.user.github_token}}
+          <a href="{{url_for('main.unlink_github')}}" class="btn btn-danger btn-xs">Unlink</a>
+        </td>
+      </tr>
+      {% endif %}
+    </table>
+    <div class="col-md-7">
       {{ password_form|safe }}
     </div>
   </div>

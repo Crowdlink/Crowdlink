@@ -12,7 +12,7 @@ requires = ['pymongo',
             'yota>=0.3',
             'selenium',
             'cryptacular',
-            'flask-oauthlib',
+            'Flask-OAuthlib',
             'markdown2',
             'Babel']
 
