@@ -9,16 +9,36 @@
   <li class="active">{{imp.brief}}</li>
 </ol>
 <div class="row">
-    <div class="fit-width col-lg-2">
-        <h2><i class="icon-plus green pull-left" title="Improvement"></i></h2>&nbsp; 
-    </div>
-    <div class="col-lg-10">
-        <h2>
-            <span id="improvement-brief" data-url-key="{{imp.url_key}}" data-proj-id="{{imp.project.id}}" data-current="{{imp.brief}}"><span id="brief-text">{{ imp.brief }}</span>&nbsp;
-        <a class="icon-edit hover-icon" style="font-size:16pt;" id="improvement-brief-edit"></a>
+  <h2>
+    {% if can_edit %}
+    <span id="brief"
+        data-key="brief"
+        data-type="edit-trigger"
+        data-url-key="{{imp.url_key}}"
+        data-proj-id="{{imp.project.id}}"
+        id="improvement-brief-edit">
+        <span id="brief_edit" style="display:none;">
+          <div class="input-group">
+            <input id="brief_input"
+                type="text"
+                class="form-control" />
+            <span class="btn btn-info input-group-addon" id="brief_spinner" data-action="save_brief(t, key, display, revert);">
+              <i class="icon-save"></i>
+            </span>
+            <span class="btn btn-primary input-group-addon" data-action="revert();">
+              <i class="icon-remove"></i>
+            </span>
+          </div><!-- /input-group --> 
         </span>
-        </h2>
-    </div>
+        <span id="brief_display">
+          <span id="brief_output">{{ imp.brief }}</span>&nbsp;
+          <small class="icon-edit icon-hover" data-action="edit();"></small>
+        </span>
+    </span>
+    {% else %}
+      {{ imp.brief }}
+    {% endif %}
+  </h2>
 </div>
 <br />
 <div class="row">
@@ -32,9 +52,22 @@
     ({{ imp.created_at|date_ago }})
   </h4>
   <br>
-  <div class="row well center col-lg-11">
+  <div class="row well center col-lg-11" id="{{imp.url_key}}_{{imp.creator.username}}_display">
+      {% if can_edit %}
+      <i class="icon-edit icon-3x icon-hover pull-right" data-type="edit-trigger" data-show="{{imp.url_key}}_{{imp.creator.username}}"></i>
+      {% endif %}
       {{imp.md|safe}}
   </div>
+  {% if can_edit %}
+  <div class="row col-lg-11" id="{{imp.url_key}}_{{imp.creator.username}}_edit" style="display:none;">
+    <script type="text/javascript" >
+      $(document).ready(function() {
+        $(".markItUp").markItUp(mySettings);
+      });
+    </script>
+    <textarea class="markItUp">{{imp.description}}</textarea>
+  </div>
+  {% endif %}
 </div>
 {{ comment_form|safe }}
 {% endblock %}

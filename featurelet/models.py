@@ -17,10 +17,6 @@ class Email(db.EmbeddedDocument):
     primary = db.BooleanField(default=True)
 
 
-class Milestone(db.Document):
-    pass
-
-
 class Improvement(db.Document):
     brief = db.StringField(max_length=512, min_length=3)
     description = db.StringField()
@@ -37,6 +33,9 @@ class Improvement(db.Document):
                        purl_key=self.project.url_key,
                        user=self.project.maintainer.username,
                        url_key=self.url_key)
+
+    def can_edit_imp(self, user):
+        return user == self.creator or self.project.can_edit_imp(user)
 
     @property
     def md(self):
@@ -63,6 +62,9 @@ class Project(db.Document):
     subscribers = db.ListField(db.GenericReferenceField())
     url_key = db.StringField(min_length=3, max_length=64)
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
+
+    def can_edit_imp(self, user):
+        return self.maintainer == user
 
     def get_abs_url(self):
         return url_for('main.view_project',

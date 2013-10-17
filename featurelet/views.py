@@ -99,7 +99,9 @@ def view_improvement(user=None, purl_key=None, url_key=None):
     proj = Project.objects.get(url_key=purl_key, maintainer=user)
     imp = Improvement.objects.get(url_key=url_key,
                                   project=proj)
-    return render_template('improvement.html', imp=imp)
+    return render_template('improvement.html',
+                           imp=imp,
+                           can_edit=imp.can_edit_imp(g.user))
 
 
 @main.route("/new_project", methods=['GET', 'POST'])

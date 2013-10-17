@@ -3,7 +3,7 @@
 {% block title %}Account Settings{% endblock %}
 {% block content %}
 <div class="row">
-  <div class="col-md-3 l-sidebar">
+  <div class="col-md-3">
     <h3>Navigation</h3>
     <div class="btn-group-vertical col-lg-12">
       <button type="button" class="btn btn-default">General</button>
@@ -17,34 +17,35 @@
     </div>
   </div>
   <div class="col-md-9">
-    <br />
     <h3>Account Information</h3>
-    <table class="table">
-      <tr>
-        <th>Username</th>
-        <td>{{g.user.username}}</td>
-      </tr>
-      <tr>
-        <th>Primary Email</th>
-        <td>
-          {{g.user.primary_email.address}}
-          {% if g.user.primary_email.verified %}
-          <span class="label label-primary">Verified</span>
-          {% else %}
-          <span class="label label-danger">Un-verified</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% if g.user.github_token %}
-      <tr>
-        <th>Github Account</th>
-        <td>
-          {{g.user.github['login']}} {{g.user.github_token}}
-          <a href="{{url_for('main.unlink_github')}}" class="btn btn-danger btn-xs">Unlink</a>
-        </td>
-      </tr>
-      {% endif %}
-    </table>
+    <div class="panel panel-default">
+      <table class="table">
+        <tr>
+          <th>Username</th>
+          <td>{{g.user.username}}</td>
+        </tr>
+        <tr>
+          <th>Primary Email</th>
+          <td>
+            {{g.user.primary_email.address}}
+            {% if g.user.primary_email.verified %}
+            <span class="label label-primary">Verified</span>
+            {% else %}
+            <span class="label label-danger">Un-verified</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% if g.user.github_token %}
+        <tr>
+          <th>Github Account</th>
+          <td>
+            {{g.user.github['login']}} {{g.user.github_token}}
+            <a href="{{url_for('main.unlink_github')}}" class="btn btn-danger btn-xs">Unlink</a>
+          </td>
+        </tr>
+        {% endif %}
+      </table>
+    </div>
     <div class="col-md-7">
       {{ password_form|safe }}
     </div>
