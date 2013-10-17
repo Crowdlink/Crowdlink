@@ -31,6 +31,53 @@ $(=>
 
     return ret
 
+  # Watch registering
+  $("[data-watch]").click(->
+    type = $(this).data('watch-type')
+    ident = $(this).data('watch')
+    if $(this).hasClass('btn-info')
+      status = true
+    else
+      status = false
+    if type == "project"
+      info = ident.split('#')
+      data = JSON.strinify(
+        proj_id: ident[0]
+        url_key: ident[1]
+        status: status
+      )
+      path = "project"
+    else if type == "improvement"
+      data = JSON.strinify(
+        proj_id: ident
+        status: status
+      )
+    else  # user
+      data = JSON.strinify(
+        username: ident
+        status: status
+      )
+
+    tmp = ->
+      $.ajax(
+        url: "#{api_root}" + type
+        type: "POST"
+        data:data
+        contentType: 'application/json'
+        dataType: "json"
+      ).done( (jsonObj) ->
+          if not jsonObj.success
+            n = noty(text: "Something went wrong with the request")
+          restore_spinner()
+      ).fail( (jqXHR, textStatus) ->
+          n = noty(text: "Something went wrong with the request")
+          restore_spinner()
+      )
+
+      setTimeout(tmp, 1000)
+  )
+
+
   # Register all vote buttons
   $("a[data-type='vote']").click(->
     elm = $(this)

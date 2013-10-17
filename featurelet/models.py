@@ -17,6 +17,16 @@ class Email(db.EmbeddedDocument):
     primary = db.BooleanField(default=True)
 
 
+class Comment(db.EmbeddedDocument):
+    body = db.StringField(min_length=10)
+    user = db.ReferenceField('User', required=True)
+    time = db.DateTimeField()
+
+    @property
+    def md_body(self):
+        return markdown2.markdown(self.body)
+
+
 class Improvement(db.Document):
     brief = db.StringField(max_length=512, min_length=3)
     description = db.StringField()
@@ -25,7 +35,9 @@ class Improvement(db.Document):
     project = db.ReferenceField('Project')
     vote_list = db.ListField(db.ReferenceField('User'))
     votes = db.IntField(default=0)
+    events = db.ListField(db.GenericEmbeddedDocumentField())
     url_key = db.StringField(unique=True)
+    subscribers = db.ListField(db.ReferenceField('User'))
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
 
     def get_abs_url(self):
@@ -50,6 +62,14 @@ class Improvement(db.Document):
     def set_url_key(self):
         self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100])
 
+    def add_comment(self, user, body):
+        comment = Comment(user=user,
+                          body=body,
+                          time=datetime.datetime.now())
+        self.comments.append(comment)
+        self.save()
+        return comment
+
 
 class Project(db.Document):
     id = db.ObjectIdField()
@@ -59,9 +79,10 @@ class Project(db.Document):
     improvement_count = db.IntField(default=1)
     website = db.StringField(max_length=2048)
     source_url = db.StringField(max_length=2048)
-    subscribers = db.ListField(db.GenericReferenceField())
     url_key = db.StringField(min_length=3, max_length=64)
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
+    subscribers = db.ListField(db.EmbeddedDocumentField('UserSubscriber'))
+    events = db.ListField(db.GenericEmbeddedDocumentField())
 
     def can_edit_imp(self, user):
         return self.maintainer == user
@@ -74,9 +95,17 @@ class Project(db.Document):
     def get_improvements(self):
         return Improvement.objects(project=self)
 
-class Subscriber(db.Document):
+
+class UserSubscriber(db.EmbeddedDocument):
     username = db.ReferenceField('User')
-    subscribee = db.GenericReferenceField()
+    comment = db.BooleanField(default=True)
+    vote = db.BooleanField(default=False)
+    improvement = db.BooleanField(default=True)
+    project = db.BooleanField(default=True)
+
+
+class CommentNotif(db.EmbeddedDocument):
+    username = db.ReferenceField('User')
 
 
 class User(db.Document):
@@ -85,6 +114,8 @@ class User(db.Document):
     username = db.StringField(max_length=32, min_length=3, primary_key=True)
     emails = db.ListField(db.EmbeddedDocumentField('Email'))
     github_token = db.StringField(unique=True)
+    subscribers = db.ListField(db.EmbeddedDocumentField(UserSubscriber))
+    public_events = db.ListField(db.GenericEmbeddedDocumentField())
 
     @property
     def password(self):
