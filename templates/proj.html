@@ -26,7 +26,13 @@
   </div>
 </div>
 
-<span class="btn btn-default" data-watch="{{project.id}}" data-watch-type="project">
+<span class="btn {% if project.subscribed %}btn-info{% else %}btn-default{% endif %}"
+      data-watch="{{project.id}}"
+      data-watch-type="project"
+      data-off-class="btn-default"
+      data-on-class="btn-info">
+  <i class="icon-eye-open"></i> &nbsp;Watch
+</span>
 <div class="row">
   <div class="col-md-8">
     <h3>Improvements</h3>
@@ -35,7 +41,7 @@
         {% for imp in project.get_improvements(): %}
         <tr>
           <td class="fit-width">
-            <a data-url-key="{{imp.url_key}}" data-proj-id="{{imp.project.id}}" data-type="vote"><div class="btn btn-sm btn-info"><i class="icon-caret-up"></i></div></a>&nbsp;&nbsp;
+            <a data-url-key="{{imp.url_key}}" data-proj-id="{{imp.project.id}}" data-type="vote"><div class="btn btn-sm btn-info">Vote&nbsp; <i class="icon-plus"></i></div></a>&nbsp;&nbsp;
             <b>{{imp.votes}} vote{{imp.votes|plural}}</b>
           </td>
           <td><a href="{{imp.get_abs_url()}}">{{imp.brief}}</a></td>

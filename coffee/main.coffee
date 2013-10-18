@@ -31,51 +31,59 @@ $(=>
 
     return ret
 
-  # Watch registering
+  # ------------------------ Watch registering
   $("[data-watch]").click(->
-    type = $(this).data('watch-type')
-    ident = $(this).data('watch')
-    if $(this).hasClass('btn-info')
-      status = true
-    else
+    parent = $(this)
+    type = parent.data('watch-type')
+    ident = parent.data('watch')
+    if parent.hasClass('btn-info')
       status = false
+      future_class = "btn-default"
+    else
+      status = true
+      future_class = "btn-info"
+
     if type == "project"
-      info = ident.split('#')
-      data = JSON.strinify(
-        proj_id: ident[0]
-        url_key: ident[1]
-        status: status
-      )
-      path = "project"
-    else if type == "improvement"
-      data = JSON.strinify(
+      data = JSON.stringify(
         proj_id: ident
-        status: status
+        vote_status: status
+      )
+    else if type == "improvement"
+      info = ident.split('#')
+      data = JSON.stringify(
+        proj_id: info[0]
+        url_key: info[1]
+        vote_status: status
       )
     else  # user
-      data = JSON.strinify(
+      data = JSON.stringify(
         username: ident
-        status: status
+        vote_status: status
       )
 
-    tmp = ->
-      $.ajax(
-        url: "#{api_root}" + type
-        type: "POST"
-        data:data
-        contentType: 'application/json'
-        dataType: "json"
-      ).done( (jsonObj) ->
-          if not jsonObj.success
-            n = noty(text: "Something went wrong with the request")
-          restore_spinner()
-      ).fail( (jqXHR, textStatus) ->
+    $.ajax(
+      url: "#{api_root}" + type
+      type: "POST"
+      data: data
+      contentType: 'application/json'
+      dataType: "json"
+    ).done( (jsonObj) ->
+        if not jsonObj.success
           n = noty(text: "Something went wrong with the request")
-          restore_spinner()
-      )
+        else
+          if status
+            parent.removeClass(parent.data('off-class'))
+            parent.addClass(parent.data('on-class'))
+          else
+            parent.removeClass(parent.data('on-class'))
+            parent.addClass(parent.data('off-class'))
+        #restore_spinner()
+    ).fail( (jqXHR, textStatus) ->
+        n = noty(text: "Something went wrong with the request")
+        #restore_spinner()
+    )
 
-      setTimeout(tmp, 1000)
-  )
+  ) # ------------------- End Watch code
 
 
   # Register all vote buttons
@@ -144,7 +152,7 @@ $(=>
           restore_spinner()
       )
 
-      setTimeout(tmp, 1000)
+    setTimeout(tmp, 1000)
 
 
 

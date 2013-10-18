@@ -1,7 +1,6 @@
-from flask import url_for, session
+from flask import url_for, session, g
 
 from featurelet import db, github
-from featurelet.events import *
 
 import cryptacular.bcrypt
 import datetime
@@ -10,6 +9,36 @@ import re
 import markdown2
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
+
+class SubscribableMixin(object):
+    """ A Mixing providing data model utils for subscribing new users. Maintain
+    uniqueness of user by hand through these checks """
+
+    def unsubscribe(self, username):
+        i = 0
+        for sub in self.subscribers:
+            if sub.user.username == username:
+                break
+            i += 1
+        else:
+            return False  # Return false if list exhausted
+        # I feel uneasy about defaulting to remove i, but hopefully...
+        del self.subscribers[i]
+
+    def subscribe(self, sub_obj):
+        # ensure that the user key is unique
+        for sub in self.subscribers:
+            if sub.user == sub_obj.user:
+                return False
+        self.subscribers.append(sub_obj)
+
+    @property
+    def subscribed(self):
+        # search the list of subscribers looking for the current user
+        for sub in self.subscribers:
+            if sub.user.username == g.user.username:
+                return True
+        return False
 
 class Email(db.EmbeddedDocument):
     address = db.StringField(max_length=1023, required=True, unique=True)
@@ -27,7 +56,7 @@ class Comment(db.EmbeddedDocument):
         return markdown2.markdown(self.body)
 
 
-class Improvement(db.Document):
+class Improvement(db.Document, SubscribableMixin):
     brief = db.StringField(max_length=512, min_length=3)
     description = db.StringField()
     creator = db.ReferenceField('User')
@@ -37,7 +66,7 @@ class Improvement(db.Document):
     votes = db.IntField(default=0)
     events = db.ListField(db.GenericEmbeddedDocumentField())
     url_key = db.StringField(unique=True)
-    subscribers = db.ListField(db.ReferenceField('User'))
+    subscribers = db.ListField(db.EmbeddedDocumentField('ImpSubscriber'))
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
 
     def get_abs_url(self):
@@ -63,15 +92,18 @@ class Improvement(db.Document):
         self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100])
 
     def add_comment(self, user, body):
-        comment = Comment(user=user,
-                          body=body,
-                          time=datetime.datetime.now())
-        self.comments.append(comment)
-        self.save()
-        return comment
+        # send a notification to all subscribers that the notification is left
+        cnotif = CommentNotif(user=user.username,
+                            obj=self)
+        distribute_event(self, cnotif, "comment", subscriber_send=True)
+        # Send the actual comment to the improvement event queue
+        c = Comment(user=user.username,
+                    body=body)
+        distribute_event(self, c, "comment", self_send=True)
 
 
-class Project(db.Document):
+
+class Project(db.Document, SubscribableMixin):
     id = db.ObjectIdField()
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     maintainer = db.ReferenceField('User')
@@ -81,7 +113,7 @@ class Project(db.Document):
     source_url = db.StringField(max_length=2048)
     url_key = db.StringField(min_length=3, max_length=64)
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
-    subscribers = db.ListField(db.EmbeddedDocumentField('UserSubscriber'))
+    subscribers = db.ListField(db.EmbeddedDocumentField('ProjectSubscriber'))
     events = db.ListField(db.GenericEmbeddedDocumentField())
 
     def can_edit_imp(self, user):
@@ -96,8 +128,22 @@ class Project(db.Document):
         return Improvement.objects(project=self)
 
 
-class UserSubscriber(db.EmbeddedDocument):
-    username = db.ReferenceField('User')
+class ImpSubscriber(db.EmbeddedDocument):
+    user = db.ReferenceField('User')
+    comment = db.BooleanField(default=True)
+    vote = db.BooleanField(default=False)
+    status = db.BooleanField(default=True)  # status change event
+    donate = db.BooleanField(default=True)
+
+
+class ProjectSubscriber(db.EmbeddedDocument):
+    user = db.ReferenceField('User')
+    comment = db.BooleanField(default=True)
+    improvement = db.BooleanField(default=False)
+
+
+class UserSubscriber(db.EmbeddedDocument, SubscribableMixin):
+    user = db.ReferenceField('User')
     comment = db.BooleanField(default=True)
     vote = db.BooleanField(default=False)
     improvement = db.BooleanField(default=True)
@@ -106,16 +152,31 @@ class UserSubscriber(db.EmbeddedDocument):
 
 class CommentNotif(db.EmbeddedDocument):
     username = db.ReferenceField('User')
+    obj = db.GenericReferenceField()  # The object recieving the comment
+    created_at = db.DateTimeField(default=datetime.datetime.now)
 
 
-class User(db.Document):
+class Comment(db.EmbeddedDocument):
+    created_at = db.DateTimeField(default=datetime.datetime.now)
+    user = db.ReferenceField('User')
+    body = db.StringField()
+    template = "comment.html"
+
+    @property
+    def md_body(self):
+        return markdown2.markdown(self.body)
+
+
+class User(db.Document, SubscribableMixin):
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     _password = db.StringField(max_length=128, min_length=5, required=True)
     username = db.StringField(max_length=32, min_length=3, primary_key=True)
     emails = db.ListField(db.EmbeddedDocumentField('Email'))
-    github_token = db.StringField(unique=True)
+    github_token = db.StringField()
     subscribers = db.ListField(db.EmbeddedDocumentField(UserSubscriber))
     public_events = db.ListField(db.GenericEmbeddedDocumentField())
+    events = db.ListField(db.GenericEmbeddedDocumentField())
+    meta = {'indexes': [{'fields': ['github_token'], 'unique': True, 'sparse': True}]}
 
     @property
     def password(self):
@@ -170,10 +231,12 @@ class User(db.Document):
         return False
 
     def get_id(self):
-        return unicode(self.id)
+        return unicode(self.username)
 
     def __str__(self):
         return self.username
 
     def __repr__(self):
         return '<User %r>' % (self.username)
+
+from featurelet.lib import distribute_event, catch_error_graceful

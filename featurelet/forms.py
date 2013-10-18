@@ -69,10 +69,10 @@ class NewProjectForm(yota.Form):
 
 
 class CommentForm(yota.Form):
-    body = TextareaNode(rows=25,
+    title = "Leave a comment"
+    body = TextareaNode(rows=12,
                         columns=100,
                         css_class="form-control",
-                        template='epictext',
                         validators=MinLengthValidator(10))
     submit = SubmitNode(title="Add Comment")
 

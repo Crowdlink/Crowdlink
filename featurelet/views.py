@@ -3,7 +3,7 @@ from flask.ext.login import login_user, logout_user, current_user, login_require
 
 from featurelet import root, lm, app, oauth, github
 from featurelet.models import User, Project, Improvement
-from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm, PasswordForm
+from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm, PasswordForm, CommentForm
 
 import json
 import mongoengine
@@ -94,14 +94,29 @@ def view_project(username=None, url_key=None):
     return render_template('proj.html', project=project)
 
 
-@main.route("/<user>/<purl_key>/<url_key>")
+@main.route("/<user>/<purl_key>/<url_key>", methods=['GET', 'POST'])
 def view_improvement(user=None, purl_key=None, url_key=None):
     proj = Project.objects.get(url_key=purl_key, maintainer=user)
     imp = Improvement.objects.get(url_key=url_key,
                                   project=proj)
+    form = CommentForm()
+    if request.method == 'POST':
+        if form.validate(request.form):
+            # Going to submit a comment
+            data = form.data_by_attr()
+            try:
+                imp.add_comment(g.user, data['body'])
+            except Exception:
+                catch_error_graceful(form)
+            else:
+                form.start.add_error({"message": "Comment successfully posted",
+                                    "type": "success"})
+
+    print g.user.to_json()
     return render_template('improvement.html',
                            imp=imp,
-                           can_edit=imp.can_edit_imp(g.user))
+                           can_edit=imp.can_edit_imp(g.user),
+                           comment_form=form.render())
 
 
 @main.route("/new_project", methods=['GET', 'POST'])
@@ -156,35 +171,6 @@ def new_improvement(maintainer=None, purl_key=None):
         return form.render_json()
 
     return render_template('new_improvement.html', form=form.render())
-
-def catch_error_graceful(form):
-    # grab current exception information
-    exc, txt, tb = sys.exc_info()
-
-    def log(msg):
-        from pprint import pformat
-        from traceback import format_exc
-        current_app.logger.warn(
-            "=============================================================\n" +
-            "{0}\nRequest dump: {1}\n{2}\n".format(msg, pformat(vars(request)), format_exc()) +
-            "=============================================================\n"
-        )
-
-    if exc is mongoengine.errors.ValidationError:
-        form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged with a high priority.'})
-        log("A validation occurred.")
-    elif exc is mongoengine.errors.InvalidQueryError:
-        form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged with a high priority.'})
-        log("An inconsistency in the models was detected")
-    elif exc is mongoengine.errors.NotUniqueError:
-        form.start.add_error({'message': 'A duplication error happended on the datastore side, one of your values is not unique. This has been logged.'})
-        log("A duplicate check on the database side was not caught")
-    elif exc in (mongoengine.errors.OperationError, mongoengine.errors.DoesNotExist):
-        form.start.add_error({'message': 'An unknown database error. This has been logged.'})
-        log("An unknown operation error occurred")
-    else:
-        form.start.add_error({'message': 'An unknown error has occurred'})
-        log("")
 
 
 @main.route("/u/<username>")
@@ -258,3 +244,6 @@ def home():
     else:
         form = RegisterForm.get_sm()
         return render_template('home.html', form=form.render())
+
+
+from featurelet.lib import catch_error_graceful
