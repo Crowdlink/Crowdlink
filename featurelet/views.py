@@ -112,7 +112,6 @@ def view_improvement(user=None, purl_key=None, url_key=None):
                 form.start.add_error({"message": "Comment successfully posted",
                                     "type": "success"})
 
-    print g.user.to_json()
     return render_template('improvement.html',
                            imp=imp,
                            can_edit=imp.can_edit_imp(g.user),
@@ -158,11 +157,9 @@ def new_improvement(maintainer=None, purl_key=None):
                 project = Project.objects.get(maintainer=maintainer, url_key=purl_key)
                 imp = Improvement(
                     creator=g.user.id,
-                    project=project,
                     brief=data['brief'],
                     description=data['description'])
-                imp.set_url_key()
-                imp.save()
+                project.add_improvement(imp)
             except Exception:
                 catch_error_graceful(form)
             else:

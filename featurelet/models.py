@@ -89,7 +89,7 @@ class Improvement(db.Document, SubscribableMixin):
                     update_one(add_to_set__vote_list=user.username, inc__votes=1)
 
     def set_url_key(self):
-        self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100])
+        self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100]).lower()
 
     def add_comment(self, user, body):
         # send a notification to all subscribers that the notification is left
@@ -127,10 +127,21 @@ class Project(db.Document, SubscribableMixin):
     def get_improvements(self):
         return Improvement.objects(project=self)
 
+    def add_improvement(self, imp):
+        imp.create_key()
+        imp.project = self
+        # send a notification to all subscribers that the notification is left
+        inotif = ImprovementNotif(user=user.username, obj=imp)
+        distribute_event(self, inotif, "comment", subscriber_send=True)
+        # Send the actual comment to the improvement event queue
+        c = Comment(user=user.username,
+                    body=body)
+        distribute_event(self, c, "comment", self_send=True)
+
 
 class ImpSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
-    comment = db.BooleanField(default=True)
+    comment_notif = db.BooleanField(default=True)
     vote = db.BooleanField(default=False)
     status = db.BooleanField(default=True)  # status change event
     donate = db.BooleanField(default=True)
@@ -138,7 +149,7 @@ class ImpSubscriber(db.EmbeddedDocument):
 
 class ProjectSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
-    comment = db.BooleanField(default=True)
+    comment_notif = db.BooleanField(default=True)
     improvement = db.BooleanField(default=False)
 
 
@@ -149,18 +160,58 @@ class UserSubscriber(db.EmbeddedDocument, SubscribableMixin):
     improvement = db.BooleanField(default=True)
     project = db.BooleanField(default=True)
 
+class Event(db.EmbeddedDocument):
+    # this represents the key in the subscriber entry that dictates whether it
+    # should be publishe
+    attr = None
+    # template used to render the event
+    template = ""
+    pass
 
-class CommentNotif(db.EmbeddedDocument):
-    username = db.ReferenceField('User')
+    def distribute(self):
+        """ Copies the subdocument everywhere it needs to go """
+        pass
+
+class ImprovementNotif(Event):
+    """ Notification of a new improvement being created """
+    user = db.ReferenceField('User')
     obj = db.GenericReferenceField()  # The object recieving the comment
     created_at = db.DateTimeField(default=datetime.datetime.now)
 
 
-class Comment(db.EmbeddedDocument):
+class CommentNotif(Event):
+    """ Notification that a comment has been created """
+    user = db.ReferenceField('User')
+    obj = db.GenericReferenceField()  # The object recieving the comment
+    created_at = db.DateTimeField(default=datetime.datetime.now)
+    template = "events/comment_not.html"
+
+    def distribute(self):
+        if type(self.obj) == "Improvement":
+            # pass it on to the improvements project if it is from improvement
+            distribute_event(self.obj.project, self, "comment_notif", subscriber_send=True, self_send=True)
+        # we never distribute notifications of the comment to itself, it gets a
+        # comment obj instead
+
+        # sent to the user who commented's feed and their subscribers
+        distribute_event(self.user, self, subscriber_send=True, self_send=True)
+
+class Comment(Event):
+    """ This is not actually an event. Comments are stored as events to simplify
+    display """
     created_at = db.DateTimeField(default=datetime.datetime.now)
     user = db.ReferenceField('User')
     body = db.StringField()
-    template = "comment.html"
+    template = "events/comment.html"
+
+    def distribute(self, improvement):
+        """ In this instance more of a create. The even obj distributes itself
+        and then notifications of its creation. really just to save space on the contents
+        of the post body """
+        # send to the event queue of the improvement
+        distribute_event(improvement, self, "comment", self_send=True)
+        notif = CommentNotif(user=self.user, obj=self)
+        notif.distribute()
 
     @property
     def md_body(self):
