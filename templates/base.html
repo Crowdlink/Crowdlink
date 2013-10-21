@@ -19,15 +19,45 @@
     <div id="wrap">
       <div class="navbar navbar-default navbar-fixed-top">
           <div class="container">
-              <a class="navbar-brand logo" href="/"><img src="/static/img/logo.png" border="0" /></a>
+              <a class="navbar-brand logo" href="/">
+                <span class="hidden-xs"><img src="/static/img/logo.png" border="0" /></span>
+                <span class="visible-xs"><img src="/static/img/logo_sm.png" border="0" /></span>
+              </a>
               <ul class="nav nav-pills">
                 <!-- <li{% if request.path == "/plans" %} class="active"{%endif%}><a href="/plans">Plans</a></li> -->
                 {% if g.user.is_authenticated() %}
-                <li{% if request.path == "/account" %} class="active"{%endif%}><a href="/account">Account</a></li>
-                <li><a href="/logout">Logout</a></li>
+                <li{% if request.path == url_for('main.account') %} class="active"{%endif%}>
+                  <a href="{{url_for('main.account')}}">
+                    <i class="icon-large icon-gear"></i>
+                    <span class="hidden-xs"> Account</span>
+                  </a>
+                </li>
+                {% set uurl = g.user.get_abs_url() %}
+                  <li{% if request.path == uurl %} class="active"{%endif%}>
+                    <a href="{{uurl}}">
+                      <i class="icon-large icon-user"></i>
+                      <span class="hidden-xs"> Profile</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="{{url_for('main.logout')}}">
+                      <i class="icon-large icon-signout"></i>
+                      <span class="hidden-xs"> Logout</span>
+                    </a>
+                  </li>
                 {% else %}
-                <li{% if request.path == "/signup" %} class="active"{%endif%}><a href="/signup"><i class="icon-large icon-edit"></i><span class="hidden-xs"> Sign Up</span></a></li>
-                <li{% if request.path == "/login" %} class="active"{%endif%}><a href="/login"><i class="icon-signin icon-large"></i><span class="hidden-xs"> Login</span></a></li>
+                  <li{% if request.path == url_for('main.signup') %} class="active"{%endif%}>
+                  <a href="{{url_for('main.signup')}}">
+                      <i class="icon-large icon-edit"></i>
+                      <span class="hidden-xs"> Sign Up</span>
+                    </a>
+                  </li>
+                  <li{% if request.path == url_for('main.login') %} class="active"{%endif%}>
+                    <a href="{{url_for('main.login')}}">
+                      <i class="icon-signin icon-large"></i>
+                      <span class="hidden-xs"> Login</span>
+                    </a>
+                  </li>
                 {% endif %}
               </ul>
           </div>

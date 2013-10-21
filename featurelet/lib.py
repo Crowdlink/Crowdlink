@@ -53,6 +53,11 @@ def distribute_event(sender, event, type, subscriber_send=False, self_send=False
                 # resolving one at a time
                 sub.user.events.append(event)
                 sub.user.save()
+                current_app.logger.debug(
+                    "{0} was distributed event '{1}' for object {2}".format(sub.user.username, type, sender))
+            else:
+                current_app.logger.debug(
+                    "{0} was not distributed event '{1}' because of settings, even though subscribed".format(sub.user, type))
 
     # Add the event to the senders own list if there is one
     if self_send:
@@ -62,4 +67,3 @@ def distribute_event(sender, event, type, subscriber_send=False, self_send=False
         else:
             sender.events.append(event)
             sender.save()
-

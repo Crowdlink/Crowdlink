@@ -105,7 +105,7 @@ def view_improvement(user=None, purl_key=None, url_key=None):
             # Going to submit a comment
             data = form.data_by_attr()
             try:
-                imp.add_comment(g.user, data['body'])
+                imp.add_comment(data['body'], g.user)
             except Exception:
                 catch_error_graceful(form)
             else:
@@ -159,7 +159,7 @@ def new_improvement(maintainer=None, purl_key=None):
                     creator=g.user.id,
                     brief=data['brief'],
                     description=data['description'])
-                project.add_improvement(imp)
+                project.add_improvement(imp, g.user)
             except Exception:
                 catch_error_graceful(form)
             else:

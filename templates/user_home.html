@@ -6,7 +6,11 @@
   <div class="col-md-8 no-gutter">
     <div class="col">
       <h3>Your feed</h3>
-      <b>There's nothing to see here... Start watching some projects</b>
+      {% for event in g.user.events %}
+        {% include event.template %}
+      {% else %}
+        There's nothing to see here right now... Start watching projects or users to monitor their progress.
+      {% endfor %}
     </div>
   </div>
   <div class="col-md-4 no-gutter">
@@ -16,11 +20,11 @@
       {% for project in projects %}
         <a href="{{project.get_abs_url() }}"><li class="list-group-item"><i class="icon-tasks"></i>&nbsp; {{ project.name }}</li></a>
       {% else %}
-        <li class="list-group-item btn-info"><i class="icon-tasks"></i>&nbsp; No project to display</li>
+        <li class="list-group-item"><i class="icon-tasks"></i>&nbsp; No project to display</li>
       {% endfor %}
       </ul>
+      <a class="btn btn-info " href="/new_project"><i class="icon-plus"></i> &nbsp;Create a New Project</a>
     </div>
-    <a class="btn btn-info col-btn" href="/new_project">Create a New Project</a>
     <div class="col">
       <h3>Popular Projects</h3>
       <b>Nothing to see here either</b>

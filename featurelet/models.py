@@ -58,7 +58,7 @@ class Comment(db.EmbeddedDocument):
 
 class Improvement(db.Document, SubscribableMixin):
     brief = db.StringField(max_length=512, min_length=3)
-    description = db.StringField()
+    description = db.StringField(min_length=15)
     creator = db.ReferenceField('User')
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     project = db.ReferenceField('Project')
@@ -88,7 +88,7 @@ class Improvement(db.Document, SubscribableMixin):
                             vote_list__ne=user.username).\
                     update_one(add_to_set__vote_list=user.username, inc__votes=1)
 
-    def set_url_key(self):
+    def create_key(self):
         self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100]).lower()
 
     def add_comment(self, user, body):
@@ -122,12 +122,15 @@ class Project(db.Document, SubscribableMixin):
     def get_improvements(self):
         return Improvement.objects(project=self)
 
-    def add_improvement(self, imp):
+    def add_improvement(self, imp, user):
         imp.create_key()
         imp.project = self
+        imp.save()
         # send a notification to all subscribers that the notification is left
-        inotif = ImprovementNotif(user=user.username, obj=imp)
-        distribute_event(self, inotif, "comment", subscriber_send=True)
+        inotif = ImprovementNotif(user=user.username, imp=imp)
+        inotif.distribute()
+
+    def add_comment(self, body, user):
         # Send the actual comment to the improvement event queue
         c = Comment(user=user.username,
                     body=body)
@@ -145,7 +148,7 @@ class ImpSubscriber(db.EmbeddedDocument):
 class ProjectSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
     comment_notif = db.BooleanField(default=True)
-    improvement = db.BooleanField(default=False)
+    improvement = db.BooleanField(default=True)
 
 
 class UserSubscriber(db.EmbeddedDocument, SubscribableMixin):
@@ -160,7 +163,7 @@ class Event(db.EmbeddedDocument):
     # should be publishe
     attr = None
     # template used to render the event
-    template = ""
+    template = "events/fallback.html"
     pass
 
     def distribute(self):
@@ -172,9 +175,27 @@ class Event(db.EmbeddedDocument):
 class ImprovementNotif(Event):
     """ Notification of a new improvement being created """
     user = db.ReferenceField('User')
-    obj = db.GenericReferenceField()  # The object recieving the comment
+    imp = db.GenericReferenceField()  # The object recieving the comment
     created_at = db.DateTimeField(default=datetime.datetime.now)
 
+    template = "events/improvement.html"
+
+    def distribute(self):
+        # send to the project, and people watching the project
+        distribute_event(self.imp.project,
+                         self,
+                         "improvement",
+                         self_send=True,
+                         subscriber_send=True
+                    )
+
+        # sent to the user who created the improvement's feed and their subscribers
+        distribute_event(self.user,
+                         self,
+                         "improvement",
+                         subscriber_send=True,
+                         self_send=True
+                    )
 
 class CommentNotif(Event):
     """ Notification that a comment has been created """

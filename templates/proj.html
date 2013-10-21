@@ -17,12 +17,13 @@
     </div>
   </div>
   <div class="col-md-4">
-    <br>
-    <br>
-    <a class="col col-btn btn btn-info"
-       href="{{url_for('main.new_improvement', maintainer=project.maintainer.username, purl_key=project.url_key) }}">Suggest an Improvement</a>
-    <a class="col col-btn btn btn-success" href="/new_milestone/{{ project.url_key }}">Add a Milestone</a>
-    <a class="col col-btn btn btn-danger" href="/settings/{{ project.url_key }}">Project Settings</a>
+    <br />
+    <div class="btn-group-vertical">
+      <a class="btn btn-default"
+         href="{{url_for('main.new_improvement', maintainer=project.maintainer.username, purl_key=project.url_key) }}">Suggest an Improvement</a>
+      <a class="btn btn-default" href="/new_milestone/{{ project.url_key }}">Add a Milestone</a>
+      <a class="btn btn-default" href="/settings/{{ project.url_key }}">Project Settings</a>
+    </div>
   </div>
 </div>
 

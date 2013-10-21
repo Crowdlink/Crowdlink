@@ -116,6 +116,7 @@ div h4.subtext {
 }
 
 /* Header */
+/******************************************/
 .logo {
   padding:9px 20px 5px 20px;
 }
@@ -123,6 +124,17 @@ div h4.subtext {
 .green {
   color:#619532;
 }
+
+ul.nav-pills {
+  li {
+    line-height:30px;
+    a {
+      border-radius:0px;
+    }
+  }
+}
+
+/******************************************/
 
 html,
 body {

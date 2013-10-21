@@ -150,5 +150,3 @@ class LoginForm(Form):
     username = nodes.Entry(css_class="form-control input-sm")
     password = nodes.Password(css_class="form-control input-sm")
     submit = nodes.Submit(title="Login", css_class="btn-sm btn btn-success")
-
-

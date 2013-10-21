@@ -25,6 +25,11 @@
     </div>
   </div>
 </div>
+<div class="row">
+  {% for event in g.user.public_events %}
+    {% include event.template %}
+  {% endfor %}
+</div>
 {% if proj %}
 <div class="row">
   <div class="col header-col-light-gray col-md-8">
