@@ -92,15 +92,9 @@ class Improvement(db.Document, SubscribableMixin):
         self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100]).lower()
 
     def add_comment(self, user, body):
-        # send a notification to all subscribers that the notification is left
-        cnotif = CommentNotif(user=user.username,
-                            obj=self)
-        distribute_event(self, cnotif, "comment", subscriber_send=True)
         # Send the actual comment to the improvement event queue
-        c = Comment(user=user.username,
-                    body=body)
-        distribute_event(self, c, "comment", self_send=True)
-
+        c = Comment(user=user.username, body=body)
+        c.distribute(self)
 
 
 class Project(db.Document, SubscribableMixin):
@@ -112,9 +106,10 @@ class Project(db.Document, SubscribableMixin):
     website = db.StringField(max_length=2048)
     source_url = db.StringField(max_length=2048)
     url_key = db.StringField(min_length=3, max_length=64)
-    meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
     subscribers = db.ListField(db.EmbeddedDocumentField('ProjectSubscriber'))
     events = db.ListField(db.GenericEmbeddedDocumentField())
+
+    meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
 
     def can_edit_imp(self, user):
         return self.maintainer == user
@@ -172,6 +167,8 @@ class Event(db.EmbeddedDocument):
         """ Copies the subdocument everywhere it needs to go """
         pass
 
+    meta = {'allow_inheritance': True}
+
 class ImprovementNotif(Event):
     """ Notification of a new improvement being created """
     user = db.ReferenceField('User')
@@ -188,13 +185,14 @@ class CommentNotif(Event):
 
     def distribute(self):
         if type(self.obj) == "Improvement":
-            # pass it on to the improvements project if it is from improvement
-            distribute_event(self.obj.project, self, "comment_notif", subscriber_send=True, self_send=True)
+            # pass it on to the improvement's project if it is from improvement
+            distribute_event(self.obj.project, self, "comment_notif", self_send=True)
+
         # we never distribute notifications of the comment to itself, it gets a
         # comment obj instead
 
         # sent to the user who commented's feed and their subscribers
-        distribute_event(self.user, self, subscriber_send=True, self_send=True)
+        distribute_event(self.user, self, "comment_notif", subscriber_send=True, self_send=True)
 
 class Comment(Event):
     """ This is not actually an event. Comments are stored as events to simplify
@@ -206,10 +204,11 @@ class Comment(Event):
 
     def distribute(self, improvement):
         """ In this instance more of a create. The even obj distributes itself
-        and then notifications of its creation. really just to save space on the contents
-        of the post body """
+        and then notifications of its creation. really just to save space on
+        the contents of the post body """
         # send to the event queue of the improvement
         distribute_event(improvement, self, "comment", self_send=True)
+        # create the notification, and distribute based on CommentNotif logic
         notif = CommentNotif(user=self.user, obj=self)
         notif.distribute()
 

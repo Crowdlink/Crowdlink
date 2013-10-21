@@ -1,20 +1,81 @@
 from flask import g
 
-from yota.nodes import *
-import yota
-from yota.validators import *
+from yota import Check, Form, Listener, Blueprint
+import yota.validators as validators
+import yota.nodes as nodes
+from yota.exceptions import *
 
-from featurelet.validators import *
-from featurelet.models import User, Project
+from featurelet.models import *
 
-class RegisterForm(yota.Form):
-    username = EntryNode(validators=UnicodeStringValidator(minval=3, maxval=32))
-    password = PasswordNode(validators=UnicodeStringValidator(minval=5, maxval=32))
-    password_confirm = PasswordNode(title="Confirm")
-    _valid_pass = Check(MatchingValidator(message="Password fields must match"), "password", "password_confirm")
-    email = EntryNode(validators=EmailValidator())
 
-    submit = SubmitNode(title="Sign Up", css_class="btn btn-info")
+class UnicodeString(object):
+
+    def __init__(self,
+                 spmsg=None,
+                 minmsg=None,
+                 maxmsg=None,
+                 minval=3,
+                 maxval=28):
+        self.minval = minval
+        self.maxval = maxval
+        self.spmsg = spmsg if spmsg else "Usernames cannot contain spaces"
+        self.minmsg = minmsg if minmsg else "Minimum of {0} characters".format(minval)
+        self.maxmsg = maxmsg if maxmsg else "No more than {0} characters".format(maxval)
+
+    def __call__(self, username):
+        if ' ' in username.data:
+            username.add_error({'message': self.spmsg})
+        if len(username.data) < self.minval:
+            username.add_error({'message': self.minmsg})
+        if len(username.data) > self.maxval:
+            username.add_error({'message': self.maxmsg})
+
+
+def replicate_validators(form):
+    """ this function runs through the linked model attributes and replicates
+    appropriate validators for them, drying up parity between mongoengine and
+    yota """
+
+    # look at all the nodes and detect the model they match to
+    for node in form._node_list:
+        try:
+            field = node.model
+        except AttributeError:
+            continue
+        else:
+            if field.required:
+                form.insert_validator(Check(validators.Required(), node._attr_name))
+            ftype = type(field).__name__
+            if ftype == "StringField":
+                kwarg = {}
+                if field.max_length:
+                    kwarg['max'] = field.max_length
+                if field.min_length:
+                    kwarg['min'] = field.min_length
+                if kwarg:
+                    form.insert_validator(Check(validators.MinMax(**kwarg), node._attr_name))
+            elif ftype == "IntField":
+                # XXX: If we implement min/max for integer field, this needs filled in
+                pass
+            elif ftype == "URLField":
+                form.insert_validator(Check(validators.URL(), node._attr_name))
+            elif ftype == "EmailField":
+                form.insert_validator(Check(validators.Email(), node._attr_name))
+
+
+class ModelForm(Form):
+    def __init__(self, *args, **kwargs):
+        super(ModelForm, self).__init__(*args, **kwargs)
+        replicate_validators(self)
+
+class RegisterForm(ModelForm):
+    username = nodes.Entry(model=User.username)
+    password = nodes.Password(validators=UnicodeString(minval=5, maxval=32))
+    password_confirm = nodes.Password(title="Confirm")
+    _valid_pass = Check(validators.Matching(message="Password fields must match"), "password", "password_confirm")
+    email = nodes.Entry(validators=validators.Email())
+
+    submit = nodes.Submit(title="Sign Up", css_class="btn btn-info")
 
     @classmethod
     def get_sm(cls):
@@ -37,26 +98,27 @@ class RegisterForm(yota.Form):
             self.username.add_error({'message': 'Username already in use!'})
 
 
-class PasswordForm(yota.Form):
+class PasswordForm(Form):
     title = "Password"
 
     hidden = {'form': 'password'}
-    password = PasswordNode(validators=UnicodeStringValidator(minval=5, maxval=32))
-    password_confirm = PasswordNode(title="Confirm")
-    _valid_pass = Check(MatchingValidator(message="Password fields must match"),
+    password = nodes.Password(validators=UnicodeString(minval=5, maxval=32))
+    password_confirm = nodes.Password(title="Confirm")
+    _valid_pass = Check(validators.Matching(message="Password fields must match"),
                         "password",
                         "password_confirm")
-    submit = SubmitNode(title="Update", css_class="btn-info btn")
+    submit = nodes.Submit(title="Update", css_class="btn-info btn")
 
 
-class NewProjectForm(yota.Form):
+class NewProjectForm(ModelForm):
     g_context = {'ajax': True, 'piecewise': True}
-    ptitle = EntryNode(title='Project Name', validators=MinMaxValidator(3, 64))
-    url_key = EntryNode(title='Url Key', template='url_key', validators=MinMaxValidator(3, 64))
-    description = EntryNode(placeholder='(Optional)')
-    website = EntryNode(placeholder='(Optional)')
-    source = EntryNode(title="Souce Code Location", validators=RequiredValidator())
-    create = SubmitNode(title="Create", css_class="btn btn-primary")
+
+    ptitle = nodes.Entry(title='Project Name', model=Project.name)
+    url_key = nodes.Entry(title='Url Key', template='url_key', model=Project.url_key)
+    description = nodes.Entry(placeholder='(Optional)')
+    website = nodes.Entry(placeholder='(Optional)')
+    source = nodes.Entry(title="Souce Code Location", validators=validators.Required())
+    create = nodes.Submit(title="Create", css_class="btn btn-primary")
 
     def validator(self):
         # Check for unique project name
@@ -68,25 +130,25 @@ class NewProjectForm(yota.Form):
             self.ptitle.add_error({'message': 'You already have a project named that'})
 
 
-class CommentForm(yota.Form):
+class CommentForm(ModelForm):
     title = "Leave a comment"
-    body = TextareaNode(rows=12,
+    body = nodes.Textarea(rows=12,
                         columns=100,
-                        css_class="form-control",
-                        validators=MinLengthValidator(10))
-    submit = SubmitNode(title="Add Comment")
+                        model=Comment.body,
+                        css_class="form-control")
+    submit = nodes.Submit(title="Add Comment")
 
 
-class NewImprovementForm(yota.Form):
+class NewImprovementForm(ModelForm):
     g_context = {'ajax': True, 'piecewise': True}
-    brief = EntryNode(validators=MinMaxValidator(3, 512))
-    description = TextareaNode(rows=15)
-    create = SubmitNode(title="Create", css_class="btn btn-primary")
+    brief = nodes.Entry(model=Improvement.brief)
+    description = nodes.Textarea(rows=15, model=Improvement.description)
+    create = nodes.Submit(title="Create", css_class="btn btn-primary")
 
-    def validator(self):
-        pass
 
-class LoginForm(yota.Form):
-    username = EntryNode(css_class="form-control input-sm")
-    password = PasswordNode(css_class="form-control input-sm")
-    submit = SubmitNode(title="Login", css_class="btn-sm btn btn-success")
+class LoginForm(Form):
+    username = nodes.Entry(css_class="form-control input-sm")
+    password = nodes.Password(css_class="form-control input-sm")
+    submit = nodes.Submit(title="Login", css_class="btn-sm btn btn-success")
+
+
