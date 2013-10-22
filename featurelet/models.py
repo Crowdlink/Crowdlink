@@ -1,4 +1,4 @@
-from flask import url_for, session, g
+from flask import url_for, session, g, current_app
 
 from featurelet import db, github
 
@@ -7,6 +7,7 @@ import datetime
 import mongoengine
 import re
 import markdown2
+import werkzeug
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
@@ -101,17 +102,27 @@ class Project(db.Document, SubscribableMixin):
     id = db.ObjectIdField()
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     maintainer = db.ReferenceField('User')
+    url_key = db.StringField(min_length=3, max_length=64)
+
+    # description info
     name = db.StringField(max_length=64, min_length=3)
-    improvement_count = db.IntField(default=1)
+    improvement_count = db.IntField(default=1)  # XXX: Currently not implemented
     website = db.StringField(max_length=2048)
     source_url = db.StringField(max_length=2048)
-    url_key = db.StringField(min_length=3, max_length=64)
+
+    # Event log
     subscribers = db.ListField(db.EmbeddedDocumentField('ProjectSubscriber'))
     events = db.ListField(db.GenericEmbeddedDocumentField())
 
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
 
+    def can_edit_settings(self, user):
+        return self.maintainer == user
+
     def can_edit_imp(self, user):
+        return self.maintainer == user
+
+    def can_sync(self, user):
         return self.maintainer == user
 
     def get_abs_url(self):
@@ -266,6 +277,10 @@ class User(db.Document, SubscribableMixin):
             session['github_user'] = github.get('user').data
         return session['github_user']
 
+    @property
+    def github_repos(self):
+        return github.get('user/repos').data
+
 
     @property
     def primary_email(self):
@@ -309,5 +324,11 @@ class User(db.Document, SubscribableMixin):
 
     def __repr__(self):
         return '<User %r>' % (self.username)
+
+    def __eq__(self, other):
+        if isinstance(other, werkzeug.local.LocalProxy):
+            return self == other._get_current_object()
+        else:
+            return super(User, self).__eq__(other)
 
 from featurelet.lib import distribute_event, catch_error_graceful

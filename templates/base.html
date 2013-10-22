@@ -14,6 +14,7 @@
     <script src="http://malsup.github.com/jquery.form.js"></script> 
     <script src="/static/lib/js/yota.js"></script>
     <script src="/static/lib/js/jquery.noty.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/static/lib/js/jquery.markitup.js"></script>
     <script src="/static/js/main.js"></script>
     <div id="wrap">
@@ -63,6 +64,16 @@
           </div>
       </div>
       <div class="container main-cont">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-block alert-{{category}} fade in">
+                    <a class="close" data-dismiss="alert" href="#">×</a>
+                      {{ message }}
+                </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
       </div>
     </div>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}Project Settings for {{project.name}}{% endblock %}
+{% block content %}
+<div class="row">
+  {% if sync_form %}
+    {{sync_form|safe}}
+  {%endif%}
+</div>
+{% endblock %}

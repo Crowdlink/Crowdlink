@@ -1,9 +1,9 @@
-from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app, send_from_directory
+from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app, send_from_directory, abort, flash
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
 from featurelet import root, lm, app, oauth, github
 from featurelet.models import User, Project, Improvement
-from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm, PasswordForm, CommentForm
+from featurelet.forms import *
 
 import json
 import mongoengine
@@ -14,9 +14,6 @@ import base64
 
 main = Blueprint('main', __name__, template_folder='../templates')
 
-@app.before_request
-def before_request():
-    g.user = current_user
 
 @lm.user_loader
 def user_loader(id):
@@ -25,6 +22,9 @@ def user_loader(id):
     except User.DoesNotExist:
         pass
 
+@main.errorhandler(403)
+def access_denied(e):
+    return render_template('403.html')
 
 @main.route("/favicon.ico")
 def favicon():
@@ -55,7 +55,9 @@ def account():
 @main.route("/login/github/deauthorize")
 def unlink_github():
     current_app.logger.warn(
-        github.get('authorizations', headers={"Authorization": "Basic %s" % current_app.config['GITHUB_ACCOUNT_KEY']}).data)
+        github.get('authorizations',
+                   headers={"Authorization": "Basic %s" %\
+                            current_app.config['GITHUB_ACCOUNT_KEY']}).data)
     return (g.user.github_token, '')
 
 @github.tokengetter
@@ -84,7 +86,39 @@ def github_auth(resp):
         return redirect(url_for('main.account'))
     else:
         # they're trying to login, or create an account
+        # XXX: Needs to be implemented
         pass
+
+
+@main.route("/<username>/<url_key>/settings", methods=['GET', 'POST'])
+def project_settings(username=None, url_key=None):
+    # get view objects and confirm permissions
+    try:
+        project = Project.objects.get(maintainer=username,
+                                  url_key=url_key)
+    except Project.DoesNotExist:
+        abort(404)
+    if not project.can_edit_settings(g.user):
+        abort(403)
+
+    sync = project.can_sync(g.user)
+    if sync:
+        sync_form = SyncForm.get_form()
+
+    if request.method == 'POST':
+        # They've submitted the synchronization form and everything checks out
+        if request.form.get('_arg_form', None) == 'sync' and \
+           sync and \
+           sync_form.validate(request.form):
+            flask.flash('Synchronized repo!', category="success")
+        else:
+            sync_form_out = sync_form.render()
+    else:
+        sync_form_out = sync_form.render()
+
+    return render_template('psettings.html',
+                           project=project,
+                           sync_form=sync_form_out)
 
 
 @main.route("/<username>/<url_key>")
@@ -145,16 +179,16 @@ def new_project():
     return render_template('new_project.html', form=form.render())
 
 
-@main.route("/<maintainer>/<purl_key>/new_improvement", methods=['GET', 'POST'])
+@main.route("/<username>/<purl_key>/new_improvement", methods=['GET', 'POST'])
 @login_required
-def new_improvement(maintainer=None, purl_key=None):
+def new_improvement(username=None, purl_key=None):
     # XXX Add check on the purl_key
     form = NewImprovementForm()
     if request.method == 'POST':
         if form.validate(request.form):
             data = form.data_by_attr()
             try:
-                project = Project.objects.get(maintainer=maintainer, url_key=purl_key)
+                project = Project.objects.get(maintainer=username, url_key=purl_key)
                 imp = Improvement(
                     creator=g.user.id,
                     brief=data['brief'],

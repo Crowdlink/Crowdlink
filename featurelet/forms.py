@@ -1,6 +1,6 @@
 from flask import g
 
-from yota import Check, Form, Listener, Blueprint
+from yota import Check, Form, Listener
 import yota.validators as validators
 import yota.nodes as nodes
 from yota.exceptions import *
@@ -8,8 +8,13 @@ from yota.exceptions import *
 from featurelet.models import *
 
 
-class UnicodeString(object):
+def list_validator(list):
+    for val, desc in list.items:
+        if list.data == val:
+            return True
+    return False
 
+class UnicodeString(object):
     def __init__(self,
                  spmsg=None,
                  minmsg=None,
@@ -145,6 +150,24 @@ class NewImprovementForm(ModelForm):
     description = nodes.Textarea(rows=15, model=Improvement.description)
     create = nodes.Submit(title="Create", css_class="btn btn-primary")
 
+
+class SyncForm(Form):
+    title = "Github Synchronization"
+    repo = nodes.List(template="bootstrap_list")
+    _check_repo = Check(list_validator, "repo")
+    hidden = {'form': 'sync'}
+    g_context = {'css_class': 'form-inline'}
+
+    @classmethod
+    def get_form(cls):
+        form = cls()
+        form.repo.items = []
+        for repo in g.user.github_repos:
+            import q; q(repo)
+            if repo['permissions']['admin']:
+                form.repo.items.append((repo, repo['full_name']))
+
+        return form
 
 class LoginForm(Form):
     username = nodes.Entry(css_class="form-control input-sm")

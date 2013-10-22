@@ -86,7 +86,7 @@ $(=>
   ) # ------------------- End Watch code
 
 
-  # Register all vote buttons
+  # --------------------- Register all vote buttons
   $("a[data-type='vote']").click(->
     elm = $(this)
     button = replace_spinner(elm)
@@ -122,9 +122,9 @@ $(=>
 
     request.fail (jqXHR, textStatus) ->
         err()
-  )
+  ) # ------------------------------------
 
-  # Editing an Improvement brief
+  # ------------- Editing an Improvement brief
   save_brief = (t, key, display, revert) ->
     orig = replace_spinner($("#" + key + "_spinner"))
     restore_spinner = ->
@@ -154,6 +154,7 @@ $(=>
 
     setTimeout(tmp, 1000)
 
+  # ---------------------------------------------
 
 
 
@@ -188,5 +189,10 @@ $(=>
     t.find("[data-action]").click(->
       eval($(this).data('action'))
     )
-  )
+  ) # ----------------------------------------
+
+
+  # ------------- Clickable rows for radio button lists
+  $(".record-table").click (event) ->
+    $(":radio", this).trigger "click"  if event.target.type isnt "radio"
 )

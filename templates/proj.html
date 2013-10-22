@@ -20,9 +20,16 @@
     <br />
     <div class="btn-group-vertical">
       <a class="btn btn-default"
-         href="{{url_for('main.new_improvement', maintainer=project.maintainer.username, purl_key=project.url_key) }}">Suggest an Improvement</a>
-      <a class="btn btn-default" href="/new_milestone/{{ project.url_key }}">Add a Milestone</a>
-      <a class="btn btn-default" href="/settings/{{ project.url_key }}">Project Settings</a>
+        href="{{url_for('main.new_improvement',
+              username=project.maintainer.username,
+              purl_key=project.url_key) }}">
+        Suggest an Improvement
+      </a>
+      <a class="btn btn-default" href="{{url_for('main.project_settings',
+                                                 username=project.maintainer.username,
+                                                 url_key=project.url_key)}}">
+        Project Settings
+      </a>
     </div>
   </div>
 </div>
