@@ -29,11 +29,11 @@ class UnicodeString(object):
 
     def __call__(self, username):
         if ' ' in username.data:
-            username.add_error({'message': self.spmsg})
+            username.add_msg({'message': self.spmsg})
         if len(username.data) < self.minval:
-            username.add_error({'message': self.minmsg})
+            username.add_msg({'message': self.minmsg})
         if len(username.data) > self.maxval:
-            username.add_error({'message': self.maxmsg})
+            username.add_msg({'message': self.maxmsg})
 
 
 def replicate_validators(form):
@@ -100,7 +100,7 @@ class RegisterForm(ModelForm):
         except User.DoesNotExist:
             pass
         else:
-            self.username.add_error({'message': 'Username already in use!'})
+            self.username.add_msg({'message': 'Username already in use!'})
 
 
 class PasswordForm(Form):
@@ -132,7 +132,7 @@ class NewProjectForm(ModelForm):
         except Project.DoesNotExist:
             pass
         else:
-            self.ptitle.add_error({'message': 'You already have a project named that'})
+            self.ptitle.add_msg({'message': 'You already have a project named that'})
 
 
 class CommentForm(ModelForm):
@@ -162,10 +162,8 @@ class SyncForm(Form):
     def get_form(cls):
         form = cls()
         form.repo.items = []
-        for repo in g.user.github_repos:
-            import q; q(repo)
-            if repo['permissions']['admin']:
-                form.repo.items.append((repo, repo['full_name']))
+        for repo in g.user.gh_repos_syncable():
+            form.repo.items.append((repo, repo['full_name']))
 
         return form
 

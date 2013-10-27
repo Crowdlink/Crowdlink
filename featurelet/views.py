@@ -43,9 +43,8 @@ def account():
                 try:
                     g.user.password = data['password']
                     g.user.save()
-                    password_form.start.add_error(
-                        {'message': 'Password successfully updated',
-                         'type': 'success' })
+                    password_form.start.add_msg(
+                        message='Password successfully updated', type='success')
                 except Exception:
                     catch_error_graceful(password_form)
 
@@ -58,11 +57,11 @@ def unlink_github():
         github.get('authorizations',
                    headers={"Authorization": "Basic %s" %\
                             current_app.config['GITHUB_ACCOUNT_KEY']}).data)
-    return (g.user.github_token, '')
+    return (g.user.gh_token, '')
 
 @github.tokengetter
 def get_github_oauth_token():
-    return (g.user.github_token, '')
+    return (g.user.gh_token, '')
 
 @main.route("/login/github")
 def github_init_auth():
@@ -76,18 +75,20 @@ def github_auth(resp):
             request.args['error_reason'],
             request.args['error_description']
         )
-    # if they're logged in
+    # if the auth failed
     if 'access_token' not in resp:
+        current_app.logger.info("Return response from Github didn't contain an access token")
         return redirect(url_for('main.account'))
+
     if g.user:
-        g.user.github_token = resp['access_token']
-        g.user.save()
-        g.github
+        g.user.gh_token = resp['access_token']
+        g.user.safe_save()
+        # Populate the github cache
+        g.user.gh
         return redirect(url_for('main.account'))
     else:
         # they're trying to login, or create an account
-        # XXX: Needs to be implemented
-        pass
+        user = User.create_user_github(resp['access_token'])
 
 
 @main.route("/<username>/<url_key>/settings", methods=['GET', 'POST'])
@@ -101,20 +102,34 @@ def project_settings(username=None, url_key=None):
     if not project.can_edit_settings(g.user):
         abort(403)
 
-    sync = project.can_sync(g.user)
+    sync = project.can_sync(g.user) and not project.gh_synced and g.user.gh_linked
     if sync:
         sync_form = SyncForm.get_form()
+    else:
+        sync_form = None
 
     if request.method == 'POST':
         # They've submitted the synchronization form and everything checks out
         if request.form.get('_arg_form', None) == 'sync' and \
            sync and \
            sync_form.validate(request.form):
-            flask.flash('Synchronized repo!', category="success")
-        else:
-            sync_form_out = sync_form.render()
-    else:
+            repo = g.user.gh_repo(sync_form.repo.data)
+            try:
+                project.gh_sync(repo)
+            except KeyError:
+                sync_form.add_msg(
+                    message="Project could not be found under your user",
+                    type="error")
+            else:
+                if project.safe_save(flash=True):
+                    flash('Your project is now synced to {0}, Improvements can '
+                          'now be linked to Issues.'.format(project.gh_repo_path),
+                          category="success")
+
+    if sync_form:
         sync_form_out = sync_form.render()
+    else:
+        sync_form_out = None
 
     return render_template('psettings.html',
                            project=project,
@@ -143,8 +158,8 @@ def view_improvement(user=None, purl_key=None, url_key=None):
             except Exception:
                 catch_error_graceful(form)
             else:
-                form.start.add_error({"message": "Comment successfully posted",
-                                    "type": "success"})
+                form.start.add_msg(message="Comment successfully posted",
+                                   type="success")
 
     return render_template('improvement.html',
                            imp=imp,
@@ -226,9 +241,9 @@ def login():
         data = form.data_by_attr()
         if success:
             try:
-                user = User.objects.get(username=data['username'])
+                user = User.objects.get(username=data['username'].lower())
             except User.DoesNotExist:
-                pass
+                form.start.add_msg(message="Invalid credentials")
             except Exception:
                 catch_error_graceful(form)
             else:
@@ -236,7 +251,7 @@ def login():
                     login_user(user)
                     return redirect(url_for('main.home'))
                 else:
-                    form.start.add_error({"message": "Invalid credentials"})
+                    form.start.add_msg(message="Invalid credentials")
     return render_template('login.html', form=form.render())
 
 
@@ -257,7 +272,8 @@ def signup():
                 login_user(user)
                 return redirect(url_for('main.home'))
             else:
-                form.start.add_error({'message': 'Unknown database error, please retry.', 'error': True})
+                form.start.add_msg(
+                    message='Unknown database error, please retry.', error=True)
 
     return render_template('register.html', form=form.render())
 

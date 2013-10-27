@@ -34,12 +34,12 @@
   </div>
 </div>
 
-<span class="btn {% if project.subscribed %}btn-info{% else %}btn-default{% endif %}"
-      data-watch="{{project.id}}"
-      data-watch-type="project"
-      data-off-class="btn-default"
-      data-on-class="btn-info">
-  <i class="icon-eye-open"></i> &nbsp;Watch
+<span class="btn btn-default btn-sm"
+      data-type="watch"
+      data-json="{{project.jsonize(id=1, subscribed=1)}}"
+      data-url="project">
+  <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
+  <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
 </span>
 <div class="row">
   <h3>Improvements</h3>
@@ -48,9 +48,13 @@
       {% for imp in project.get_improvements(): %}
       <tr>
         <td class="fit-width">
-          <a data-url-key="{{imp.url_key}}"
-              data-proj-id="{{imp.project.id}}"
-              data-type="vote"><div class="btn btn-sm btn-info">Vote&nbsp; <i class="icon-plus"></i></div></a>&nbsp;&nbsp;
+          <a data-json="{{imp.jsonize(url_key=1, project=1, vote_status=1)}}"
+            data-type="vote"
+            class="btn btn-xs btn-info">
+            <span class="false-div">Vote&nbsp; <i class="fa fa-plus"></i></span>
+            <span class="true-div">Unvote&nbsp; <i class="fa fa-minus"></i></span>
+          </a>
+          &nbsp;&nbsp;
           <b>{{imp.votes}} vote{{imp.votes|plural}}</b>
         </td>
         <td><a href="{{imp.get_abs_url()}}">{{imp.brief}}</a></td>

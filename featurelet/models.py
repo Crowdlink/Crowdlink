@@ -1,6 +1,6 @@
-from flask import url_for, session, g, current_app
+from flask import url_for, session, g, current_app, flash
 
-from featurelet import db, github
+from . import db, github
 
 import cryptacular.bcrypt
 import datetime
@@ -8,21 +8,25 @@ import mongoengine
 import re
 import markdown2
 import werkzeug
+import json
+import bson
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
 class SubscribableMixin(object):
-    """ A Mixing providing data model utils for subscribing new users. Maintain
+    """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
 
     def unsubscribe(self, username):
         i = 0
+        # locates the index of the user by hand. I'm sure there's some clever
+        # lamda to do this
         for sub in self.subscribers:
             if sub.user.username == username:
                 break
             i += 1
         else:
-            return False  # Return false if list exhausted
+            return False  # Return false if list exhausted, failure
         # I feel uneasy about defaulting to remove i, but hopefully...
         del self.subscribers[i]
 
@@ -30,7 +34,7 @@ class SubscribableMixin(object):
         # ensure that the user key is unique
         for sub in self.subscribers:
             if sub.user == sub_obj.user:
-                return False
+                return False  # err, shouldn't have been present
         self.subscribers.append(sub_obj)
 
     @property
@@ -40,6 +44,36 @@ class SubscribableMixin(object):
             if sub.user.username == g.user.username:
                 return True
         return False
+
+class CommonMixin(object):
+    """ mixin for all documents in database. provides some nice utils"""
+    def safe_save(self, **kwargs):
+        try:
+            self.save(**kwargs)
+        except Exception:
+            catch_error_graceful(form)
+            return False
+        else:
+            return True
+        return True
+
+    def jsonize(self, **kwargs):
+        for key, val in kwargs.items():
+            try:
+                attr = getattr(self, key)
+                if isinstance(attr, db.Document):
+                    attr = str(attr.id)
+                elif isinstance(attr, bool):
+                    pass
+                else:
+                    attr = str(attr)
+            except AttributeError:
+                pass
+            else:
+                kwargs[key] = attr
+        return json.dumps(kwargs)
+
+    meta = {'allow_inheritance': True}
 
 class Email(db.EmbeddedDocument):
     address = db.StringField(max_length=1023, required=True, unique=True)
@@ -57,16 +91,28 @@ class Comment(db.EmbeddedDocument):
         return markdown2.markdown(self.body)
 
 
-class Improvement(db.Document, SubscribableMixin):
+class Improvement(db.Document, SubscribableMixin, CommonMixin):
+    id = db.ObjectIdField()
+    # key pair, unique identifier
+    url_key = db.StringField(unique=True)
+    project = db.ReferenceField('Project')
+
     brief = db.StringField(max_length=512, min_length=3)
     description = db.StringField(min_length=15)
     creator = db.ReferenceField('User')
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
-    project = db.ReferenceField('Project')
+
+    # github synchronization
+    gh_synced = db.BooleanField(default=False)
+    gh_issue_num = db.IntField()
+    gh_labels = db.ListField(db.StringField())
+
+    # voting
     vote_list = db.ListField(db.ReferenceField('User'))
     votes = db.IntField(default=0)
+
+    # event dist
     events = db.ListField(db.GenericEmbeddedDocumentField())
-    url_key = db.StringField(unique=True)
     subscribers = db.ListField(db.EmbeddedDocumentField('ImpSubscriber'))
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
 
@@ -79,6 +125,21 @@ class Improvement(db.Document, SubscribableMixin):
     def can_edit_imp(self, user):
         return user == self.creator or self.project.can_edit_imp(user)
 
+
+    def gh_desync(self, flatten=False):
+        """ Used to disconnect an improvement from github. Really just a
+        trickle down call from de-syncing the project, but nicer to keep the
+        logic in here"""
+        self.gh_synced = 0
+        # Remove indexes if we're flattening
+        if flatten:
+            self.gh_issue_num = None
+            self.gh_labels = []
+        try:
+            self.save()
+        except Exception:
+            catch_error_graceful()
+
     @property
     def md(self):
         return markdown2.markdown(self.description)
@@ -89,6 +150,18 @@ class Improvement(db.Document, SubscribableMixin):
                             vote_list__ne=user.username).\
                     update_one(add_to_set__vote_list=user.username, inc__votes=1)
 
+    def unvote(self, user):
+        return Improvement.objects(
+            project=self.project,
+            url_key=self.url_key,
+            vote_list__in=[user.username, ]).\
+                update_one(pull__vote_list=user.username, dec__votes=1)
+
+
+    @property
+    def vote_status(self):
+        return g.user in self.vote_list
+
     def create_key(self):
         self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100]).lower()
 
@@ -98,7 +171,7 @@ class Improvement(db.Document, SubscribableMixin):
         c.distribute(self)
 
 
-class Project(db.Document, SubscribableMixin):
+class Project(db.Document, SubscribableMixin, CommonMixin):
     id = db.ObjectIdField()
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     maintainer = db.ReferenceField('User')
@@ -114,7 +187,37 @@ class Project(db.Document, SubscribableMixin):
     subscribers = db.ListField(db.EmbeddedDocumentField('ProjectSubscriber'))
     events = db.ListField(db.GenericEmbeddedDocumentField())
 
+    # Github Syncronization information
+    gh_repo_id = db.IntField(default=-1)
+    gh_repo_path = db.StringField()
+    gh_synced_at = db.DateTimeField()
+    gh_synced = db.BooleanField(default=False)
+
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
+
+    @property
+    def gh_synced(self):
+        return self.gh_repo_id > 0
+
+    def gh_sync(self, data):
+        self.gh_repo_id = data['id']
+        self.gh_repo_path = data['full_name']
+        self.gh_synced = datetime.datetime.now()
+
+    def gh_desync(self, flatten=False):
+        """ Used to disconnect a repository from github. By default will leave
+        all data in place for re-syncing, but flatten will cause erasure """
+        for imp in self.get_improvements():
+            imp.gh_desync(flatten=flatten)
+
+        self.gh_synced = False
+        # Remove indexes if we're flattening
+        if flatten:
+            self.gh_synced_at = None
+            self.gh_repo_path = None
+            self.gh_repo_id = None
+        self.safe_save()
+
 
     def can_edit_settings(self, user):
         return self.maintainer == user
@@ -136,14 +239,18 @@ class Project(db.Document, SubscribableMixin):
     def add_improvement(self, imp, user):
         imp.create_key()
         imp.project = self
-        imp.save()
+        try:
+            imp.save()
+        except mongoengine.errors.OperationError:
+            return False
+
         # send a notification to all subscribers that the notification is left
-        inotif = ImprovementNotif(user=user.username, imp=imp)
+        inotif = events.ImprovementNotif(user=user.username, imp=imp)
         inotif.distribute()
 
     def add_comment(self, body, user):
         # Send the actual comment to the improvement event queue
-        c = Comment(user=user.username,
+        c = events.Comment(user=user.username,
                     body=body)
         distribute_event(self, c, "comment", self_send=True)
 
@@ -162,107 +269,40 @@ class ProjectSubscriber(db.EmbeddedDocument):
     improvement = db.BooleanField(default=True)
 
 
-class UserSubscriber(db.EmbeddedDocument, SubscribableMixin):
+class UserSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
     comment = db.BooleanField(default=True)
     vote = db.BooleanField(default=False)
     improvement = db.BooleanField(default=True)
     project = db.BooleanField(default=True)
 
-class Event(db.EmbeddedDocument):
-    # this represents the key in the subscriber entry that dictates whether it
-    # should be publishe
-    attr = None
-    # template used to render the event
-    template = "events/fallback.html"
-    pass
 
-    def distribute(self):
-        """ Copies the subdocument everywhere it needs to go """
-        pass
+class User(db.Document, SubscribableMixin, CommonMixin):
+    # _id
+    username = db.StringField(max_length=32, min_length=3, primary_key=True)
 
-    meta = {'allow_inheritance': True}
-
-class ImprovementNotif(Event):
-    """ Notification of a new improvement being created """
-    user = db.ReferenceField('User')
-    imp = db.GenericReferenceField()  # The object recieving the comment
-    created_at = db.DateTimeField(default=datetime.datetime.now)
-
-    template = "events/improvement.html"
-
-    def distribute(self):
-        # send to the project, and people watching the project
-        distribute_event(self.imp.project,
-                         self,
-                         "improvement",
-                         self_send=True,
-                         subscriber_send=True
-                    )
-
-        # sent to the user who created the improvement's feed and their subscribers
-        distribute_event(self.user,
-                         self,
-                         "improvement",
-                         subscriber_send=True,
-                         self_send=True
-                    )
-
-class CommentNotif(Event):
-    """ Notification that a comment has been created """
-    user = db.ReferenceField('User')
-    obj = db.GenericReferenceField()  # The object recieving the comment
-    created_at = db.DateTimeField(default=datetime.datetime.now)
-    template = "events/comment_not.html"
-
-    def distribute(self):
-        if type(self.obj) == "Improvement":
-            # pass it on to the improvement's project if it is from improvement
-            distribute_event(self.obj.project, self, "comment_notif", self_send=True)
-
-        # we never distribute notifications of the comment to itself, it gets a
-        # comment obj instead
-
-        # sent to the user who commented's feed and their subscribers
-        distribute_event(self.user, self, "comment_notif", subscriber_send=True, self_send=True)
-
-class Comment(Event):
-    """ This is not actually an event. Comments are stored as events to simplify
-    display """
-    created_at = db.DateTimeField(default=datetime.datetime.now)
-    user = db.ReferenceField('User')
-    body = db.StringField()
-    template = "events/comment.html"
-
-    def distribute(self, improvement):
-        """ In this instance more of a create. The even obj distributes itself
-        and then notifications of its creation. really just to save space on
-        the contents of the post body """
-        # send to the event queue of the improvement
-        distribute_event(improvement, self, "comment", self_send=True)
-        # create the notification, and distribute based on CommentNotif logic
-        notif = CommentNotif(user=self.user, obj=self)
-        notif.distribute()
-
-    @property
-    def md_body(self):
-        return markdown2.markdown(self.body)
-
-
-class User(db.Document, SubscribableMixin):
+    # User information
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     _password = db.StringField(max_length=128, min_length=5, required=True)
-    username = db.StringField(max_length=32, min_length=3, primary_key=True)
     emails = db.ListField(db.EmbeddedDocumentField('Email'))
-    github_token = db.StringField()
+
+    # Event information
     subscribers = db.ListField(db.EmbeddedDocumentField(UserSubscriber))
     public_events = db.ListField(db.GenericEmbeddedDocumentField())
     events = db.ListField(db.GenericEmbeddedDocumentField())
-    meta = {'indexes': [{'fields': ['github_token'], 'unique': True, 'sparse': True}]}
+
+    # Github sync
+    gh_token = db.StringField()
+
+    meta = {'indexes': [{'fields': ['gh_token'], 'unique': True, 'sparse': True}]}
 
     @property
     def password(self):
         return self._password
+
+    @property
+    def gh_linked(self):
+        return bool(self.gh_token)
 
     @password.setter
     def password(self, val):
@@ -272,15 +312,34 @@ class User(db.Document, SubscribableMixin):
         return crypt.check(self._password, password)
 
     @property
-    def github(self):
+    def gh(self):
         if 'github_user' not in session:
             session['github_user'] = github.get('user').data
         return session['github_user']
 
-    @property
-    def github_repos(self):
-        return github.get('user/repos').data
+    def gh_repos(self):
+        """ Generate a complete list of repositories """
+        try:
+            return github.get('user/repos').data
+        except ValueError:
+            self.gh_deauth()
 
+    def gh_deauth(self, flatten=False):
+        """ De-authenticates a user and redirects them to their account
+        settings with a flash """
+        flash("Your GitHub Authentication token was missing when expected, please re-authenticate.")
+        self.gh_token = ''
+        for project in self.get_projects():
+            project.gh_desync(flatten=flatten)
+
+    def gh_repos_syncable(self):
+        """ Generate a list only of repositories that can be synced """
+        for repo in self.gh_repos():
+            if repo['permissions']['admin']:
+                yield repo
+    def gh_repo(self, path):
+        """ Get a single repositories information from the gh_path """
+        return github.get('repos/{0}'.format(path)).data
 
     @property
     def primary_email(self):
@@ -295,6 +354,17 @@ class User(db.Document, SubscribableMixin):
             user = cls(emails=[email], username=username)
             user.password = password
             user.save()
+        except Exception:
+            catch_error_graceful()
+
+        return user
+
+    @classmethod
+    def create_user_github(cls, access_token):
+        user = cls(gh_token=access_token)
+        try:
+            email = Email(address=user.gh['email'])
+            user.save()
         except mongoengine.errors.OperationError:
             return False
 
@@ -305,6 +375,10 @@ class User(db.Document, SubscribableMixin):
 
     def get_projects(self):
         return Project.objects(maintainer=self)
+
+    def save(self):
+        self.username = self.username.lower()
+        super(User, self).save()
 
     # Authentication callbacks
     def is_authenticated(self):
@@ -322,13 +396,18 @@ class User(db.Document, SubscribableMixin):
     def __str__(self):
         return self.username
 
+    # Convenience functions
     def __repr__(self):
         return '<User %r>' % (self.username)
 
     def __eq__(self, other):
+        """ This returns the actual user object compaison when it's a proxy object.
+        Very useful since we do this for auth checks all the time """
         if isinstance(other, werkzeug.local.LocalProxy):
             return self == other._get_current_object()
         else:
             return super(User, self).__eq__(other)
 
-from featurelet.lib import distribute_event, catch_error_graceful
+
+from .events import (ImprovementNotif, CommentNotif, Comment)
+from .lib import (catch_error_graceful)

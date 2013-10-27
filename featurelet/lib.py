@@ -1,4 +1,4 @@
-from flask import url_for, session, g, current_app, request
+from flask import url_for, session, g, current_app, request, flash
 
 from featurelet import db, github, app
 from featurelet.models import User
@@ -6,7 +6,11 @@ from featurelet.models import User
 import sys
 import mongoengine
 
-def catch_error_graceful(form=None):
+def catch_error_graceful(form=None, flash=False):
+    """ This is a utility function that handles exceptions that might be omitted
+    from Mongoengine in a graceful, patterned way. In production these errors
+    should never really happen, so they can be handled uniformly logging and user
+    return. It is called by the safe_save utility. """
     # grab current exception information
     exc, txt, tb = sys.exc_info()
 
@@ -19,32 +23,39 @@ def catch_error_graceful(form=None):
             "=============================================================\n"
         )
 
+    # default to danger....
+    cat = "danger"
     if exc is mongoengine.errors.ValidationError:
-        if form:
-            form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged with a high priority.'})
+        msg = ('A database schema validation error has occurred. This has been'
+               ' logged with a high priority.')
         log("A validation occurred.")
     elif exc is mongoengine.errors.InvalidQueryError:
-        if form:
-            form.start.add_error({'message': 'A database schema validation error has occurred. This has been logged with a high priority.'})
+        msg = ('A database schema validation error has occurred. This has been '
+               'logged with a high priority.')
         log("An inconsistency in the models was detected")
     elif exc is mongoengine.errors.NotUniqueError:
-        if form:
-            form.start.add_error({'message': 'A duplication error happended on the datastore side, one of your values is not unique. This has been logged.'})
+        msg = ('A duplication error happended on the datastore side, one of '
+               'your values is not unique. This has been logged.')
         log("A duplicate check on the database side was not caught")
     elif exc in (mongoengine.errors.OperationError, mongoengine.errors.DoesNotExist):
-        if form:
-            form.start.add_error({'message': 'An unknown database error. This has been logged.'})
+        msg = 'An unknown database error. This has been logged.'
         log("An unknown operation error occurred")
     else:
-        if form:
-            form.start.add_error({'message': 'An unknown error has occurred'})
+        msg = 'An unknown error has occurred'
         log("")
+
+    if form:
+        form.start.add_msg(message=msg, type=cat)
+    elif flash:
+        flash(msg, category=cat)
 
 
 def distribute_event(sender, event, type, subscriber_send=False, self_send=False):
-    """ A function that will de-normalize an event by distributing it to all
-    subscribing event lists """
-    # Distribute to all subscribers who have the right options if asked
+    """ A function that will de-normalize an event by distributing it to requested
+    subscribing event lists. This only handles the logic and action of distribution,
+    and not the initial routing which is instead handled on notifications
+    distribute method """
+    # Distribute to all subscribers who have the right options
     if subscriber_send:
         for sub in sender.subscribers:
             # If they wish to recieve this type of event

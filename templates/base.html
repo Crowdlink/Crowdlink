@@ -5,7 +5,7 @@
     {% block head %}
     <link href="/static/lib/css/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="/static/css/main.css" rel="stylesheet" media="screen">
-    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+    <link href="/static/lib/css/font-awesome.min.css" rel="stylesheet">
     <title>{% block title %}{% endblock %} - Featurelet</title>
     {% endblock %}
   </head>
@@ -16,6 +16,7 @@
     <script src="/static/lib/js/jquery.noty.js"></script>
     <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/static/lib/js/jquery.markitup.js"></script>
+    <script src="/static/js/lib.js"></script>
     <script src="/static/js/main.js"></script>
     <div id="wrap">
       <div class="navbar navbar-default navbar-fixed-top">
@@ -29,33 +30,33 @@
                 {% if g.user.is_authenticated() %}
                 <li{% if request.path == url_for('main.account') %} class="active"{%endif%}>
                   <a href="{{url_for('main.account')}}">
-                    <i class="icon-large icon-gear"></i>
+                    <i class="fa fa-large fa-gear"></i>
                     <span class="hidden-xs"> Account</span>
                   </a>
                 </li>
                 {% set uurl = g.user.get_abs_url() %}
                   <li{% if request.path == uurl %} class="active"{%endif%}>
                     <a href="{{uurl}}">
-                      <i class="icon-large icon-user"></i>
+                      <i class="fa fa-large fa-user"></i>
                       <span class="hidden-xs"> Profile</span>
                     </a>
                   </li>
                   <li>
                     <a href="{{url_for('main.logout')}}">
-                      <i class="icon-large icon-signout"></i>
+                      <i class="fa fa-large fa-signout"></i>
                       <span class="hidden-xs"> Logout</span>
                     </a>
                   </li>
                 {% else %}
                   <li{% if request.path == url_for('main.signup') %} class="active"{%endif%}>
                   <a href="{{url_for('main.signup')}}">
-                      <i class="icon-large icon-edit"></i>
+                      <i class="fa fa-large fa-edit"></i>
                       <span class="hidden-xs"> Sign Up</span>
                     </a>
                   </li>
                   <li{% if request.path == url_for('main.login') %} class="active"{%endif%}>
                     <a href="{{url_for('main.login')}}">
-                      <i class="icon-signin icon-large"></i>
+                      <i class="fa fa-sign-in fa-large"></i>
                       <span class="hidden-xs"> Login</span>
                     </a>
                   </li>
@@ -64,9 +65,11 @@
           </div>
       </div>
       <div class="container main-cont">
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
-            {% for category, message in messages %}
+           {% for category, message in messages %}
+                <br />
+                {% if category == 'message' %}{% set category = 'danger' %}{% endif %}
                 <div class="alert alert-block alert-{{category}} fade in">
                     <a class="close" data-dismiss="alert" href="#">×</a>
                       {{ message }}

@@ -17,16 +17,23 @@ api = Blueprint('api', __name__)
 def vote_api():
     js = request.json
     try:
-        imp = Improvement.objects.get(project=js['proj_id'],
-                                    url_key=js['url_key'])
+        imp = Improvement.objects.get(
+            project=js['project'],
+            url_key=js['url_key'])
+        vote_status = js['vote_status']
     except KeyError:
         return incorrect_syntax()
     except Improvement.DoesNotExist:
         return resource_not_found()
 
-    if not imp.vote(g.user):
-        if g.user in imp.vote_list:
-            return jsonify(success=False, code='already_voted')
+    if vote_status and not imp.vote(g.user):
+        if imp.vote_status:
+            return jsonify(success=False, code='already_voted', disp="Already voted!")
+        else:
+            return jsonify(success=False)
+    elif not vote_status and not imp.unvote(g.user):
+        if not imp.vote_status:
+            return jsonify(success=False, code='already_voted', disp="Haven't voted yet")
         else:
             return jsonify(success=False)
 
@@ -40,14 +47,14 @@ def update_project():
 
     # try to access the improvement with identifying information
     try:
-        proj_id = js.pop('proj_id')
+        proj_id = js.pop('id')
         project = Project.objects.get(id=proj_id)
     except KeyError:
         return incorrect_syntax()
     except Improvement.DoesNotExist:
         return resource_not_found()
 
-    status = js.pop('vote_status', None)
+    status = js.pop('subscribed', None)
     if status == True:
         # Subscription logic, will need to be expanded to allow granular selection
         subscribe = ProjectSubscriber(user=g.user.username)
@@ -55,7 +62,6 @@ def update_project():
     elif status == False:
         project.unsubscribe(g.user.username)
 
-    current_app.logger.debug("Updating project " + project.to_json())
     try:
         project.save()
     except mongoengine.errors.ValidationError as e:
@@ -78,7 +84,7 @@ def update_user():
     except Improvement.DoesNotExist:
         return resource_not_found()
 
-    status = js.pop('vote_status', None)
+    status = js.pop('subscribed', None)
     if status == True:
         # Subscription logic, will need to be expanded to allow granular selection
         subscribe = UserSubscriber(user=g.user.username)
@@ -101,7 +107,7 @@ def update_improvement():
 
     # try to access the improvement with identifying information
     try:
-        proj_id = js.pop('proj_id')
+        proj_id = js.pop('project')
         url_key = js.pop('url_key')
         imp = Improvement.objects.get(project=proj_id,
                                     url_key=url_key)
@@ -118,7 +124,7 @@ def update_improvement():
     if desc:
         imp.description = desc
 
-    status = js.pop('vote_status', None)
+    status = js.pop('subscribed', None)
     if status == True:
         # Subscription logic, will need to be expanded to allow granular selection
         subscribe = ImpSubscriber(user=g.user.username)

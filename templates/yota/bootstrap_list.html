@@ -15,9 +15,9 @@
       <table class="table table-hover">
         {% for repo, description in items %}
         <tr class="record-table">
-            <td><i class="icon-book"></i> &nbsp;<a href="{{repo['url']}}">{{repo['full_name']}}</a></td>
+            <td><i class="icon-book"></i> &nbsp;<a href="{{repo['html_url']}}">{{repo['full_name']}}</a></td>
           <td>
-            <input type="radio" value="{{value}}" name="{{name}}"{% if data == value %} selected{% endif %}>
+            <input type="radio" value="{{repo['full_name']}}" name="{{name}}"{% if data == value %} selected{% endif %}>
           </td>
         </tr>
         {% endfor %}

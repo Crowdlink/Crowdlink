@@ -23,16 +23,16 @@
                 type="text"
                 class="form-control" />
             <span class="btn btn-info input-group-addon" id="brief_spinner" data-action="save_brief(t, key, display, revert);">
-              <i class="icon-save"></i>
+              <i class="fa fa-save"></i>
             </span>
             <span class="btn btn-primary input-group-addon" data-action="revert();">
-              <i class="icon-remove"></i>
+              <i class="fa fa-remove"></i>
             </span>
           </div><!-- /input-group --> 
         </span>
         <span id="brief_display">
           <span id="brief_output">{{ imp.brief }}</span>&nbsp;
-          <small class="icon-edit icon-hover" data-action="edit();"></small>
+          <small class="fa fa-edit icon-hover" data-action="edit();"></small>
         </span>
     </span>
     {% else %}
@@ -42,14 +42,19 @@
 </div>
 <br />
 <div class="row">
-  <span class="btn btn-sm {% if imp.subscribed %}btn-info{% else %}btn-default{% endif %}"
-        data-watch="{{imp.project.id}}#{{imp.url_key}}"
-        data-watch-type="improvement"
-        data-off-class="btn-default"
-        data-on-class="btn-info">
-        <i class="icon-eye-open"></i> &nbsp;Watch
+  <span class="btn btn-default btn-sm"
+      data-type="watch"
+      data-json="{{imp.jsonize(url_key=1, project=1, subscribed=1)}}"
+      data-url="improvement">
+    <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
+    <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
   </span>
-  <div class="btn btn-sm btn-info"><i class="icon-arrow-up"></i> &nbsp;Upvote</div>
+  <a data-json="{{imp.jsonize(url_key=1, project=1, vote_status=1)}}"
+      data-type="vote"
+      class="btn btn-sm btn-info">
+    <span class="false-div">Vote&nbsp; <i class="fa fa-plus"></i></span>
+    <span class="true-div">Unvote&nbsp; <i class="fa fa-minus"></i></span>
+  </a>
 </div>
 <br />
 <div class="row">
@@ -60,7 +65,7 @@
   <br>
   <div class="row well center col-lg-11" id="{{imp.url_key}}_{{imp.creator.username}}_display">
       {% if can_edit %}
-      <i class="icon-edit icon-3x icon-hover pull-right" data-type="edit-trigger" data-show="{{imp.url_key}}_{{imp.creator.username}}"></i>
+      <i class="fa fa-edit fa-3x icon-hover pull-right" data-type="edit-trigger" data-show="{{imp.url_key}}_{{imp.creator.username}}"></i>
       {% endif %}
       {{imp.md|safe}}
   </div>

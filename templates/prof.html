@@ -8,12 +8,12 @@
       <div class="col-md-7">
         <h2>{{ user.username }}</h2>
         <h4><b>Joined: </b>{{ user.created_at|date }}</h4>
-        <span class="btn {% if user.subscribed %}btn-info{% else %}btn-default{% endif %}"
-              data-watch="{{user.username}}"
-              data-watch-type="user"
-              data-off-class="btn-default"
-              data-on-class="btn-info">
-          <i class="icon-eye-open"></i> &nbsp;Watch
+        <span class="btn btn-default btn-sm"
+            data-type="watch"
+            data-json="{{user.jsonize(username=1, subscribed=1)}}"
+            data-url="user">
+          <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
+          <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
         </span>
       </div>
       <div class="col-md-5 text-right">

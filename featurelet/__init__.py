@@ -1,4 +1,4 @@
-from flask import Flask, g
+from flask import Flask, g, current_app
 from flask.ext.mongoengine import MongoEngine
 from flask.ext.login import LoginManager, current_user
 from jinja2 import FileSystemLoader
@@ -46,6 +46,7 @@ error_occured = False
 try:
     db = MongoEngine(app)
 except mongoengine.connection.ConnectionError:
+    app.logger.warn("Couldn't load database, using mock object")
     import mock
     db = mock.Mock()
     error_occured = True

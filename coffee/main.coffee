@@ -1,6 +1,4 @@
 $(=>
-  image_root = '/static/img/'
-  api_root = '/api/'
 
   window.bind_import = (id) ->
     options = {
@@ -30,99 +28,6 @@ $(=>
     elm.html("<img src='#{image_root}spinner_#{size}.gif' border='0' />")
 
     return ret
-
-  # ------------------------ Watch registering
-  $("[data-watch]").click(->
-    parent = $(this)
-    type = parent.data('watch-type')
-    ident = parent.data('watch')
-    if parent.hasClass('btn-info')
-      status = false
-      future_class = "btn-default"
-    else
-      status = true
-      future_class = "btn-info"
-
-    if type == "project"
-      data = JSON.stringify(
-        proj_id: ident
-        vote_status: status
-      )
-    else if type == "improvement"
-      info = ident.split('#')
-      data = JSON.stringify(
-        proj_id: info[0]
-        url_key: info[1]
-        vote_status: status
-      )
-    else  # user
-      data = JSON.stringify(
-        username: ident
-        vote_status: status
-      )
-
-    $.ajax(
-      url: "#{api_root}" + type
-      type: "POST"
-      data: data
-      contentType: 'application/json'
-      dataType: "json"
-    ).done( (jsonObj) ->
-        if not jsonObj.success
-          n = noty(text: "Something went wrong with the request")
-        else
-          if status
-            parent.removeClass(parent.data('off-class'))
-            parent.addClass(parent.data('on-class'))
-          else
-            parent.removeClass(parent.data('on-class'))
-            parent.addClass(parent.data('off-class'))
-        #restore_spinner()
-    ).fail( (jqXHR, textStatus) ->
-        n = noty(text: "Something went wrong with the request")
-        #restore_spinner()
-    )
-
-  ) # ------------------- End Watch code
-
-
-  # --------------------- Register all vote buttons
-  $("a[data-type='vote']").click(->
-    elm = $(this)
-    button = replace_spinner(elm)
-    holder = elm
-    request = $.ajax(
-        url: "#{api_root}vote"
-        type: "POST"
-        data:JSON.stringify(
-            proj_id: elm.data("proj-id")
-            url_key: elm.data("url-key")
-        )
-        contentType: 'application/json'
-        dataType: "json"
-    )
-
-    err = ->
-        elm.html('<div class="btn btn-xs btn-danger">Err</div> ')
-        setTimeout(->
-            elm.html(button)
-        , 2000)
-
-    request.done (jsonObj) ->
-        if jsonObj.success
-            elm.html('')
-        else
-            if jsonObj.code == 'already_voted'
-                elm.html('<div class="btn btn-xs btn-success">Already Voted</div> ')
-                setTimeout(->
-                    elm.html('')
-                , 2000)
-            else
-                err()
-
-    request.fail (jqXHR, textStatus) ->
-        err()
-  ) # ------------------------------------
 
   # ------------- Editing an Improvement brief
   save_brief = (t, key, display, revert) ->
@@ -155,8 +60,6 @@ $(=>
     setTimeout(tmp, 1000)
 
   # ---------------------------------------------
-
-
 
   # Edit trigger
   $("[data-type='edit-trigger']").each(->
@@ -191,6 +94,24 @@ $(=>
     )
   ) # ----------------------------------------
 
+
+
+  $("a[data-type='vote']").pover_ajax(
+    url: 'vote'
+    switch_key: 'vote_status'
+    true_class: 'btn-success'
+    false_class: 'btn-info'
+    true_div_sel: '.true-div'
+    false_div_sel: '.false-div'
+  )
+
+  $("[data-type='watch']").pover_ajax(
+    switch_key: 'subscribed'
+    true_class: 'btn-info'
+    false_class: 'btn-default'
+    true_div_sel: '.true-div'
+    false_div_sel: '.false-div'
+  )
 
   # ------------- Clickable rows for radio button lists
   $(".record-table").click (event) ->

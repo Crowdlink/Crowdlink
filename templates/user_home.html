@@ -18,12 +18,12 @@
       <h3>Your projects</h3>
       <ul class="list-group main-list">
       {% for project in projects %}
-        <a href="{{project.get_abs_url() }}"><li class="list-group-item"><i class="icon-tasks"></i>&nbsp; {{ project.name }}</li></a>
+        <a href="{{project.get_abs_url() }}"><li class="list-group-item"><i class="fa fa-tasks"></i>&nbsp; {{ project.name }}</li></a>
       {% else %}
-        <li class="list-group-item"><i class="icon-tasks"></i>&nbsp; No project to display</li>
+        <li class="list-group-item"><i class="fa fa-tasks"></i>&nbsp; No project to display</li>
       {% endfor %}
       </ul>
-      <a class="btn btn-info " href="/new_project"><i class="icon-plus"></i> &nbsp;Create a New Project</a>
+      <a class="btn btn-info " href="/new_project"><i class="fa fa-plus"></i> &nbsp;Create a New Project</a>
     </div>
     <div class="col">
       <h3>Popular Projects</h3>

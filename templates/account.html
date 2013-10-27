@@ -35,11 +35,11 @@
             {% endif %}
           </td>
         </tr>
-        {% if g.user.github_token %}
+        {% if g.user.gh_linked %}
         <tr>
           <th>Github Account</th>
           <td>
-            {{g.user.github['login']}} {{g.user.github_token}}
+            {{g.user.gh['login']}} {{g.user.gh_token}}
             <a href="{{url_for('main.unlink_github')}}" class="btn btn-danger btn-xs">Unlink</a>
           </td>
         </tr>
