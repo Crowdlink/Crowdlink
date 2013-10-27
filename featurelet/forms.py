@@ -140,8 +140,9 @@ class CommentForm(ModelForm):
     body = nodes.Textarea(rows=12,
                         columns=100,
                         model=Comment.body,
+                        label="",
                         css_class="form-control")
-    submit = nodes.Submit(title="Add Comment")
+    submit = nodes.Submit(title="Add Comment", label="")
 
 
 class NewImprovementForm(ModelForm):

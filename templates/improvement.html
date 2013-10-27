@@ -2,59 +2,64 @@
 
 {% block title %}View Improvement "{{ imp.brief }}"{% endblock %}
 {% block content %}
-<ol class="breadcrumb">
-  <li><a href="{{imp.project.maintainer.get_abs_url()}}">{{imp.project.maintainer}}</a></li>
-  <li><a href="{{imp.project.get_abs_url()}}">{{ imp.project.name }}</a></li>
-  <li><a href="">Improvements</a></li>
-  <li class="active">{{imp.brief}}</li>
-</ol>
 <div class="row">
-  <h2>
-    {% if can_edit %}
-    <span id="brief"
-        data-key="brief"
-        data-type="edit-trigger"
-        data-url-key="{{imp.url_key}}"
-        data-proj-id="{{imp.project.id}}"
-        id="improvement-brief-edit">
-        <span id="brief_edit" style="display:none;">
-          <div class="input-group">
-            <input id="brief_input"
-                type="text"
-                class="form-control" />
-            <span class="btn btn-info input-group-addon" id="brief_spinner" data-action="save_brief(t, key, display, revert);">
-              <i class="fa fa-save"></i>
-            </span>
-            <span class="btn btn-primary input-group-addon" data-action="revert();">
-              <i class="fa fa-remove"></i>
-            </span>
-          </div><!-- /input-group --> 
-        </span>
-        <span id="brief_display">
-          <span id="brief_output">{{ imp.brief }}</span>&nbsp;
-          <small class="fa fa-edit icon-hover" data-action="edit();"></small>
-        </span>
-    </span>
-    {% else %}
-      {{ imp.brief }}
-    {% endif %}
-  </h2>
+  <ol class="breadcrumb">
+    <li><a href="{{imp.project.maintainer.get_abs_url()}}">{{imp.project.maintainer}}</a></li>
+    <li><a href="{{imp.project.get_abs_url()}}">{{ imp.project.name }}</a></li>
+    <li><a href="">Improvements</a></li>
+    <li class="active">{{imp.brief}}</li>
+  </ol>
 </div>
-<br />
 <div class="row">
-  <span class="btn btn-default btn-sm"
-      data-type="watch"
-      data-json="{{imp.jsonize(url_key=1, project=1, subscribed=1)}}"
-      data-url="improvement">
-    <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
-    <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
-  </span>
-  <a data-json="{{imp.jsonize(url_key=1, project=1, vote_status=1)}}"
-      data-type="vote"
-      class="btn btn-sm btn-info">
-    <span class="false-div">Vote&nbsp; <i class="fa fa-plus"></i></span>
-    <span class="true-div">Unvote&nbsp; <i class="fa fa-minus"></i></span>
-  </a>
+  <div class="col-md-8 no-gutter">
+    <h2>
+      {% if can_edit %}
+      <span id="brief"
+          data-key="brief"
+          data-type="edit-trigger"
+          data-url-key="{{imp.url_key}}"
+          data-proj-id="{{imp.project.id}}"
+          id="improvement-brief-edit">
+          <span id="brief_edit" style="display:none;">
+            <div class="input-group">
+              <input id="brief_input"
+                  type="text"
+                  class="form-control" />
+              <span class="btn btn-info input-group-addon" id="brief_spinner" data-action="save_brief(t, key, display, revert);">
+                <i class="fa fa-save"></i>
+              </span>
+              <span class="btn btn-primary input-group-addon" data-action="revert();">
+                <i class="fa fa-remove"></i>
+              </span>
+            </div><!-- /input-group --> 
+          </span>
+          <span id="brief_display">
+            <span id="brief_output">{{ imp.brief }}</span>&nbsp;
+            <small class="fa fa-edit icon-hover" data-action="edit();"></small>
+          </span>
+      </span>
+      {% else %}
+        {{ imp.brief }}
+      {% endif %}
+    </h2>
+  </div>
+  <div class="col-md-4 no-gutter">
+    <div class="btn-group-vertical pull-right" style="width:50%;">
+      <a class="btn btn-default"
+          data-type="watch"
+          data-json="{{imp.jsonize(url_key=1, project=1, subscribed=1)}}"
+          data-url="improvement">
+        <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
+        <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
+      </a>
+      <a data-json="{{imp.jsonize(url_key=1, project=1, vote_status=1)}}"
+          data-type="vote"
+          class="btn btn-info">
+        <span class="false-div"><i class="fa fa-plus"></i> &nbsp;Vote</span>
+        <span class="true-div"><i class="fa fa-minus"></i> &nbsp;Unvote</span>
+      </a>
+    </div>
+  </div>
 </div>
 <br />
 <div class="row">
@@ -63,7 +68,7 @@
     ({{ imp.created_at|date_ago }})
   </h4>
   <br>
-  <div class="row well center col-lg-11" id="{{imp.url_key}}_{{imp.creator.username}}_display">
+  <div class="row well center" id="{{imp.url_key}}_{{imp.creator.username}}_display">
       {% if can_edit %}
       <i class="fa fa-edit fa-3x icon-hover pull-right" data-type="edit-trigger" data-show="{{imp.url_key}}_{{imp.creator.username}}"></i>
       {% endif %}
@@ -80,11 +85,15 @@
   </div>
   {% endif %}
 </div>
+{% if events %}
 <div class="row">
   <h3>Events</h3>
   {% for event in imp.events %}
     {% include event.template %}
   {% endfor %}
+</div>
+{% endif %}
+<div class="row">
   {{ comment_form|safe }}
 </div>
 {% endblock %}

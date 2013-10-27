@@ -3,22 +3,29 @@
 {% block title %}Home{% endblock %}
 {% block content %}
 <div class="row">
-  <div class="col-md-8">
-    <div class="col">
-      <h2>{{ project.name }}</h2>
-      <h4>
-        <b>Created </b>{{ project.created_at|date }}
-        ({{ project.created_at|date_ago }})
-      </h4>
-      <h4>
-        <b>Maintainer </b>
-        <a href="{{ project.maintainer.get_abs_url() }}">{{ project.maintainer.username }}</a>
-      </h4>
-    </div>
+  <div class="col-md-8 no-gutter">
+    <h2>
+      {{ project.name }}
+    </h2>
+    <h4>
+      <b>Created </b>{{ project.created_at|date }}
+      ({{ project.created_at|date_ago }})
+    </h4>
+    <h4>
+      <b>Maintainer </b>
+      <a href="{{ project.maintainer.get_abs_url() }}">{{ project.maintainer.username }}</a>
+    </h4>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-4 no-gutter">
     <br />
-    <div class="btn-group-vertical">
+    <div class="btn-group-vertical pull-right" style="width:70%;">
+      <a class="btn btn-default"
+            data-type="watch"
+            data-json="{{project.jsonize(id=1, subscribed=1)}}"
+            data-url="project">
+        <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
+        <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
+      </a>
       <a class="btn btn-default"
         href="{{url_for('main.new_improvement',
               username=project.maintainer.username,
@@ -28,19 +35,13 @@
       <a class="btn btn-default" href="{{url_for('main.project_settings',
                                                  username=project.maintainer.username,
                                                  url_key=project.url_key)}}">
+        <i class="fa fa-large fa-gear"></i>
         Project Settings
       </a>
     </div>
   </div>
 </div>
 
-<span class="btn btn-default btn-sm"
-      data-type="watch"
-      data-json="{{project.jsonize(id=1, subscribed=1)}}"
-      data-url="project">
-  <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
-  <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
-</span>
 <div class="row">
   <h3>Improvements</h3>
   <table class="table table-hover">
