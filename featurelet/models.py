@@ -10,6 +10,8 @@ import markdown2
 import werkzeug
 import json
 import bson
+import urllib
+import hashlib
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
@@ -57,7 +59,7 @@ class CommonMixin(object):
             return True
         return True
 
-    def jsonize(self, **kwargs):
+    def jsonize(self, raw=False, **kwargs):
         for key, val in kwargs.items():
             try:
                 attr = getattr(self, key)
@@ -65,13 +67,22 @@ class CommonMixin(object):
                     attr = str(attr.id)
                 elif isinstance(attr, bool):
                     pass
+                elif callable(attr):
+                    try:
+                        attr = attr()
+                    except TypeError:
+                        pass
                 else:
                     attr = str(attr)
             except AttributeError:
                 pass
             else:
                 kwargs[key] = attr
-        return json.dumps(kwargs)
+        if raw:
+            return kwargs
+        else:
+            return json.dumps(kwargs)
+
 
     meta = {'allow_inheritance': True}
 
@@ -114,7 +125,8 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     # event dist
     events = db.ListField(db.GenericEmbeddedDocumentField())
     subscribers = db.ListField(db.EmbeddedDocumentField('ImpSubscriber'))
-    meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
+    meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True},
+                        ]}
 
     def get_abs_url(self):
         return url_for('main.view_improvement',
@@ -169,6 +181,10 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
         # Send the actual comment to the improvement event queue
         c = Comment(user=user.username, body=body)
         c.distribute(self)
+
+    #def to_json(self):
+    #    """ Define how a straight json serialization is generated """
+    #    return jsonize(raw=1, url_key=1, project=1, get_abs_url=1, brief=1)
 
 
 class Project(db.Document, SubscribableMixin, CommonMixin):
@@ -300,16 +316,16 @@ class User(db.Document, SubscribableMixin, CommonMixin):
     def password(self):
         return self._password
 
-    @property
-    def gh_linked(self):
-        return bool(self.gh_token)
-
     @password.setter
     def password(self, val):
         self._password = unicode(crypt.encode(val))
 
     def check_password(self, password):
         return crypt.check(self._password, password)
+
+    @property
+    def gh_linked(self):
+        return bool(self.gh_token)
 
     @property
     def gh(self):
@@ -346,6 +362,16 @@ class User(db.Document, SubscribableMixin, CommonMixin):
         for email in self.emails:
             if email.primary:
                 return email
+
+    @property
+    def avatar_lg(self):
+        # Set your variables here
+        default = "http://www.example.com/default.jpg"
+        size = 180
+
+        # construct the url
+        gravatar_url = "http://www.gravatar.com/avatar/" + hashlib.md5(self.primary_email.lower()).hexdigest() + "?"
+        gravatar_url += urllib.urlencode({'d':default, 's':str(size)})
 
     @classmethod
     def create_user(cls, username, password, email_address):

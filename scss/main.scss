@@ -1,3 +1,4 @@
+@import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700|Raleway:400,700);
 @import "compass/css3/images";
 @import "compass/css3/text-shadow";
 
@@ -127,7 +128,7 @@ tr.record-table {
 /* Header */
 /******************************************/
 .logo {
-  padding:9px 20px 5px 20px;
+  padding:9px 20px 5px 15px;
 }
 
 .green {
@@ -142,7 +143,14 @@ ul.nav-pills {
     line-height:30px;
     a {
       border-radius:0px;
+      color: #000000;
+      &:hover,
+      &:focus{
+        background-color:none;
+      }
     }
+    font-size:18pt;
+    font-weight:normal;
   }
 }
 

@@ -146,6 +146,7 @@ def before_request():
 def user_loader(id):
     return User.objects.get(username=id)
 
-from featurelet import views, models, api
+from . import monkey_patch
+from . import api, views, models
 app.register_blueprint(views.main)
 app.register_blueprint(api.api, url_prefix='/api')

@@ -6,6 +6,7 @@ from featurelet.models import User, Project, Improvement, UserSubscriber, Projec
 from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm
 
 import json
+import bson
 import mongoengine
 import os
 import sys
@@ -99,6 +100,37 @@ def update_user():
 
     return jsonify(success=True)
 
+@api.route("/improvements", methods=['GET'])
+@api.route("/improvements/<fltr>", methods=['GET'])
+def get_improvements(fltr=None):
+    js = request.json
+
+    # try to access the improvements with identifying information
+    try:
+        if fltr:
+            coll = Improvement._get_collection()
+            # Run the fulltext search command manually
+            results = coll.database.command(
+                "text",
+                coll.name,
+                search=fltr,
+                limit=15)
+            improvements = []
+            for res in results['results']:
+                prop = Improvement(**res['obj']).jsonize(raw=1, get_abs_url=1)
+                res['obj'].update(prop)
+                improvements.append(res['obj'])
+            # Serialize the bson directly, rather than proxying to improvement
+            # objects
+            return bson.json_util.dumps(improvements)
+        else:
+            improvements = Improvement.objects(project=js['project'])
+    except KeyError:
+        return incorrect_syntax()
+    except Improvement.DoesNotExist:
+        return resource_not_found()
+
+    return improvements.to_json()
 
 @api.route("/improvement", methods=['POST'])
 @login_required
