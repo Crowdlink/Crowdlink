@@ -102,8 +102,9 @@ def update_user():
 
 @api.route("/improvements", methods=['GET'])
 def get_improvements():
-    js = request.json
-    fltr = js.pop('filter', None)
+    args = request.args
+    fltr = args.get('filter', None)
+    limit = args.get('limit', 10)
 
     # try to access the improvements with identifying information
     try:
@@ -117,14 +118,19 @@ def get_improvements():
                 limit=15)
             improvements = []
             for res in results['results']:
-                prop = Improvement(**res['obj']).jsonize(raw=1, get_abs_url=1)
+                prop = Improvement(**res['obj']).jsonize(
+                    raw=1,
+                    get_abs_url=1,
+                    vote_status=1,
+                    project=1)
                 res['obj'].update(prop)
+                print res['obj']
                 improvements.append(res['obj'])
             # Serialize the bson directly, rather than proxying to improvement
             # objects
             return bson.json_util.dumps(improvements)
         else:
-            improvements = Improvement.objects(project=js['project'])
+            improvements = Improvement.objects(project=args['project'])[:limit]
     except KeyError:
         return incorrect_syntax()
     except Improvement.DoesNotExist:

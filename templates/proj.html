@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
 {% block title %}Home{% endblock %}
+{% block post_script %}
+<script type="text/javascript" charset="utf-8">
+$(function () {
+  window.improvements.reset({{project.get_improvements().to_json()|safe}})
+});
+</script>
+{% endblock %}
 {% block content %}
 <div class="row">
   <div class="col-md-8 no-gutter">
@@ -35,9 +42,6 @@
     </div>
   </div>
 </div>
-<script type="text/html" id="template-improvement">
-  <li><%= brief %></li>
-</script>
 <div class="row">
   <h3>Improvements</h3>
   <div class="input-group">
@@ -47,33 +51,30 @@
         data-project="{{project.id}}"
         class="form-control" />
     </form>
+  <table class="table table-hover" ng-controller="ImpCtrl">
+    <tbody>
+     <tr ng-repeat="imp in imps">
+      <td class="fit-width">
+        <a data-vote-status="{{ vote_status }}"
+           data-url-key="{{ url_key }}"
+           data-project="{{ project }}"
+           data-type="vote"
+           class="btn btn-xs btn-info">
+          <span class="false-div">Vote&nbsp; <i class="fa fa-plus"></i></span>
+          <span class="true-div">Unvote&nbsp; <i class="fa fa-minus"></i></span>
+        </a>
+        &nbsp;&nbsp;
+        <b><%= imp.attributes.votes %> votes</b>
+      </td>
+      <td><a href="<%= imp.attributes.get_abs_url %>"><% imp.attributes.brief %></a></td>
+    </tr>
+    <% }); %>
+    </tbody>
+  </table>
     <span class="btn btn-info input-group-addon">
       <i class="fa fa-search"></i>
     </span>
   </div><!-- /input-group -->
-  <table class="table table-hover">
-    <tbody>
-      {% for imp in project.get_improvements(): %}
-      <tr>
-        <td class="fit-width">
-          <a data-json="{{imp.jsonize(url_key=1, project=1, vote_status=1)}}"
-            data-type="vote"
-            class="btn btn-xs btn-info">
-            <span class="false-div">Vote&nbsp; <i class="fa fa-plus"></i></span>
-            <span class="true-div">Unvote&nbsp; <i class="fa fa-minus"></i></span>
-          </a>
-          &nbsp;&nbsp;
-          <b>{{imp.votes}} vote{{imp.votes|plural}}</b>
-        </td>
-        <td><a href="{{imp.get_abs_url()}}">{{imp.brief}}</a></td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="2"><b>No improvements to view, you should suggest one!</b></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
 </div>
 {% if project.events %}
 <div class="row">
