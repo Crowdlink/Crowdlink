@@ -261,12 +261,12 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
             return False
 
         # send a notification to all subscribers that the notification is left
-        inotif = events.ImprovementNotif(user=user.username, imp=imp)
+        inotif = ImprovementNotif(user=user.username, imp=imp)
         inotif.distribute()
 
     def add_comment(self, body, user):
         # Send the actual comment to the improvement event queue
-        c = events.Comment(user=user.username,
+        c = Comment(user=user.username,
                     body=body)
         distribute_event(self, c, "comment", self_send=True)
 

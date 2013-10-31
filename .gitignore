@@ -1,8 +1,6 @@
 # compiled assets
 static/css/*
 static/js/*
-static/lib/js/*
-static/lib/css/*
 
 *.py[cod]
 *.swp

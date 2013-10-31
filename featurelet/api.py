@@ -101,9 +101,9 @@ def update_user():
     return jsonify(success=True)
 
 @api.route("/improvements", methods=['GET'])
-@api.route("/improvements/<fltr>", methods=['GET'])
-def get_improvements(fltr=None):
+def get_improvements():
     js = request.json
+    fltr = js.pop('filter', None)
 
     # try to access the improvements with identifying information
     try:
@@ -172,11 +172,8 @@ def update_improvement():
     return jsonify(success=True)
 
 def incorrect_syntax(message='Incorrect syntax', **kwargs):
-    response = jsonify(code=400, message=message, **kwargs)
-    response.status_code = 400
-    return response
+    print "testing"
+    return jsonify(code=400, message=message, **kwargs)
 
 def resource_not_found(message='Asset does not exist', **kwargs):
-    response = jsonify(code=404, message=message, **kwargs)
-    response.status_code = 404
-    return response
+    return jsonify(code=404, message=message, **kwargs)
