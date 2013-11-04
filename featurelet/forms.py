@@ -74,7 +74,7 @@ class ModelForm(Form):
         replicate_validators(self)
 
 class RegisterForm(ModelForm):
-    username = nodes.Entry(model=User.username)
+    username = nodes.Entry(model=User.username, validators=validators.Username())
     password = nodes.Password(validators=UnicodeString(minval=5, maxval=32))
     password_confirm = nodes.Password(title="Confirm")
     _valid_pass = Check(validators.Matching(message="Password fields must match"), "password", "password_confirm")
