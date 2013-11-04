@@ -102,6 +102,15 @@ class RegisterForm(ModelForm):
         else:
             self.username.add_msg({'message': 'Username already in use!'})
 
+        # Check unique email address
+        try:
+            email = User.objects.get(__raw__={'emails': {'$elemMatch': {'address': self.email.data}}})
+        except User.DoesNotExist:
+            pass
+        else:
+            self.email.add_msg({'message': 'Email address already in use!'})
+
+
 
 class PasswordForm(Form):
     title = "Password"
