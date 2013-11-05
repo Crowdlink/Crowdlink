@@ -1,15 +1,4 @@
 $(=>
-  # We extend the Backbone.Model prototype to build our own
-  APP.Models.Improvement = Backbone.Model.extend(
-
-    # We can pass it default values.
-    defaults:
-      brief: null
-      url_key: null
-      project: null
-      url_html: null
-  )
-
   APP.Collections.ImpCollection = Backbone.Collection.extend(
     model: APP.Models.Improvement
     url: window.api_path + 'improvements'

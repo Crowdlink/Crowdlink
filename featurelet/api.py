@@ -1,9 +1,10 @@
 from flask import Blueprint, request, g, current_app, jsonify, abort
 from flask.ext.login import login_required, logout_user, current_user
 
-from featurelet import root, lm, app
-from featurelet.models import User, Project, Improvement, UserSubscriber, ProjectSubscriber, ImpSubscriber
-from featurelet.forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm
+from . import root, lm, app
+from .models import User, Project, Improvement, UserSubscriber, ProjectSubscriber, ImpSubscriber
+from .forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm
+from .lib import get_json_joined
 
 import json
 import bson
@@ -100,14 +101,15 @@ def update_user():
 
     return jsonify(success=True)
 
-@api.route("/improvements", methods=['GET'])
+@api.route("/improvement", methods=['GET'])
 def get_improvements():
     args = request.args
     fltr = args.get('filter', None)
-    limit = args.get('limit', 10)
+    limit = args.get('limit', 15)
 
     # try to access the improvements with identifying information
     try:
+        # If the user is running a fulltext search
         if fltr:
             coll = Improvement._get_collection()
             # Run the fulltext search command manually
@@ -115,28 +117,27 @@ def get_improvements():
                 "text",
                 coll.name,
                 search=fltr,
-                limit=15)
+                limit=limit)
             improvements = []
             for res in results['results']:
+                # Kinda hacky. We make an in memory improvement to generate
+                # properties and join them in for return
                 prop = Improvement(**res['obj']).jsonize(
                     raw=1,
-                    get_abs_url=1,
-                    vote_status=1,
-                    project=1)
+                    **Improvement.standard_join)
                 res['obj'].update(prop)
-                print res['obj']
                 improvements.append(res['obj'])
             # Serialize the bson directly, rather than proxying to improvement
             # objects
             return bson.json_util.dumps(improvements)
+        # otherwise, just dump the project results back
         else:
-            improvements = Improvement.objects(project=args['project'])[:limit]
+            return get_json_joined(Improvement.objects(project=args['project'])[:limit])
     except KeyError:
         return incorrect_syntax()
     except Improvement.DoesNotExist:
         return resource_not_found()
 
-    return improvements.to_json()
 
 @api.route("/improvement", methods=['POST'])
 @login_required

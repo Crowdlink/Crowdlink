@@ -1,19 +1,22 @@
 'use strict'
-improvementApp = angular.module("improvementApp", ['improvementServices', 'improvementControllers'])
+mainApp = angular.module("mainApp", ['mainServices', 'mainControllers'])
 # Avoid collision with Jinja templates
-improvementApp.config ($interpolateProvider) ->
+mainApp.config ($interpolateProvider) ->
   $interpolateProvider.startSymbol "{[{"
   $interpolateProvider.endSymbol "}]}"
 
-improvementServices = angular.module("improvementServices", ["ngResource"])
-improvementServices.factory("ImpService", ['$resource', ($resource) ->
+mainServices = angular.module("mainServices", ["ngResource"])
+mainServices.factory("ImpService", ['$resource', ($resource) ->
   $resource window.api_path + "improvement", {},
     update:
       method: "POST"
+    query:
+      method: "GET"
+      isArray: true
 ])
 
-improvementControllers = angular.module("improvementControllers", [])
-improvementControllers.controller('editBriefController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
+mainControllers = angular.module("mainControllers", [])
+mainControllers.controller('editBriefController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
     $scope.init = (id, brief) ->
         $scope.id = id
         $scope.saving = false
@@ -51,7 +54,7 @@ improvementControllers.controller('editBriefController', ['$scope', '$timeout', 
         $scope.editing = !$scope.editing
 ])
 
-improvementControllers.controller('editDescController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
+mainControllers.controller('editDescController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
     $scope.init = (id, desc_md, desc) ->
         $scope.id = id
         $scope.saving = false
@@ -90,4 +93,31 @@ improvementControllers.controller('editDescController', ['$scope', '$timeout', '
     $scope.toggle = ->
         $scope.prev_desc = $scope.desc
         $scope.editing = !$scope.editing
+] )
+
+mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
+    $scope.init = (project, imps) ->
+        $scope.project = project
+        $scope.imps = JSON.parse(unescape(imps))
+
+    $scope.search = ->
+        $scope.saving = true
+        ImpService.query(
+            filter: $scope.filter
+            project: $scope.project
+        ,(value) -> # Function to be run when function returns
+            if 'success' not of value
+                $timeout ->
+                    $scope.imps = value
+                , 100
+            else
+                if 'message' of value
+                    text = "Error communicating with server. #{value.message}"
+                else
+                    text = "There was an unknown error committing your action. #{value.code}"
+                noty
+                    text: text
+                    type: 'error'
+                    timout: 2000
+        )
 ])

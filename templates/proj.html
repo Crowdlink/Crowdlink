@@ -1,13 +1,6 @@
 {% extends "base.html" %}
 
 {% block title %}Home{% endblock %}
-{% block post_script %}
-<script type="text/javascript" charset="utf-8">
-$(function () {
-  window.improvements.reset({{project.get_improvements().to_json()|safe}})
-});
-</script>
-{% endblock %}
 {% block content %}
 <div class="row">
   <div class="col-md-8 no-gutter">
@@ -42,39 +35,29 @@ $(function () {
     </div>
   </div>
 </div>
-<div class="row">
+<div class="row" ng-app="mainApp" ng-controller="projectImpSearch">
   <h3>Improvements</h3>
   <div class="input-group">
-    <form>
-    <input id="improvement_search"
-        type="text"
-        data-project="{{project.id}}"
-        class="form-control" />
-    </form>
-  <table class="table table-hover" ng-controller="ImpCtrl">
+    <input type="text" ng-model="filter" ng-change="search()" class="form-control" />
+    <span class="btn btn-info input-group-addon">
+      <i ng-click="search()" class="fa fa-search"></i>
+    </span>
+  </div><!-- /input-group -->
+    <table class="table table-hover" ng-init="init('{{project.id}}', '{{project.get_improvements().to_json()|urlencode}}')">
     <tbody>
      <tr ng-repeat="imp in imps">
       <td class="fit-width">
-        <a data-vote-status="{{ vote_status }}"
-           data-url-key="{{ url_key }}"
-           data-project="{{ project }}"
-           data-type="vote"
-           class="btn btn-xs btn-info">
-          <span class="false-div">Vote&nbsp; <i class="fa fa-plus"></i></span>
-          <span class="true-div">Unvote&nbsp; <i class="fa fa-minus"></i></span>
+        <a class="btn btn-xs btn-info" ng-click="vote()">
+          <span ng-hide="imp.vote_status">Vote&nbsp; <i class="fa fa-plus"></i></span>
+          <span ng-hide="!imp.vote_status">Unvote&nbsp; <i class="fa fa-minus"></i></span>
         </a>
         &nbsp;&nbsp;
-        <b><%= imp.attributes.votes %> votes</b>
+        <b>{[{ imp.votes }]} votes</b>
       </td>
-      <td><a href="<%= imp.attributes.get_abs_url %>"><% imp.attributes.brief %></a></td>
+      <td><a href="{[{ imp.get_abs_url }]}">{[{ imp.brief }]}</a></td>
     </tr>
-    <% }); %>
     </tbody>
   </table>
-    <span class="btn btn-info input-group-addon">
-      <i class="fa fa-search"></i>
-    </span>
-  </div><!-- /input-group -->
 </div>
 {% if project.events %}
 <div class="row">

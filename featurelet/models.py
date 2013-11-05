@@ -39,6 +39,7 @@ class SubscribableMixin(object):
                 return False  # err, shouldn't have been present
         self.subscribers.append(sub_obj)
 
+
     @property
     def subscribed(self):
         # search the list of subscribers looking for the current user
@@ -126,7 +127,10 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     events = db.ListField(db.GenericEmbeddedDocumentField())
     subscribers = db.ListField(db.EmbeddedDocumentField('ImpSubscriber'))
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True},
+                        {'fields': {'brief': 'text'}}
                         ]}
+
+    standard_join = {'get_abs_url': 1, 'vote_status': 1, 'project': 1}
 
     def get_abs_url(self):
         return url_for('main.view_improvement',
@@ -185,6 +189,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     #def to_json(self):
     #    """ Define how a straight json serialization is generated """
     #    return jsonize(raw=1, url_key=1, project=1, get_abs_url=1, brief=1)
+Improvement._get_collection().ensure_index([('brief', 'text')])
 
 
 class Project(db.Document, SubscribableMixin, CommonMixin):
@@ -249,8 +254,11 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
                        username=self.maintainer.username,
                        url_key=self.url_key)
 
-    def get_improvements(self):
-        return Improvement.objects(project=self)
+    def get_improvements(self, json=False, join=None):
+        vals = Improvement.objects(project=self)
+        if json:
+            return get_json_joined(vals, join=None)
+        return vals
 
     def add_improvement(self, imp, user):
         imp.create_key()

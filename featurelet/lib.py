@@ -5,6 +5,24 @@ from featurelet.models import User
 
 import sys
 import mongoengine
+import json
+from bson.json_util import _json_convert
+
+def get_json_joined(queryset, join=None):
+    lst = []
+
+    # get our standard join dictionary
+    if join:
+        join_dct = join
+    else:
+        join_dct = queryset[0].standard_join
+
+    for obj, bson in zip(queryset, queryset.as_pymongo()):
+        dct = _json_convert(bson)
+        dct.update(obj.jsonize(raw=1, **join_dct))
+        lst.append(dct)
+
+    return json.dumps(lst)
 
 def catch_error_graceful(form=None, flash=False):
     """ This is a utility function that handles exceptions that might be omitted
