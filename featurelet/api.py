@@ -170,12 +170,20 @@ def update_improvement():
         if js.pop('render_md', True):
             return_val['md'] = imp.md
 
-    status = js.pop('subscribed', None)
-    if status == True:
+    sub_status = js.pop('subscribed', None)
+    if sub_status == True:
         # Subscription logic, will need to be expanded to allow granular selection
         subscribe = ImpSubscriber(user=g.user.username)
         imp.subscribe(subscribe)
-    elif status == False:
+    elif sub_status == False:
+        imp.unsubscribe(g.user.username)
+
+    open_status = js.pop('subscribed', None)
+    if sub_status == True:
+        # Subscription logic, will need to be expanded to allow granular selection
+        subscribe = ImpSubscriber(user=g.user.username)
+        imp.subscribe(subscribe)
+    elif sub_status == False:
         imp.unsubscribe(g.user.username)
 
     try:

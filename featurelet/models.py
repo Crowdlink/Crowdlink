@@ -444,4 +444,4 @@ class User(db.Document, SubscribableMixin, CommonMixin):
 
 
 from .events import (ImprovementNotif, CommentNotif, Comment)
-from .lib import (catch_error_graceful)
+from .lib import (catch_error_graceful, get_json_joined)

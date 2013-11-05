@@ -16,84 +16,55 @@ mainServices.factory("ImpService", ['$resource', ($resource) ->
 ])
 
 mainControllers = angular.module("mainControllers", [])
-mainControllers.controller('editBriefController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
-    $scope.init = (id, brief) ->
+mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
+    $scope.init = (id, brief, desc_md, desc) ->
         $scope.id = id
-        $scope.saving = false
         $scope.brief = brief
-        $scope.editing = false
+        $scope.brief =
+          val: unescape(brief)
+          editing: false
+          saving: false
+          prev: ""
+        $scope.desc =
+          val: unescape(desc)
+          md: unescape(desc_md)
+          editing: false
+          saving: false
+          prev: ""
 
-    $scope.revert = ->
-        $scope.brief = $scope.prev_brief
-        $scope.toggle()
+    $scope.revert = (s) ->
+        s.val = s.prev
+        $scope.toggle(s)
 
-    $scope.save = ->
-        $scope.saving = true
+    $scope.save = (s) ->
+        s.saving = true
         ImpService.update(
-            brief: $scope.brief
-            id: $scope.id
-        ,(value) -> # Function to be run when function returns
-            if value.success
-                $timeout ->
-                    $scope.saving = false
-                    $scope.editing = false
-                , 1000
-            else
-                if 'message' of value
-                    text = "Error communicating with server. #{value.message}"
-                else
-                    text = "There was an unknown error committing your action. #{error.code}"
-                noty
-                    text: text
-                    type: 'error'
-                    timout: 2000
-        )
-
-    $scope.toggle = ->
-        $scope.prev_brief = $scope.brief
-        $scope.editing = !$scope.editing
-])
-
-mainControllers.controller('editDescController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
-    $scope.init = (id, desc_md, desc) ->
-        $scope.id = id
-        $scope.saving = false
-        $scope.editing = false
-        $scope.desc = unescape(desc)
-        $scope.desc_md = unescape(desc_md)
-
-    $scope.revert = ->
-        $scope.desc = $scope.prev_desc
-        $scope.toggle()
-
-    $scope.save = ->
-        $scope.saving = true
-        ImpService.update(
-            description: $scope.desc
-            id: $scope.id
+            brief: $scope.brief.val
+            description: $scope.desc.val
             render_md: true
+            id: $scope.id
         ,(value) -> # Function to be run when function returns
             if value.success
-                $scope.desc_md = value.md
+                $scope.desc.md = value.md
                 $timeout ->
-                    $scope.saving = false
-                    $scope.editing = false
+                    s.saving = false
+                    s.editing = false
                 , 1000
             else
                 if 'message' of value
                     text = "Error communicating with server. #{value.message}"
                 else
-                    text = "There was an unknown error committing your action. #{error.code}"
+                    text = "There was an unknown error committing your action. #{value.code}"
                 noty
                     text: text
                     type: 'error'
                     timout: 2000
         )
 
-    $scope.toggle = ->
-        $scope.prev_desc = $scope.desc
-        $scope.editing = !$scope.editing
-] )
+    $scope.toggle = (s) ->
+        s.prev = s.val
+        s.editing = !s.editing
+])
 
 mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
     $scope.init = (project, imps) ->
