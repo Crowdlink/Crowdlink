@@ -142,13 +142,18 @@ def get_improvements():
 @login_required
 def update_improvement():
     js = request.json
+    return_val = {}
 
     # try to access the improvement with identifying information
     try:
-        proj_id = js.pop('project')
-        url_key = js.pop('url_key')
-        imp = Improvement.objects.get(project=proj_id,
-                                    url_key=url_key)
+        proj_id = js.pop('project', None)
+        url_key = js.pop('url_key', None)
+        if url_key and proj_id:
+            imp = Improvement.objects.get(project=proj_id,
+                                          url_key=url_key)
+        else:
+            imp_id = js.pop('id')
+            imp = Improvement.objects.get(id=imp_id)
     except KeyError:
         return incorrect_syntax()
     except Improvement.DoesNotExist:
@@ -161,6 +166,8 @@ def update_improvement():
     desc = js.pop('description', None)
     if desc:
         imp.description = desc
+        if js.pop('render_md', True):
+            return_val['md'] = imp.md
 
     status = js.pop('subscribed', None)
     if status == True:
@@ -175,10 +182,11 @@ def update_improvement():
     except mongoengine.errors.ValidationError as e:
         return jsonify(success=False, validation_errors=e.to_dict())
 
-    return jsonify(success=True)
+    # return a true value to the user
+    return_val.update({'success': True})
+    return jsonify(return_val)
 
 def incorrect_syntax(message='Incorrect syntax', **kwargs):
-    print "testing"
     return jsonify(code=400, message=message, **kwargs)
 
 def resource_not_found(message='Asset does not exist', **kwargs):

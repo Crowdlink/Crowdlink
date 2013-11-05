@@ -93,6 +93,17 @@ def plural(value):
     else:
         return ''
 
+@app.template_filter('attrencode')
+def attr_encode(value):
+    html_escape_table = {
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&apos;",
+        ">": "&gt;",
+        "<": "&lt;",
+    }
+    return "".join(html_escape_table.get(c,c) for c in value)
+
 @app.template_filter('date_ago')
 def format_date_ago(time):
     """
@@ -148,5 +159,5 @@ def user_loader(id):
 
 from . import monkey_patch
 from . import api, views, models
-app.register_blueprint(views.main)
 app.register_blueprint(api.api, url_prefix='/api')
+app.register_blueprint(views.main)

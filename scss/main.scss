@@ -12,6 +12,7 @@ $brand-success:         #1A9958;
 $brand-warning:         #F39C12;
 $brand-danger:          #E74C3C;
 $brand-info:            #3498DB;
+$img-lib-url: "/static/lib/img/";
 
 .header-col {
   padding:25px 40px;
@@ -246,7 +247,7 @@ body {
   width:22px; height:5px;
   margin-left:auto;
   margin-right:auto;
-  background-image:url(images/handle.png);
+  background-image:url(#{$img-lib-url}handle.png);
   cursor:n-resize;
 }
 /***************************************************************************************/
@@ -260,7 +261,7 @@ body {
   display:block;
 }
 .markItUpHeader ul .markItUpDropMenu {
-  background:transparent url(images/menu.png) no-repeat 115% 50%;
+  background:transparent url(#{$img-lib-url}menu.png) no-repeat 115% 50%;
   margin-right:5px;
 }
 .markItUpHeader ul .markItUpDropMenu li {
@@ -279,7 +280,7 @@ body {
   border-bottom:1px solid #000;
 }
 .markItUpHeader ul ul .markItUpDropMenu {
-  background:#FFF url(images/submenu.png) no-repeat 100% 50%;
+  background:#FFF url(#{$img-lib-url}submenu.png) no-repeat 100% 50%;
 }
 .markItUpHeader ul .markItUpSeparator {
   margin:0 10px;
@@ -319,4 +320,55 @@ body {
 .markItUpHeader ul ul a:hover  {
   color:#FFF;
   background-color:#000;
+}
+/* Buttons!!!!!!!!!!!!!!!!! */
+.markItUp .markItUpButton1 a {
+  background-image:url(#{$img-lib-url}h1.png); 
+}
+.markItUp .markItUpButton2 a {
+  background-image:url(#{$img-lib-url}h2.png); 
+}
+.markItUp .markItUpButton3 a {
+  background-image:url(#{$img-lib-url}h3.png); 
+}
+.markItUp .markItUpButton4 a {
+  background-image:url(#{$img-lib-url}h4.png); 
+}
+.markItUp .markItUpButton5 a {
+  background-image:url(#{$img-lib-url}h5.png); 
+}
+.markItUp .markItUpButton6 a {
+  background-image:url(#{$img-lib-url}h6.png); 
+}
+
+.markItUp .markItUpButton7 a {
+  background-image:url(#{$img-lib-url}bold.png);
+}
+.markItUp .markItUpButton8 a {
+  background-image:url(#{$img-lib-url}italic.png);
+}
+
+.markItUp .markItUpButton9 a {
+  background-image:url(#{$img-lib-url}list-bullet.png);
+}
+.markItUp .markItUpButton10 a {
+  background-image:url(#{$img-lib-url}list-numeric.png);
+}
+
+.markItUp .markItUpButton11 a {
+  background-image:url(#{$img-lib-url}picture.png); 
+}
+.markItUp .markItUpButton12 a {
+  background-image:url(#{$img-lib-url}link.png);
+}
+
+.markItUp .markItUpButton13 a {
+  background-image:url(#{$img-lib-url}quotes.png);
+}
+.markItUp .markItUpButton14 a {
+  background-image:url(#{$img-lib-url}code.png);
+}
+
+.markItUp .preview a {
+  background-image:url(#{$img-lib-url}preview.png);
 }

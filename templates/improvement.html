@@ -10,32 +10,25 @@
     <li class="active">{{imp.brief}}</li>
   </ol>
 </div>
+<div ng-app="improvementApp">
 <div class="row">
   <div class="col-md-8 no-gutter">
     <h2>
       {% if can_edit %}
-      <span id="brief"
-          data-key="brief"
-          data-type="edit-trigger"
-          data-url-key="{{imp.url_key}}"
-          data-proj-id="{{imp.project.id}}"
-          id="improvement-brief-edit">
-          <span id="brief_edit" style="display:none;">
+      <span id="brief" ng-controller="editBriefController" ng-init="init('{{imp.id}}', '{{imp.brief}}')">
+          <span ng-show="editing" ng-hide="!editing">
             <div class="input-group">
-              <input id="brief_input"
-                  type="text"
-                  class="form-control" />
-              <span class="btn btn-info input-group-addon" id="brief_spinner" data-action="save_brief(t, key, display, revert);">
-                <i class="fa fa-save"></i>
+              <input type="text" class="form-control" ng-model="brief" />
+              <span class="btn btn-info input-group-addon" ng-click="save()">
+                <i class="fa fa-save" ng-hide="saving"></i>
+                <i class="fa fa-spinner fa-spin" ng-show="saving"></i>
               </span>
-              <span class="btn btn-primary input-group-addon" data-action="revert();">
-                <i class="fa fa-times-circle"></i>
-              </span>
-            </div><!-- /input-group --> 
+              <span class="btn btn-primary input-group-addon" ng-click="revert()"><i class="fa fa-times-circle"></i></span>
+            </div>
           </span>
-          <span id="brief_display">
-            <span id="brief_output">{{ imp.brief }}</span>&nbsp;
-            <small class="fa fa-edit icon-hover" data-action="edit();"></small>
+          <span ng-hide="editing" ng-show="!editing">
+            {[{ brief }]}&nbsp;
+            <small class="fa fa-edit icon-hover" ng-click="toggle()"></small>
           </span>
       </span>
       {% else %}
@@ -68,22 +61,34 @@
     ({{ imp.created_at|date_ago }})
   </h4>
   <br>
-  <div class="row well center" id="{{imp.url_key}}_{{imp.creator.username}}_display">
+  <div class="row well center">
       {% if can_edit %}
-      <i class="fa fa-edit fa-3x icon-hover pull-right" data-type="edit-trigger" data-show="{{imp.url_key}}_{{imp.creator.username}}"></i>
-      {% endif %}
+      <div ng-controller="editDescController" ng-init="init('{{imp.id}}', '{{imp.md|urlencode}}', '{{imp.description|urlencode}}')">
+        <div class="row col-lg-11" ng-show="editing" ng-hide="!editing">
+          <script type="text/javascript" >
+            $(document).ready(function() {
+              $(".markItUp").markItUp(mySettings);
+            });
+          </script>
+          <textarea class="markItUp" ng-model="desc">{[{desc}]}</textarea>
+          <span class="btn btn-info" ng-click="save()">
+            <i class="fa fa-save" ng-hide="saving"></i> &nbsp;Save
+            <i class="fa fa-spinner fa-spin" ng-show="saving"></i>
+          </span>
+          <span class="btn btn-primary" ng-click="revert()"><i class="fa fa-times-circle"></i> &nbsp;Discard</span>
+        </div>
+        <div ng-hide="editing" ng-show="!editing">
+          <i class="fa fa-edit fa-3x icon-hover pull-right" ng-click="toggle()"></i>
+          <span ng-bind-html-unsafe="desc_md"></span>
+        </div>
+      </div>
+      {% else %}
       {{imp.md|safe}}
+      {% endif %}
   </div>
   {% if can_edit %}
-  <div class="row col-lg-11" id="{{imp.url_key}}_{{imp.creator.username}}_edit" style="display:none;">
-    <script type="text/javascript" >
-      $(document).ready(function() {
-        $(".markItUp").markItUp(mySettings);
-      });
-    </script>
-    <textarea class="markItUp">{{imp.description}}</textarea>
-  </div>
   {% endif %}
+</div>
 </div>
 {% if events %}
 <div class="row">

@@ -41,15 +41,6 @@ $(=>
       @
   )
 
-
-  $("#improvement_search").keyup(->
-    t = $(this)
-    window.improvements.fetch(
-      data:
-        project: t.data('project')
-        filter: t.val()
-    )
-  )
   window.improvements = new APP.Collections.ImpCollection([])
   re_render = ->
     view = new APP.Views.TableView(
