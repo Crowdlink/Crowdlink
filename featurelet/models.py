@@ -109,6 +109,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     url_key = db.StringField(unique=True)
     project = db.ReferenceField('Project')
 
+    open = db.BooleanField(default=True)
     brief = db.StringField(max_length=512, min_length=3)
     description = db.StringField(min_length=15)
     creator = db.ReferenceField('User')
@@ -160,13 +161,13 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     def md(self):
         return markdown2.markdown(self.description)
 
-    def vote(self, user):
+    def set_vote(self, user):
         return Improvement.objects(project=self.project,
                             url_key=self.url_key,
                             vote_list__ne=user.username).\
                     update_one(add_to_set__vote_list=user.username, inc__votes=1)
 
-    def unvote(self, user):
+    def set_unvote(self, user):
         return Improvement.objects(
             project=self.project,
             url_key=self.url_key,
@@ -177,6 +178,22 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     @property
     def vote_status(self):
         return g.user in self.vote_list
+
+    def set_open(self):
+        """ Let the caller know if it was already set """
+        if self.open:
+            return False
+        else:
+            self.open = True
+            return True
+
+    def set_close(self):
+        """ Let the caller know if it was already set """
+        if not self.open:
+            return False
+        else:
+            self.open = False
+            return True
 
     def create_key(self):
         self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100]).lower()

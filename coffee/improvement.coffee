@@ -17,9 +17,10 @@ mainServices.factory("ImpService", ['$resource', ($resource) ->
 
 mainControllers = angular.module("mainControllers", [])
 mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
-    $scope.init = (id, brief, desc_md, desc) ->
+    $scope.init = (id, brief, desc_md, desc, status) ->
         $scope.id = id
         $scope.brief = brief
+        # data type edit templates
         $scope.brief =
           val: unescape(brief)
           editing: false
@@ -31,22 +32,29 @@ mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService'
           editing: false
           saving: false
           prev: ""
+        # toggle type templates
+        $scope.status =
+          val: status == 'True'
+          saving: false
 
     $scope.revert = (s) ->
         s.val = s.prev
         $scope.toggle(s)
 
-    $scope.save = (s) ->
+    $scope.save = (s, callback) ->
         s.saving = true
         ImpService.update(
             brief: $scope.brief.val
             description: $scope.desc.val
+            open: $scope.status.send_val
             render_md: true
             id: $scope.id
         ,(value) -> # Function to be run when function returns
             if value.success
                 $scope.desc.md = value.md
                 $timeout ->
+                    if callback
+                      callback()
                     s.saving = false
                     s.editing = false
                 , 1000
@@ -60,6 +68,12 @@ mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService'
                     type: 'error'
                     timout: 2000
         )
+
+    $scope.swap_save = (s) ->
+      s.send_val = !s.val
+      $scope.save(s, ->
+        s.val = !s.val
+      )
 
     $scope.toggle = (s) ->
         s.prev = s.val

@@ -10,7 +10,7 @@
     <li class="active">{{imp.brief}}</li>
   </ol>
 </div>
-<div ng-app="mainApp" ng-controller="editController" ng-init="init('{{imp.id}}', '{{imp.brief|urlencode}}', '{{imp.md|urlencode}}', '{{imp.description|urlencode}}')">
+<div ng-app="mainApp" ng-controller="editController" ng-init="init('{{imp.id}}', '{{imp.brief|urlencode}}', '{{imp.md|urlencode}}', '{{imp.description|urlencode}}', '{{imp.open}}')">
   <div class="row">
     <div class="col-md-8 no-gutter">
       <h2>
@@ -35,8 +35,8 @@
       </h2>
     </div>
     <div class="col-md-4 no-gutter">
-      <div class="btn-group-vertical pull-right" style="width:50%;">
-        <a class="btn btn-default"
+      <div class="pull-right" style="width:50%;">
+        <a class="btn btn-default fill-link"
             data-type="watch"
             data-json="{{imp.jsonize(url_key=1, project=1, subscribed=1)}}"
             data-url="improvement">
@@ -45,10 +45,24 @@
         </a>
         <a data-json="{{imp.jsonize(url_key=1, project=1, vote_status=1)}}"
             data-type="vote"
-            class="btn btn-info">
+            class="btn btn-info fill-link">
           <span class="false-div"><i class="fa fa-plus"></i> &nbsp;Vote</span>
           <span class="true-div"><i class="fa fa-minus"></i> &nbsp;Unvote</span>
         </a>
+        {% if can_edit %}
+        <a class="btn fill-link"
+            ng-class="{'btn-danger': status.val, 'btn-success': !status.val}"
+            ng-click="swap_save(status)">
+          <span ng-show="status.val">
+            <i class="fa fa-minus-circle" ng-hide="status.saving"></i>
+            <i class="fa fa-spinner fa-spin" ng-show="status.saving"></i> &nbsp;Close
+          </span>
+          <span ng-hide="status.val">
+            <i class="fa fa-plus-circle" ng-hide="status.saving"></i>
+            <i class="fa fa-spinner fa-spin" ng-show="status.saving"></i> &nbsp;Open
+          </span>
+        </a>
+        {% endif %}
       </div>
     </div>
   </div>

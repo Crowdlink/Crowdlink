@@ -28,12 +28,12 @@ def vote_api():
     except Improvement.DoesNotExist:
         return resource_not_found()
 
-    if vote_status and not imp.vote(g.user):
+    if vote_status and not imp.set_vote(g.user):
         if imp.vote_status:
             return jsonify(success=False, code='already_voted', disp="Already voted!")
         else:
             return jsonify(success=False)
-    elif not vote_status and not imp.unvote(g.user):
+    elif not vote_status and not imp.set_unvote(g.user):
         if not imp.vote_status:
             return jsonify(success=False, code='already_voted', disp="Haven't voted yet")
         else:
@@ -178,13 +178,11 @@ def update_improvement():
     elif sub_status == False:
         imp.unsubscribe(g.user.username)
 
-    open_status = js.pop('subscribed', None)
-    if sub_status == True:
-        # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = ImpSubscriber(user=g.user.username)
-        imp.subscribe(subscribe)
-    elif sub_status == False:
-        imp.unsubscribe(g.user.username)
+    open_status = js.pop('open', None)
+    if open_status == True:
+        imp.set_open()
+    elif open_status == False:
+        imp.set_close()
 
     try:
         imp.save()

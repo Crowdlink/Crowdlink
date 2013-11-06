@@ -47,7 +47,9 @@
     <tbody>
      <tr ng-repeat="imp in imps">
       <td class="fit-width">
-        <a class="btn btn-xs btn-info" ng-click="vote()">
+        <a class="btn btn-xs"
+            ng-class="{'btn-success': imp.vote_status, 'btn-info': !imp.vote_status}"
+            ng-click="vote()">
           <span ng-hide="imp.vote_status">Vote&nbsp; <i class="fa fa-plus"></i></span>
           <span ng-hide="!imp.vote_status">Unvote&nbsp; <i class="fa fa-minus"></i></span>
         </a>
