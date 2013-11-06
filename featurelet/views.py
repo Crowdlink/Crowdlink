@@ -164,7 +164,8 @@ def view_improvement(user=None, purl_key=None, url_key=None):
     return render_template('improvement.html',
                            imp=imp,
                            can_edit=imp.can_edit_imp(g.user),
-                           comment_form=form.render())
+                           comment_form=form.render(),
+                           Improvement=Improvement)
 
 
 @main.route("/new_project", methods=['GET', 'POST'])

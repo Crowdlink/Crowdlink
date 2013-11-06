@@ -14,6 +14,7 @@ requires = ['pymongo',
             'cryptacular',
             'Flask-OAuthlib',
             'markdown2',
+            'enum',
             'Babel']
 
 setup(name='featurelet',

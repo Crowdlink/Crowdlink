@@ -1,6 +1,7 @@
 from flask import url_for, session, g, current_app, flash
 
 from . import db, github
+from enum import Enum
 
 import cryptacular.bcrypt
 import datetime
@@ -104,12 +105,15 @@ class Comment(db.EmbeddedDocument):
 
 
 class Improvement(db.Document, SubscribableMixin, CommonMixin):
+    CloseVals = Enum('Completed', 'Duplicate', 'Won\'t Fix', 'Other')
+
     id = db.ObjectIdField()
     # key pair, unique identifier
     url_key = db.StringField(unique=True)
     project = db.ReferenceField('Project')
 
     open = db.BooleanField(default=True)
+    _close_reason = db.IntField(default=CloseVals.Other.index)
     brief = db.StringField(max_length=512, min_length=3)
     description = db.StringField(min_length=15)
     creator = db.ReferenceField('User')
@@ -133,6 +137,14 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
 
     standard_join = {'get_abs_url': 1, 'vote_status': 1, 'project': 1}
 
+    # Closevalue masking for render
+    @property
+    def close_reason(self):
+        return self.CloseVals[self._close_reason]
+    @close_reason.setter
+    def close_reason(self, newval):
+        self._close_reason = newval
+
     def get_abs_url(self):
         return url_for('main.view_improvement',
                        purl_key=self.project.url_key,
@@ -141,7 +153,6 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
 
     def can_edit_imp(self, user):
         return user == self.creator or self.project.can_edit_imp(user)
-
 
     def gh_desync(self, flatten=False):
         """ Used to disconnect an improvement from github. Really just a

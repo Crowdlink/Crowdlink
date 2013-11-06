@@ -10,7 +10,7 @@
     <li class="active">{{imp.brief}}</li>
   </ol>
 </div>
-<div ng-app="mainApp" ng-controller="editController" ng-init="init('{{imp.id}}', '{{imp.brief|urlencode}}', '{{imp.md|urlencode}}', '{{imp.description|urlencode}}', '{{imp.open}}')">
+<div ng-app="mainApp" ng-controller="editController" ng-init="init('{{imp.id}}', '{{imp.brief|urlencode}}', '{{imp.md|urlencode}}', '{{imp.description|urlencode}}', '{{imp.open}}', '{{imp._close_reason}}')">
   <div class="row">
     <div class="col-md-8 no-gutter">
       <h2>
@@ -62,6 +62,17 @@
             <i class="fa fa-spinner fa-spin" ng-show="status.saving"></i> &nbsp;Open
           </span>
         </a>
+        {% if not imp.open %}
+        <div class="btn-group-vertical">
+          {% for val in Improvement.CloseVals: %}
+          <label class="btn"
+            ng-class="{true: 'active btn-info', false: 'btn-default'}[close_reason.val=={{val.index}}]">
+            <input type="radio" ng-model="close_reason.val" ng-value="{{val.index}}" class="hide">
+            {{ val }}
+          </label>
+          {% endfor %}
+        </div>
+        {% endif %}
         {% endif %}
       </div>
     </div>

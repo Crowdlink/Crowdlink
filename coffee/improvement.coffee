@@ -10,14 +10,16 @@ mainServices.factory("ImpService", ['$resource', ($resource) ->
   $resource window.api_path + "improvement", {},
     update:
       method: "POST"
+      timeout: 5000
     query:
       method: "GET"
+      timeout: 5000
       isArray: true
 ])
 
 mainControllers = angular.module("mainControllers", [])
 mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
-    $scope.init = (id, brief, desc_md, desc, status) ->
+    $scope.init = (id, brief, desc_md, desc, status, close_reason) ->
         $scope.id = id
         $scope.brief = brief
         # data type edit templates
@@ -35,6 +37,10 @@ mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService'
         # toggle type templates
         $scope.status =
           val: status == 'True'
+          saving: false
+        # toggle type templates
+        $scope.close_reason =
+          val: close_reason
           saving: false
 
     $scope.revert = (s) ->
@@ -67,6 +73,7 @@ mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService'
                     text: text
                     type: 'error'
                     timout: 2000
+                s.saving = false
         )
 
     $scope.swap_save = (s) ->

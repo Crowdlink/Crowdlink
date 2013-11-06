@@ -4,6 +4,12 @@
 
 @import url("//fonts.googleapis.com/css?family=Raleway:400,700");
 
+.btn-shadow(@color) {
+	#gradient > .vertical-three-colors(lighten(@color, 8%), @color, 60%, darken(@color, 4%));
+	filter: none;
+	border-bottom: 1px solid darken(@color, 10%);
+}
+
 // Navbar =====================================================================
 
 .navbar {
@@ -21,6 +27,47 @@
 }
 
 // Buttons ====================================================================
+.btn {
+
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+
+  .caret {
+    border-top-color: #fff;
+  }
+}
+
+.btn-default {
+  
+  .btn-shadow(@btn-default-bg);
+
+  .caret {
+    border-top-color: @text-color;
+  }
+}
+
+.btn-default {
+  .btn-shadow(@btn-default-bg);
+}
+
+.btn-primary {
+  .btn-shadow(@btn-primary-bg);
+}
+
+.btn-success {
+  .btn-shadow(@btn-success-bg);
+}
+
+.btn-info {
+  .btn-shadow(@btn-info-bg);
+}
+
+.btn-warning {
+  .btn-shadow(@btn-warning-bg);
+}
+
+.btn-danger {
+  .btn-shadow(@btn-danger-bg);
+}
 
 // Typography =================================================================
 

@@ -82,7 +82,7 @@ $(=>
   $("a[data-type='vote']").pover_ajax(
     url: 'vote'
     switch_key: 'vote_status'
-    true_class: 'btn-success'
+    true_class: 'btn-info active'
     false_class: 'btn-info'
     true_div_sel: '.true-div'
     false_div_sel: '.false-div'
@@ -90,8 +90,8 @@ $(=>
 
   $("[data-type='watch']").pover_ajax(
     switch_key: 'subscribed'
-    true_class: 'btn-info'
-    false_class: 'btn-default'
+    true_class: 'btn-info active'
+    false_class: 'btn-info'
     true_div_sel: '.true-div'
     false_div_sel: '.false-div'
   )

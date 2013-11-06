@@ -134,8 +134,8 @@ Shows/Hides applicable content or classes for rendering the current state.
     else
       @element.find(@options.false_div_sel).show()
       @element.find(@options.true_div_sel).hide()
-      @element.addClass(@options.false_class)
       @element.removeClass(@options.true_class)
+      @element.addClass(@options.false_class)
 
   PoverAjax::getDefaults = ->
     PoverAjax.DEFAULTS
@@ -157,82 +157,5 @@ Shows/Hides applicable content or classes for rendering the current state.
 
   # Register our class on the jquery plugin
   $.fn.pover_ajax.Constructor = PoverAjax
-
-
-
-) jQuery
-
-
-
-###
-This plugin switches between an edit mode and display mode for editable fields
-Has a dependency on the PoverAjax plugin above
-###
-(($)->
-  EditAjax = (element, options) ->
-    @type = @options = @element = @data = @mode = null
-    @init "pover_ajax", element, options
-
-  EditAjax.DEFAULTS =
-      # The data key value that things are switched on, also an on off switch for the functionality
-      dispDivSel: null,  # same idea as above, but it will hide show a div
-      editDivSel: null,
-      # Functions that will get called optionally on success or fail
-      successFunc: null,
-      errorFunc: null
-
-  EditAjax::init = (type, element, options) ->
-    @element = $(element)
-    @mode = "disp"
-
-    @data = @element.data('json')
-    @options = @getOptions(options)
-
-    # Register a click handler
-    @element.find("[data-func='edit']").click $.proxy(@edit, @)
-
-  EditAjax::getDefaults = ->
-    EditAjax.DEFAULTS
-
-  EditAjax::getOptions = (options) ->
-    options = $.extend({}, @getDefaults(), @element.data(), options)
-    options
-
-  EditAjax::revert = ->
-    # Swap without preserving the form input
-    t.find(@settings.editDivSel).hide()
-    t.find(@settings.dispDivSel).show()
-
-  EditAjax::display = ->
-    # set the display field to the current output value
-    input = t.find("#" + key + "_input").val()
-    t.find("#" + key + "_output").html(input)
-    # Swap
-    t.find("#" + key + "_edit").hide()
-    t.find("#" + key + "_display").show()
-
-  EditAjax::edit = ->
-    # set the edit field to the current display value
-    input = t.find("#" + key + "_output").html()
-    t.find("#" + key + "_input").val(input)
-    # swap
-    t.find("#" + key + "_edit").show()
-    t.find("#" + key + "_display").hide()
-
-  # Register as a jquery plugin
-  $.fn.edit_ajax = (option) ->
-    @each ->
-      t = $(this)
-      data = t.data("edit_ajax")
-      options = typeof option is "object" and option
-      if not data
-        t.data("edit_ajax", (data = new EditAjax(this, options)))
-      if typeof option is "string"
-        data[option]()
-
-  # Register our class on the jquery plugin
-  $.fn.edit_ajax.Constructor = EditAjax
-
-
 
 ) jQuery
