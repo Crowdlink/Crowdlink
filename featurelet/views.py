@@ -15,12 +15,20 @@ import base64
 main = Blueprint('main', __name__, template_folder='../templates')
 
 
+# Make user availible easily in the global var
+@app.before_request
+def before_request():
+    g.user = current_user
+
+
+# tell the session manager how to access the user object
 @lm.user_loader
 def user_loader(id):
     try:
-        return User.objects.get(username=id)
+        return User.objects.get(id=id)
     except User.DoesNotExist:
-        pass
+        return None
+
 
 @main.errorhandler(403)
 def access_denied(e):

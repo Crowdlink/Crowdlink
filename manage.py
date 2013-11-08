@@ -1,12 +1,13 @@
-import argparse
-import datetime
-import time
-import os
-import mongoengine
-import logging
+from flask.ext.script import Manager
+from featurelet import app
 
+manager = Manager(app)
+
+import logging
+from featurelet.lib import send_email
 from featurelet.models import User, Project, Improvement
 
+# setup logging to go to stdout
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 rootLogger = logging.getLogger()
 
@@ -15,10 +16,18 @@ consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
 rootLogger.setLevel(logging.INFO)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Provisions the featurelet project on featurelet')
-    args = parser.parse_args()
+@manager.option('-u', '--userid', dest='userid')
+@manager.option('-n', '--username', dest='username')
+def send_confirm(userid=None, username=None):
+    if userid:
+        recipient = User.objects.get(id=userid).primary_email
+    else:
+        recipient = User.objects.get(username=username).primary_email
+    send_email(recipient, 'test')
 
+
+@manager.command
+def provision():
     usr = User.create_user("featurelet", "testing", "support@featurelet.com")
     usr.active = True
     usr.save()
@@ -46,3 +55,16 @@ if __name__ == "__main__":
             brief=title,
             description=desc)
         proj.add_improvement(imp, usr)
+
+@manager.command
+def test_email():
+    recipient = app.config['EMAIL_TEST_ADDR']
+    send_email(recipient, 'test')
+
+
+@manager.command
+def runserver():
+    app.run(debug=True, host='0.0.0.0')
+
+if __name__ == "__main__":
+    manager.run()

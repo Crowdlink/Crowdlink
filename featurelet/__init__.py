@@ -15,11 +15,19 @@ root = os.path.abspath(os.path.dirname(__file__) + '/../')
 
 # initialize our flask application
 app = Flask(__name__, static_folder='../static', static_url_path='/static')
-app.debug = True
-
 # set our template path and configs
 app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
+app.config.update(
+    EMAIL_SERVER="localhost",
+    EMAIL_DEBUG=0,
+    EMAIL_USE_TLS=False,
+    EMAIL_PORT=25
+)
 app.config.from_pyfile('../application.cfg')
+
+if app.config['DEBUG']:
+    from flask_debugtoolbar import DebugToolbarExtension
+    toolbar = DebugToolbarExtension(app)
 
 # Setup login stuff
 lm = LoginManager()
@@ -146,16 +154,6 @@ def format_date_ago(time):
     if day_diff < 365:
         return str(day_diff/30) + " months ago"
     return str(day_diff/365) + " years ago"
-
-# Make user availible easily in the global var
-@app.before_request
-def before_request():
-    g.user = current_user
-
-# tell the session manager how to access the user object
-@lm.user_loader
-def user_loader(id):
-    return User.objects.get(username=id)
 
 from . import api, views, models
 app.register_blueprint(api.api, url_prefix='/api')

@@ -59,10 +59,10 @@ def update_project():
     status = js.pop('subscribed', None)
     if status == True:
         # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = ProjectSubscriber(user=g.user.username)
+        subscribe = ProjectSubscriber(user=g.user.id)
         project.subscribe(subscribe)
     elif status == False:
-        project.unsubscribe(g.user.username)
+        project.unsubscribe(g.user)
 
     try:
         project.save()
@@ -89,10 +89,10 @@ def update_user():
     status = js.pop('subscribed', None)
     if status == True:
         # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = UserSubscriber(user=g.user.username)
+        subscribe = UserSubscriber(user=g.user.id)
         user.subscribe(subscribe)
     elif status == False:
-        user.unsubscribe(g.user.username)
+        user.unsubscribe(g.user)
 
     try:
         user.save()
@@ -173,10 +173,10 @@ def update_improvement():
     sub_status = js.pop('subscribed', None)
     if sub_status == True:
         # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = ImpSubscriber(user=g.user.username)
+        subscribe = ImpSubscriber(user=g.user.id)
         imp.subscribe(subscribe)
     elif sub_status == False:
-        imp.unsubscribe(g.user.username)
+        imp.unsubscribe(g.user)
 
     open_status = js.pop('open', None)
     if open_status == True:

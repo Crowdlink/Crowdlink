@@ -1,12 +1,64 @@
-from flask import url_for, session, g, current_app, request, flash
+from flask import url_for, session, g, current_app, request, flash, render_template
 
-from featurelet import db, github, app
-from featurelet.models import User
+from . import db, github, app
+from .models import User
 
 import sys
 import mongoengine
 import json
+import smtplib
+
 from bson.json_util import _json_convert
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+email_cfg = {
+            'confirm': {'subject': 'Confirm your email address on Featurelet',
+                         'html_template': 'email/confirm.html',
+                         'plain_template': 'email/confirm_plain.html'},
+            'test': {'subject': 'Admin test email from Featurelet',
+                         'html_template': 'email/test.html',
+                         'plain_template': 'email/test_plain.html'}
+             }
+
+def send_email(to_addr, typ, **kwargs):
+    conf = email_cfg[typ]
+    send_addr = app.config['EMAIL_SENDER']
+    send_name = app.config['EMAIL_SEND_NAME']
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = conf['subject']
+    msg['From'] = "{0} <{1}>".format(send_name, send_addr)
+    msg['To'] = to_addr
+    if 'plain_template' in conf:
+        msg.attach(MIMEText(render_template(conf['plain_template'], **kwargs), 'plain'))
+    if 'html_template' in conf:
+        msg.attach(MIMEText(render_template(conf['html_template'], **kwargs), 'html'))
+
+    try:
+        host = smtplib.SMTP(app.config['EMAIL_SERVER'],
+                            app.config['EMAIL_PORT'],
+                            app.config['EMAIL_EHLO'],
+                            timeout=2)
+        host.set_debuglevel(app.config['EMAIL_DEBUG'])
+        if app.config['EMAIL_USE_TLS']:
+            host.starttls()
+        host.ehlo()
+        host.login(app.config['EMAIL_USERNAME'], app.config['EMAIL_PASSWORD'])
+        current_app.logger.info(host.sendmail(send_addr,
+                      to_addr,
+                      msg.as_string()))
+        return True
+    except KeyError:
+        current_app.logger.exception("Missing required server configuration for Email config")
+    except Exception:
+        from traceback import format_exc
+        current_app.logger.info(
+            "=============================================================\n" +
+            "Failed to send mail: {0}\n".format(format_exc()) +
+            "=============================================================\n"
+        )
+        return False
+
 
 def get_json_joined(queryset, join=None):
     lst = []
@@ -29,6 +81,7 @@ def catch_error_graceful(form=None, flash=False):
     from Mongoengine in a graceful, patterned way. In production these errors
     should never really happen, so they can be handled uniformly logging and user
     return. It is called by the safe_save utility. """
+    exc, txt, tb = sys.exc_info()
     def log(msg):
         from pprint import pformat
         from traceback import format_exc
@@ -40,7 +93,7 @@ def catch_error_graceful(form=None, flash=False):
                 "=============================================================\n"
             )
         except RuntimeError:
-            print "{0}\n\n{1}\n".format(msg, exc)
+            print("{0}\n\n{1}\n".format(msg, exc))
 
     # default to danger....
     cat = "danger"

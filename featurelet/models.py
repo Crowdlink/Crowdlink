@@ -1,6 +1,7 @@
 from flask import url_for, session, g, current_app, flash
 
 from . import db, github
+
 from enum import Enum
 
 import cryptacular.bcrypt
@@ -20,12 +21,12 @@ class SubscribableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
 
-    def unsubscribe(self, username):
+    def unsubscribe(self, user):
         i = 0
         # locates the index of the user by hand. I'm sure there's some clever
         # lamda to do this
         for sub in self.subscribers:
-            if sub.user.username == username:
+            if sub.user == user:
                 break
             i += 1
         else:
@@ -45,7 +46,7 @@ class SubscribableMixin(object):
     def subscribed(self):
         # search the list of subscribers looking for the current user
         for sub in self.subscribers:
-            if sub.user.username == g.user.username:
+            if sub.user == g.user:
                 return True
         return False
 
@@ -148,7 +149,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     def get_abs_url(self):
         return url_for('main.view_improvement',
                        purl_key=self.project.url_key,
-                       user=self.project.maintainer.username,
+                       user=self.project.maintainer,
                        url_key=self.url_key)
 
     def can_edit_imp(self, user):
@@ -175,15 +176,15 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     def set_vote(self, user):
         return Improvement.objects(project=self.project,
                             url_key=self.url_key,
-                            vote_list__ne=user.username).\
-                    update_one(add_to_set__vote_list=user.username, inc__votes=1)
+                            vote_list__ne=user.id).\
+                    update_one(add_to_set__vote_list=user.id, inc__votes=1)
 
     def set_unvote(self, user):
         return Improvement.objects(
             project=self.project,
             url_key=self.url_key,
-            vote_list__in=[user.username, ]).\
-                update_one(pull__vote_list=user.username, dec__votes=1)
+            vote_list__in=[user.id, ]).\
+                update_one(pull__vote_list=user.id, dec__votes=1)
 
 
     @property
@@ -211,7 +212,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
 
     def add_comment(self, user, body):
         # Send the actual comment to the improvement event queue
-        c = Comment(user=user.username, body=body)
+        c = Comment(user=user.id, body=body)
         c.distribute(self)
 
     #def to_json(self):
@@ -279,7 +280,7 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
 
     def get_abs_url(self):
         return url_for('main.view_project',
-                       username=self.maintainer.username,
+                       username=self.maintainer,
                        url_key=self.url_key)
 
     def get_improvements(self, json=False, join=None):
@@ -297,12 +298,12 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
             return False
 
         # send a notification to all subscribers that the notification is left
-        inotif = ImprovementNotif(user=user.username, imp=imp)
+        inotif = ImprovementNotif(user=user.id, imp=imp)
         inotif.distribute()
 
     def add_comment(self, body, user):
         # Send the actual comment to the improvement event queue
-        c = Comment(user=user.username,
+        c = Comment(user=user,
                     body=body)
         distribute_event(self, c, "comment", self_send=True)
 
@@ -329,9 +330,14 @@ class UserSubscriber(db.EmbeddedDocument):
     project = db.BooleanField(default=True)
 
 
+class Transaction(db.Document, CommonMixin):
+    id = db.ObjectIdField()
+
+
 class User(db.Document, SubscribableMixin, CommonMixin):
     # _id
-    username = db.StringField(max_length=32, min_length=3, primary_key=True)
+    id = db.ObjectIdField()
+    username = db.StringField(max_length=32, min_length=3, unique=True)
 
     # User information
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
@@ -453,10 +459,10 @@ class User(db.Document, SubscribableMixin, CommonMixin):
         return False
 
     def get_id(self):
-        return unicode(self.username)
+        return unicode(self.id)
 
     def __str__(self):
-        return self.username
+        return str(self.id)
 
     # Convenience functions
     def __repr__(self):
