@@ -462,7 +462,7 @@ class User(db.Document, SubscribableMixin, CommonMixin):
         return unicode(self.id)
 
     def __str__(self):
-        return str(self.id)
+        return str(self.username)
 
     # Convenience functions
     def __repr__(self):

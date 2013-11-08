@@ -39,7 +39,7 @@ def favicon():
     return send_file(os.path.join(root, 'static/favicon.ico'))
 
 
-@main.route("/account", methods=['GET', 'POST'])
+@main.route("/account/", methods=['GET', 'POST'])
 @login_required
 def account():
     password_form = PasswordForm()
@@ -59,7 +59,7 @@ def account():
     return render_template('account.html',
                            password_form=password_form.render())
 
-@main.route("/login/github/deauthorize")
+@main.route("/login/github/deauthorize/")
 def unlink_github():
     current_app.logger.warn(
         github.get('authorizations',
@@ -71,11 +71,11 @@ def unlink_github():
 def get_github_oauth_token():
     return (g.user.gh_token, '')
 
-@main.route("/login/github")
+@main.route("/login/github/")
 def github_init_auth():
     return github.authorize(callback=url_for('main.github_auth', _external=True))
 
-@main.route("/login/github/authorize")
+@main.route("/login/github/authorize/")
 @github.authorized_handler
 def github_auth(resp):
     if resp is None:
@@ -99,11 +99,12 @@ def github_auth(resp):
         user = User.create_user_github(resp['access_token'])
 
 
-@main.route("/<username>/<url_key>/settings", methods=['GET', 'POST'])
+@main.route("/<username>/<url_key>/settings/", methods=['GET', 'POST'])
 def project_settings(username=None, url_key=None):
     # get view objects and confirm permissions
     try:
-        project = Project.objects.get(maintainer=username,
+        usr = User.objects.get(username=username)
+        project = Project.objects.get(maintainer=usr.id,
                                   url_key=url_key)
     except Project.DoesNotExist:
         abort(404)
@@ -144,16 +145,18 @@ def project_settings(username=None, url_key=None):
                            sync_form=sync_form_out)
 
 
-@main.route("/<username>/<url_key>")
+@main.route("/<username>/<url_key>/")
 def view_project(username=None, url_key=None):
-    project = Project.objects.get(maintainer=User(username=username),
+    usr = User.objects.get(username=username)
+    project = Project.objects.get(maintainer=usr,
                                   url_key=url_key)
     return render_template('proj.html', project=project)
 
 
-@main.route("/<user>/<purl_key>/<url_key>", methods=['GET', 'POST'])
-def view_improvement(user=None, purl_key=None, url_key=None):
-    proj = Project.objects.get(url_key=purl_key, maintainer=user)
+@main.route("/<username>/<purl_key>/<url_key>", methods=['GET', 'POST'])
+def view_improvement(username=None, purl_key=None, url_key=None):
+    usr = User.objects.get(username=username)
+    proj = Project.objects.get(url_key=purl_key, maintainer=usr)
     imp = Improvement.objects.get(url_key=url_key,
                                   project=proj)
     form = CommentForm()
