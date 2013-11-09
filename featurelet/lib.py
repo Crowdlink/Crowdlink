@@ -67,7 +67,10 @@ def get_json_joined(queryset, join=None):
     if join:
         join_dct = join
     else:
-        join_dct = queryset[0].standard_join
+        try:
+            join_dct = queryset[0].standard_join
+        except IndexError:
+            return []
 
     for obj, bson in zip(queryset, queryset.as_pymongo()):
         dct = _json_convert(bson)
@@ -76,7 +79,7 @@ def get_json_joined(queryset, join=None):
 
     return json.dumps(lst)
 
-def catch_error_graceful(form=None, flash=False):
+def catch_error_graceful(form=None, out_flash=False):
     """ This is a utility function that handles exceptions that might be omitted
     from Mongoengine in a graceful, patterned way. In production these errors
     should never really happen, so they can be handled uniformly logging and user
@@ -118,7 +121,7 @@ def catch_error_graceful(form=None, flash=False):
 
     if form:
         form.start.add_msg(message=msg, type=cat)
-    elif flash:
+    elif out_flash:
         flash(msg, category=cat)
 
 

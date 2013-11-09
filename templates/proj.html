@@ -43,7 +43,9 @@
       <i ng-click="search()" class="fa fa-search"></i>
     </span>
   </div><!-- /input-group -->
-    <table class="table table-hover" ng-init="init('{{project.id}}', '{{project.get_improvements(json=True)|urlencode}}')">
+  <table
+    class="table table-hover"
+    ng-init="init('{{project.id}}', '{{project.get_improvements(json=True)|urlencode}}')">
     <tbody>
      <tr ng-repeat="imp in imps">
       <td class="fit-width">

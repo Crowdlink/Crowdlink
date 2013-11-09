@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Charge your card{% endblock %}
+{% block post_script %}
+<script src="https://checkout.stripe.com/checkout.js"></script>
+{% endblock %}
+{% block content %}
+<div class="row">
+  {% include "acct_nav.html" %}
+  <div class="col-md-9" style="padding:30px;" ng-app="mainApp" ng-controller="chargeController" ng-init="init('{{sk}}', '{{g.user.id}}')">
+    <div ng-show="result.show" class="alert alert-{[{result.type}]} fade in">
+      <a class="close" data-dismiss="alert" href="#">×</a>
+      {[{ result.text }]}
+    </div>
+    <form class="form-horizontal" role="form" novalidate name="charge_form">
+      <div class="form-group">
+        <h4>Select an amount to pay</h4>
+        <ul class="nav nav-pills nav-stacked">
+          {% for val, label in [(500, '5.00'), (1000, '10.00'), (2500, '25.00'), (5000, '50.00'), (10000, '100.00')] %}
+          <li ng-class="{true: 'active'}[amount=={{val}}]">
+            <a ng-click="amount={{val}}">
+              <input type="radio" ng-model="amount" ng-value="{{val}}">&nbsp;&nbsp;
+              <i class="fa fa-dollar"></i> {{ label }}
+            </a>
+          </li>
+          {% endfor %}
+          <li ng-class="{true: 'active'}[amount==false]">
+            <a ng-click="amount=false">
+              <input type="radio" style="margin-bottom:15px;" ng-model="amount" ng-value="false">&nbsp;&nbsp;
+              Other <input type="number" name="custom_amount" min="5" max="1000" class="form-control" ng-model="custom_amount" />
+            </a>
+            <span ng-show="charge_form.custom_amount.$error.min || charge_form.custom_amount.$error.max"><b>The value must be in range 5 to 1000!</b></span>
+          </li>
+        </div>
+        <div class="form-group">
+          <button type="button" class="btn btn-info" ng-click="pay()">Pay Now</button>
+        </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

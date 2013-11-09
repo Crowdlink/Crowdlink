@@ -38,7 +38,7 @@
                 <span class="hidden-xs"><img src="/static/img/logo.png" border="0" /></span>
                 <span class="visible-xs"><img src="/static/img/logo_sm.png" border="0" /></span>
               </a>
-              <ul class="nav nav-pills">
+              <ul class="nav nav-pills main-nav-pills">
                 <!-- <li{% if request.path == "/plans" %} class="active"{%endif%}><a href="/plans">Plans</a></li> -->
                 {% if g.user.is_authenticated() %}
                 <li{% if request.path == url_for('main.account') %} class="active"{%endif%}>

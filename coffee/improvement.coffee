@@ -17,6 +17,13 @@ mainServices.factory("ImpService", ['$resource', ($resource) ->
       isArray: true
 ])
 
+mainServices.factory("StripeService", ['$resource', ($resource) ->
+  $resource window.api_path + "charge", {},
+    update:
+      method: "POST"
+      timeout: 5000
+])
+
 mainControllers = angular.module("mainControllers", [])
 mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
     $scope.init = (id, brief, desc_md, desc, status, close_reason) ->
@@ -112,4 +119,43 @@ mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpServic
                     type: 'error'
                     timout: 2000
         )
+])
+
+mainControllers.controller('chargeController', ['$scope', 'StripeService', ($scope, StripeService)->
+    $scope.init = (sk, userid) ->
+      window.handler = StripeCheckout.configure
+        token: $scope.recv_token
+        key: sk
+      $scope.amount = 500
+      $scope.userid = userid
+      $scope.result =
+        text: ""
+        type: ""
+        show: false
+
+    $scope.recv_token = (token, args) ->
+      console.log(args)
+      StripeService.update(
+          token: token
+          amount: $scope.amount
+          userid: $scope.userid
+      ,(value) -> # Function to be run when function returns
+          $scope.result =
+            text: "You're card has been successfully charged"
+            type: "success"
+            show: true
+      )
+
+    $scope.pay = () ->
+      # Open Checkout with further options
+      handler.open
+        image: window.static_path + "/img/logo_stripe.png"
+        name: "Featurelet"
+        description: "Credits ($" + $scope.amount/100 + ")"
+        amount: $scope.amount
+])
+
+mainControllers.controller('transactionsController', ['$scope', 'StripeService', ($scope, StripeService)->
+    $scope.init = (transactions) ->
+      $scope.transactions = JSON.parse(unescape(transactions))
 ])

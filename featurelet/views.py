@@ -2,7 +2,7 @@ from flask import Blueprint, request, redirect, render_template, url_for, send_f
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
 from featurelet import root, lm, app, oauth, github
-from featurelet.models import User, Project, Improvement
+from featurelet.models import User, Project, Improvement, Transaction
 from featurelet.forms import *
 
 import json
@@ -38,6 +38,20 @@ def access_denied(e):
 def favicon():
     return send_file(os.path.join(root, 'static/favicon.ico'))
 
+
+@main.route("/charge/", methods=['GET', 'POST'])
+@login_required
+def charge():
+    return render_template('charge.html',
+                           sk=app.config['STRIPE_PUBLISH_KEY'])
+
+@main.route("/transactions/", methods=['GET'])
+@login_required
+def transactions():
+    transactions = Transaction.objects(user=g.user.id)
+    transactions = get_json_joined(transactions, join=None)
+    return render_template('charges.html',
+                           transactions=transactions)
 
 @main.route("/account/", methods=['GET', 'POST'])
 @login_required
@@ -88,11 +102,12 @@ def github_auth(resp):
         current_app.logger.info("Return response from Github didn't contain an access token")
         return redirect(url_for('main.account'))
 
-    if g.user:
-        g.user.gh_token = resp['access_token']
-        g.user.safe_save()
+    if current_user:
+        print current_user
+        current_user.gh_token = resp['access_token']
+        current_user.safe_save()
         # Populate the github cache
-        g.user.gh
+        current_user.gh
         return redirect(url_for('main.account'))
     else:
         # they're trying to login, or create an account

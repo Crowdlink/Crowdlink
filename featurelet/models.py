@@ -52,11 +52,17 @@ class SubscribableMixin(object):
 
 class CommonMixin(object):
     """ mixin for all documents in database. provides some nice utils"""
+    standard_join = {}
     def safe_save(self, **kwargs):
+        form = kwargs.pop('form', None)
+        flash = kwargs.pop('flash', False)
         try:
             self.save(**kwargs)
         except Exception:
-            catch_error_graceful(form)
+            catch_error_graceful(
+                form=form,
+                out_flash=flash
+            )
             return False
         else:
             return True
@@ -149,7 +155,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     def get_abs_url(self):
         return url_for('main.view_improvement',
                        purl_key=self.project.url_key,
-                       user=self.project.maintainer,
+                       username=self.project.maintainer.username,
                        url_key=self.url_key)
 
     def can_edit_imp(self, user):
@@ -159,7 +165,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
         """ Used to disconnect an improvement from github. Really just a
         trickle down call from de-syncing the project, but nicer to keep the
         logic in here"""
-        self.gh_synced = 0
+        self.gh_synced = False
         # Remove indexes if we're flattening
         if flatten:
             self.gh_issue_num = None
@@ -246,13 +252,15 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
 
     @property
-    def gh_synced(self):
-        return self.gh_repo_id > 0
+    def gh_sync_meta(self):
+        return gh_repo_id > 0
 
     def gh_sync(self, data):
         self.gh_repo_id = data['id']
         self.gh_repo_path = data['full_name']
-        self.gh_synced = datetime.datetime.now()
+        self.gh_synced_at = datetime.datetime.now()
+        self.gh_synced = True
+        current_app.logger.debug("Synchronized repository")
 
     def gh_desync(self, flatten=False):
         """ Used to disconnect a repository from github. By default will leave
@@ -265,8 +273,9 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
         if flatten:
             self.gh_synced_at = None
             self.gh_repo_path = None
-            self.gh_repo_id = None
+            self.gh_repo_id = -1
         self.safe_save()
+        current_app.logger.debug("Desynchronized repository")
 
 
     def can_edit_settings(self, user):
@@ -280,7 +289,7 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
 
     def get_abs_url(self):
         return url_for('main.view_project',
-                       username=self.maintainer,
+                       username=self.maintainer.username,
                        url_key=self.url_key)
 
     def get_improvements(self, json=False, join=None):
@@ -332,6 +341,12 @@ class UserSubscriber(db.EmbeddedDocument):
 
 class Transaction(db.Document, CommonMixin):
     id = db.ObjectIdField()
+    amount = db.DecimalField(min_value=0.00, precision=2)
+    livemode = db.BooleanField()
+    stripe_id = db.StringField()
+    created = db.DateTimeField()
+    last_four = db.IntField()
+    user = db.ReferenceField('User')
 
 
 class User(db.Document, SubscribableMixin, CommonMixin):

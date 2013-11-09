@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Charge your card{% endblock %}
+{% block post_script %}
+<script src="https://checkout.stripe.com/checkout.js"></script>
+{% endblock %}
+{% block content %}
+<div class="row">
+  {% include "acct_nav.html" %}
+  <div class="col-md-9"
+    style="padding:30px;"
+    ng-app="mainApp"
+    ng-controller="transactionsController"
+    ng-init="init('{{transactions|urlencode}}')">
+    <h4>Transactions</h4>
+    <table class="table table-hover">
+      <tbody>
+        <tr>
+          <th>Amount</th>
+          <th>Date</th>
+          <th>Card</th>
+        </th>
+        <tr ng-repeat="trans in transactions">
+          <td>
+            <a href="{[{ charge.get_abs_url }]}">
+              <i class="fa fa-dollar"></i> {[{ trans.amount/100 }]}
+            </a>
+          </td>
+          <td>
+            <i class="fa fa-calendar"></i>
+            {[{ trans.created.$date | date:'short' }]}
+          </td>
+          <td class="mono">
+              <i class="fa fa-credit-card"></i>
+              **** **** **** {[{ trans.last_four }]}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <h4 ng-hide="transactions">No transactions to show.</h4>
+  </div>
+</div>
+{% endblock %}

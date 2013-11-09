@@ -32,7 +32,7 @@ if app.config['DEBUG']:
 # Setup login stuff
 lm = LoginManager()
 lm.init_app(app)
-lm.login_view = 'login'
+lm.login_view = 'main.login'
 
 # OAuth configuration
 oauth = OAuth(app)

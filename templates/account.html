@@ -3,19 +3,7 @@
 {% block title %}Account Settings{% endblock %}
 {% block content %}
 <div class="row">
-  <div class="col-md-3">
-    <h3>Navigation</h3>
-    <div class="btn-group-vertical col-lg-12">
-      <button type="button" class="btn btn-default">General</button>
-      {% if not g.user.github_token %}
-      <button type="button" class="btn btn-default">
-        <a href="/login/github">
-          <i class="icon-github icon-li icon-large"></i>&nbsp; Link You Github
-        </a>
-      </button>
-      {% endif %}
-    </div>
-  </div>
+  {% include "acct_nav.html" %}
   <div class="col-md-9">
     <h3>Account Information</h3>
     <div class="panel panel-default">

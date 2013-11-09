@@ -2,15 +2,17 @@ from flask import Blueprint, request, g, current_app, jsonify, abort
 from flask.ext.login import login_required, logout_user, current_user
 
 from . import root, lm, app
-from .models import User, Project, Improvement, UserSubscriber, ProjectSubscriber, ImpSubscriber
+from .models import User, Project, Improvement, UserSubscriber, ProjectSubscriber, ImpSubscriber, Transaction
 from .forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm
 from .lib import get_json_joined
 
 import json
 import bson
 import mongoengine
+import datetime
 import os
 import sys
+import stripe
 
 api = Blueprint('api', __name__)
 
@@ -192,6 +194,69 @@ def update_improvement():
     # return a true value to the user
     return_val.update({'success': True})
     return jsonify(return_val)
+
+@api.route("/charge", methods=['POST'])
+def run_charge():
+    js = request.json
+
+    # try to access the improvements with identifying information
+    try:
+        amount = js['amount']
+        card = js['token']['id']
+        livemode = js['token']['livemode']
+        if amount > 100000 or amount < 500:
+            return incorrect_syntax()
+        user = User.objects.get(id=js['userid'])
+
+        stripe.api_key = app.config['STRIPE_SECRET_KEY']
+        try:
+            retval = stripe.Charge.create(
+                amount=amount,
+                currency="usd",
+                card=card)
+        except stripe.CardError as e:
+            body = e.json_body
+            err  = body['error']
+
+            current_app.logger.info(err)
+            return jsonify(success=False)
+        except stripe.InvalidRequestError, e:
+            current_app.logger.error(
+                "An InvalidRequestError was recieved from stripe."
+                "Original token information: {0}".format(js['token']))
+            return jsonify(success=False)
+        except stripe.AuthenticationError, e:
+            current_app.logger.error(
+                "An AuthenticationError was recieved from stripe."
+                "Original token information: {0}".format(js['token']))
+            return jsonify(success=False)
+        except stripe.APIConnectionError, e:
+            current_app.logger.warn(
+                "An APIConnectionError was recieved from stripe."
+                "Original token information: {0}".format(js['token']))
+            return jsonify(success=False)
+        except stripe.StripeError, e:
+            current_app.logger.warn(
+                "An StripeError occurred in stripe API."
+                "Original token information: {0}".format(js['token']))
+            return jsonify(success=False)
+        else:
+            trans = Transaction(
+                amount=amount,
+                livemode=livemode,
+                stripe_id=retval['id'],
+                created=datetime.date.fromtimestamp(retval['created']),
+                user=user.id,
+                last_four=retval['card']['last4']
+            )
+            trans.save()
+
+    except KeyError:
+        return incorrect_syntax()
+    except User.DoesNotExist:
+        return resource_not_found()
+
+    return jsonify(success=True)
 
 def incorrect_syntax(message='Incorrect syntax', **kwargs):
     return jsonify(code=400, message=message, **kwargs)
