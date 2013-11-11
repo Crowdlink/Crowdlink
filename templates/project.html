@@ -38,7 +38,7 @@
 <div class="row" ng-app="mainApp" ng-controller="projectImpSearch">
   <h3>Improvements</h3>
   <div class="input-group">
-    <input type="text" ng-model="filter" ng-change="search()" class="form-control" />
+    <input type="text" ng-model="filter" class="form-control" />
     <span class="btn btn-info input-group-addon">
       <i ng-click="search()" class="fa fa-search"></i>
     </span>
@@ -47,18 +47,21 @@
     class="table table-hover"
     ng-init="init('{{project.id}}', '{{project.get_improvements(json=True)|urlencode}}')">
     <tbody>
-     <tr ng-repeat="imp in imps">
+     <tr ng-repeat="imp in imps | filter:filter">
       <td class="fit-width">
         <a class="btn btn-xs"
             ng-class="{'btn-success': imp.vote_status, 'btn-info': !imp.vote_status}"
-            ng-click="vote()">
+            ng-click="vote(imp)">
           <span ng-hide="imp.vote_status">Vote&nbsp; <i class="fa fa-plus"></i></span>
           <span ng-hide="!imp.vote_status">Unvote&nbsp; <i class="fa fa-minus"></i></span>
         </a>
         &nbsp;&nbsp;
-        <b>{[{ imp.votes }]} votes</b>
+        <b><ng-pluralize count="imp.votes"
+                         when="{'0': 'No votes',
+                                'one': '1 vote',
+                                'other': '{} votes'}"></ng-pluralize></b>
       </td>
-      <td><a href="{[{ imp.get_abs_url }]}">{[{ imp.brief }]}</a></td>
+      <td><a href="{[{ imp.get_abs_url }]}" ng-bind-html-unsafe="imp.brief | searchFilter:filter"></a></td>
     </tr>
     </tbody>
   </table>

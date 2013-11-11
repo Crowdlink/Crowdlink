@@ -1,5 +1,5 @@
 'use strict'
-mainApp = angular.module("mainApp", ['mainServices', 'mainControllers'])
+mainApp = angular.module("mainApp", ['mainServices', 'mainControllers', 'mainFilters'])
 # Avoid collision with Jinja templates
 mainApp.config ($interpolateProvider) ->
   $interpolateProvider.startSymbol "{[{"
@@ -119,6 +119,14 @@ mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpServic
                     type: 'error'
                     timout: 2000
         )
+
+    $scope.vote = (imp) ->
+      imp.vote_status = !imp.vote_status
+      if imp.vote_status
+        imp.votes += 1
+      else
+        imp.votes -= 1
+
 ])
 
 mainControllers.controller('chargeController', ['$scope', 'StripeService', ($scope, StripeService)->
@@ -159,3 +167,16 @@ mainControllers.controller('transactionsController', ['$scope', 'StripeService',
     $scope.init = (transactions) ->
       $scope.transactions = JSON.parse(unescape(transactions))
 ])
+
+mainFilters = angular.module("mainFilters", [])
+mainFilters.filter('searchFilter', ->
+  (input, query, option) ->
+    input.replace(RegExp('('+ query + ')', 'gi'), '<span class="match">$1</span>')
+)
+mainFilters.filter('impFilter', ->
+  (input, query, option) ->
+    if query in input.brief or query in input.description
+        return true
+    else
+        return false
+)
