@@ -19,22 +19,35 @@
           <th>Amount</th>
           <th>Date</th>
           <th>Card</th>
+          <th>Status</th>
+          <th></th>
         </th>
-        <tr ng-repeat="trans in transactions">
-          <td>
-            <a href="{[{ charge.get_abs_url }]}">
+        <tbody ng-repeat="trans in transactions">
+          <tr ng-click="trans.details=!trans.details"
+            ng-class="{1: 'success', 0: 'warning'}[trans._status]"
+            class="clickable">
+            <td>
               <i class="fa fa-dollar"></i> {[{ trans.amount/100 }]}
-            </a>
-          </td>
-          <td>
-            <i class="fa fa-calendar"></i>
-            {[{ trans.created.$date | date:'short' }]}
-          </td>
-          <td class="mono">
-              <i class="fa fa-credit-card"></i>
-              **** **** **** {[{ trans.last_four }]}
-          </td>
-        </tr>
+            </td>
+            <td>
+              <i class="fa fa-calendar"></i>
+              {[{ trans.created.$date | date:'short' }]}
+            </td>
+            <td class="mono">
+                <i class="fa fa-credit-card"></i>
+                **** **** **** {[{ trans.last_four }]}
+            </td>
+            <td>
+                {[{ trans.status }]}
+            </td>
+            <td><i class="fa" ng-class="{true: 'fa-caret-up', false: 'fa-caret-down'}[trans.details]"></i></td>
+          </tr>
+          <tr ng-show="trans.details">
+            <td colspan="5">
+              Look at all the details
+            </td>
+          </tr>
+        </tbody>
       </tbody>
     </table>
     <h4 ng-hide="transactions">No transactions to show.</h4>

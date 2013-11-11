@@ -166,6 +166,8 @@ mainControllers.controller('chargeController', ['$scope', 'StripeService', ($sco
 mainControllers.controller('transactionsController', ['$scope', 'StripeService', ($scope, StripeService)->
     $scope.init = (transactions) ->
       $scope.transactions = JSON.parse(unescape(transactions))
+      for trans in $scope.transactions
+        trans.details = false
 ])
 
 mainFilters = angular.module("mainFilters", [])

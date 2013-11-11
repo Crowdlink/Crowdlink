@@ -102,12 +102,12 @@ def github_auth(resp):
         current_app.logger.info("Return response from Github didn't contain an access token")
         return redirect(url_for('main.account'))
 
-    if current_user:
-        print current_user
-        current_user.gh_token = resp['access_token']
-        current_user.safe_save()
+    if g.user:
+        g.user.gh_token = resp['access_token']
+        g.user.gh_synced = True
+        g.user.safe_save()
         # Populate the github cache
-        current_user.gh
+        g.user.gh
         return redirect(url_for('main.account'))
     else:
         # they're trying to login, or create an account

@@ -241,12 +241,18 @@ def run_charge():
                 "Original token information: {0}".format(js['token']))
             return jsonify(success=False)
         else:
+            if retval['paid']:
+                status = Transaction.StatusVals.Cleared.index
+            else:
+                status = Transaction.StatusVals.Pending.index
+
             trans = Transaction(
                 amount=amount,
                 livemode=livemode,
                 stripe_id=retval['id'],
-                created=datetime.date.fromtimestamp(retval['created']),
+                created=datetime.datetime.fromtimestamp(retval['created']),
                 user=user.id,
+                _status=status,
                 last_four=retval['card']['last4']
             )
             trans.save()

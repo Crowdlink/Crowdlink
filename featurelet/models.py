@@ -146,9 +146,6 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     @property
     def close_reason(self):
         return self.CloseVals[self._close_reason]
-    @close_reason.setter
-    def close_reason(self, newval):
-        self._close_reason = newval
 
     def get_abs_url(self):
         return url_for('main.view_improvement',
@@ -338,6 +335,9 @@ class UserSubscriber(db.EmbeddedDocument):
 
 
 class Transaction(db.Document, CommonMixin):
+    StatusVals = Enum('Pending', 'Cleared')
+    _status = db.IntField(default=StatusVals.Pending.index)
+
     id = db.ObjectIdField()
     amount = db.DecimalField(min_value=0.00, precision=2)
     livemode = db.BooleanField()
@@ -345,6 +345,15 @@ class Transaction(db.Document, CommonMixin):
     created = db.DateTimeField()
     last_four = db.IntField()
     user = db.ReferenceField('User')
+
+    standard_join = {'status': 1}
+    meta = {
+        'ordering': ['-created']
+    }
+    # Closevalue masking for render
+    @property
+    def status(self):
+        return self.StatusVals[self._status]
 
 
 class User(db.Document, SubscribableMixin, CommonMixin):
