@@ -138,9 +138,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     # event dist
     events = db.ListField(db.GenericEmbeddedDocumentField())
     subscribers = db.ListField(db.EmbeddedDocumentField('ImpSubscriber'))
-    meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True},
-                        {'fields': {'brief': 'text'}}
-                        ]}
+    meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
 
     standard_join = {'get_abs_url': 1, 'vote_status': 1, 'project': 1}
 
@@ -253,7 +251,7 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
 
     @property
     def gh_sync_meta(self):
-        return gh_repo_id > 0
+        return self.gh_repo_id > 0
 
     def gh_sync(self, data):
         self.gh_repo_id = data['id']

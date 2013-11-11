@@ -50,7 +50,7 @@ def charge():
 def transactions():
     transactions = Transaction.objects(user=g.user.id)
     transactions = get_json_joined(transactions, join=None)
-    return render_template('charges.html',
+    return render_template('transactions.html',
                            transactions=transactions)
 
 @main.route("/account/", methods=['GET', 'POST'])
@@ -165,7 +165,7 @@ def view_project(username=None, url_key=None):
     usr = User.objects.get(username=username)
     project = Project.objects.get(maintainer=usr,
                                   url_key=url_key)
-    return render_template('proj.html', project=project)
+    return render_template('project.html', project=project)
 
 
 @main.route("/<username>/<purl_key>/<url_key>", methods=['GET', 'POST'])

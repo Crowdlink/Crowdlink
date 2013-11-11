@@ -56,7 +56,7 @@ Shows/Hides applicable content or classes for rendering the current state.
     if @options.spinner
       @element.popover(
         html: true
-        content: "<img src='#{window.static_path}spinner_xs.gif' border='0' />"
+        content: "<img src='#{window.static_path}img/spinner_xs.gif' border='0' />"
         placement: @options.popover_placement
         trigger: 'manual'
       )
@@ -64,7 +64,7 @@ Shows/Hides applicable content or classes for rendering the current state.
   PoverAjax::run = () ->
     # Create a popover spinner if settings enabled
     if @options.spinner
-      html = "<img src='#{window.static_path}spinner_xs.gif' border='0' />"
+      html = "<img src='#{window.static_path}img/spinner_xs.gif' border='0' />"
       popover = @element.attr("data-content", html).data("bs.popover")
       popover.setContent()
       popover.$tip.addClass popover.options.placement
