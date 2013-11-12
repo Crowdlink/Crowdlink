@@ -1,6 +1,7 @@
 # compiled assets
 static/css/*
 static/js/*
+static/lib/css/bootstrap.min.css
 
 *.py[cod]
 *.swp
