@@ -1,4 +1,4 @@
-from flask import url_for, session, g, current_app, request, flash, render_template
+from flask import url_for, session, g, current_app, request, flash, render_template, jsonify
 
 from . import db, github, app
 from .models import User
@@ -20,6 +20,9 @@ email_cfg = {
                          'html_template': 'email/test.html',
                          'plain_template': 'email/test_plain.html'}
              }
+
+def redirect_angular(url):
+    return jsonify(redirect=url)
 
 def send_email(to_addr, typ, **kwargs):
     conf = email_cfg[typ]

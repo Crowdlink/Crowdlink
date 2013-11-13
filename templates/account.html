@@ -1,6 +1,4 @@
-{% extends "base.html" %}
-
-{% block title %}Account Settings{% endblock %}
+<!-- {% block title %}Account Settings{% endblock %} -->
 {% block content %}
 <div class="row">
   {% include "acct_nav.html" %}
@@ -28,7 +26,7 @@
           <th>Github Account</th>
           <td>
             {{g.user.gh['login']}} {{g.user.gh_token}}
-            <a href="{{url_for('main.unlink_github')}}" class="btn btn-danger btn-xs">Unlink</a>
+            <a href="#{{url_for('main.unlink_github')}}" class="btn btn-danger btn-xs">Unlink</a>
           </td>
         </tr>
         {% endif %}

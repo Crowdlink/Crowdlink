@@ -1,6 +1,4 @@
-{% extends "base.html" %}
-
-{% block title %}Home{% endblock %}
+<!-- {% block title %}Home{% endblock %} -->
 {% block content %}
 <div class="row">
   <div class="col-md-8 no-gutter">
@@ -13,7 +11,7 @@
     </h4>
     <h4>
       <b>Maintainer </b>
-      <a href="{{ project.maintainer.get_abs_url() }}">{{ project.maintainer.username }}</a>
+      <a href="#{{ project.maintainer.get_abs_url() }}">{{ project.maintainer.username }}</a>
     </h4>
   </div>
   <div class="col-md-4 no-gutter">
@@ -26,7 +24,7 @@
         <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
         <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
       </a>
-      <a class="btn btn-default" href="{{url_for('main.project_settings',
+      <a class="btn btn-default" href="#{{url_for('main.project_settings',
                                                  username=project.maintainer.username,
                                                  url_key=project.url_key)}}">
         <i class="fa fa-large fa-gear"></i>
@@ -61,7 +59,7 @@
                                 'one': '1 vote',
                                 'other': '{} votes'}"></ng-pluralize></b>
       </td>
-      <td><a href="{[{ imp.get_abs_url }]}" ng-bind-html-unsafe="imp.brief | searchFilter:filter"></a></td>
+      <td><a href="#{[{ imp.get_abs_url }]}" ng-bind-html-unsafe="imp.brief | searchFilter:filter"></a></td>
     </tr>
     </tbody>
   </table>

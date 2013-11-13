@@ -9,15 +9,23 @@
     <title>{% block title %}{% endblock %} - Featurelet</title>
     {% endblock %}
   </head>
-  <body>
+  <body ng-app="mainApp">
+    <!-- Templates -->
+    <script type="text/ng-template" id="main.html">
+      <div ng-init="init()">
+        <div ng-bind-html="html_out"></div>
+      </div>
+    </script>
     <!-- Jquery -->
     <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
     <script src="//malsup.github.com/jquery.form.js"></script>
     <!-- Yota -->
     <script src="/static/lib/js/yota.js"></script>
     <!-- Angular -->
-    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js"></script>
-    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular-resource.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-resource.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-route.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-sanitize.min.js"></script>
     <!-- Noty notifications -->
     <script src="//cdn.jsdelivr.net/noty/2.1.0/jquery.noty.js"></script>
     <script src="//cdn.jsdelivr.net/noty/2.1.0/layouts/top.js"></script>
@@ -34,7 +42,7 @@
     <div id="wrap">
       <div class="navbar navbar-default navbar-fixed-top">
           <div class="container no-gutter">
-              <a class="navbar-brand logo" href="/">
+              <a class="navbar-brand logo" href="#/home">
                 <span class="hidden-xs"><img src="/static/img/logo.png" border="0" /></span>
                 <span class="visible-xs"><img src="/static/img/logo_sm.png" border="0" /></span>
               </a>
@@ -42,33 +50,33 @@
                 <!-- <li{% if request.path == "/plans" %} class="active"{%endif%}><a href="/plans">Plans</a></li> -->
                 {% if g.user.is_authenticated() %}
                 <li{% if request.path == url_for('main.account') %} class="active"{%endif%}>
-                  <a href="{{url_for('main.account')}}">
+                  <a href="#{{url_for('main.account')}}">
                     <i class="fa fa-large fa-gear"></i>
                     <span class="hidden-xs"> Account</span>
                   </a>
                 </li>
-                {% set uurl = g.user.get_abs_url() %}
-                  <li{% if request.path == uurl %} class="active"{%endif%}>
-                    <a href="{{uurl}}">
+                {% set url = g.user.get_abs_url() %}
+                  <li{% if request.path == url %} class="active"{%endif%}>
+                    <a href="#{{url}}">
                       <i class="fa fa-large fa-user"></i>
                       <span class="hidden-xs"> Profile</span>
                     </a>
                   </li>
                   <li>
-                    <a href="{{url_for('main.logout')}}">
+                    <a href="#{{url_for('main.logout')}}">
                       <i class="fa fa-large fa-sign-out"></i>
                       <span class="hidden-xs"> Logout</span>
                     </a>
                   </li>
                 {% else %}
                   <li{% if request.path == url_for('main.signup') %} class="active"{%endif%}>
-                  <a href="{{url_for('main.signup')}}">
+                  <a href="#{{url_for('main.signup')}}">
                       <i class="fa fa-large fa-edit"></i>
                       <span class="hidden-xs"> Sign Up</span>
                     </a>
                   </li>
                   <li{% if request.path == url_for('main.login') %} class="active"{%endif%}>
-                    <a href="{{url_for('main.login')}}">
+                    <a href="#{{url_for('main.login')}}">
                       <i class="fa fa-sign-in fa-large"></i>
                       <span class="hidden-xs"> Login</span>
                     </a>
@@ -77,7 +85,7 @@
               </ul>
           </div>
       </div>
-      <div class="container main-cont">
+      <div class="container main-cont" ng-view>
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
            {% for category, message in messages %}

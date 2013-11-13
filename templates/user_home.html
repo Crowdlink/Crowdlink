@@ -1,6 +1,4 @@
-{% extends "base.html" %}
-
-{% block title %}Home{% endblock %}
+<!-- {% block title %}Home{% endblock %} -->
 {% block content %}
 <div class="row">
   <div class="col-md-8 no-gutter">
@@ -18,7 +16,7 @@
       <h3>Your projects</h3>
       <ul class="list-group main-list">
       {% for project in projects %}
-        <a href="{{project.get_abs_url() }}"><li class="list-group-item"><i class="fa fa-tasks"></i>&nbsp; {{ project.name }}</li></a>
+        <a href="#{{project.get_abs_url() }}"><li class="list-group-item"><i class="fa fa-tasks"></i>&nbsp; {{ project.name }}</li></a>
       {% else %}
         <li class="list-group-item"><i class="fa fa-tasks"></i>&nbsp; No project to display</li>
       {% endfor %}

@@ -1,16 +1,14 @@
-{% extends "base.html" %}
-
-{% block title %}View Improvement "{{ imp.brief }}"{% endblock %}
+<!-- {% block title %}View Improvement "{{ imp.brief }}"{% endblock %} -->
 {% block content %}
 <div class="row">
   <ol class="breadcrumb">
-    <li><a href="{{imp.project.maintainer.get_abs_url()}}">{{imp.project.maintainer}}</a></li>
-    <li><a href="{{imp.project.get_abs_url()}}">{{ imp.project.name }}</a></li>
+    <li><a href="#{{imp.project.maintainer.get_abs_url()}}">{{imp.project.maintainer}}</a></li>
+    <li><a href="#{{imp.project.get_abs_url()}}">{{ imp.project.name }}</a></li>
     <li><a href="">Improvements</a></li>
     <li class="active">{{imp.brief}}</li>
   </ol>
 </div>
-<div ng-app="mainApp" ng-controller="editController" ng-init="init('{{imp.id}}', '{{imp.brief|urlencode}}', '{{imp.md|urlencode}}', '{{imp.description|urlencode}}', '{{imp.open}}', '{{imp._close_reason}}')">
+<div ng-controller="editController" ng-init="init('{{imp.id}}', '{{imp.brief|urlencode}}', '{{imp.md|urlencode}}', '{{imp.description|urlencode}}', '{{imp.open}}', '{{imp._close_reason}}')">
   <div class="row">
     <div class="col-md-8 no-gutter">
       <h2>

@@ -3,6 +3,7 @@ from flask.ext.login import login_user, logout_user, current_user, login_require
 
 from featurelet import root, lm, app, oauth, github
 from featurelet.models import User, Project, Improvement, Transaction
+from featurelet.lib import jsonify
 from featurelet.forms import *
 
 import json
@@ -249,7 +250,7 @@ def new_improvement(username=None, purl_key=None):
 @main.route("/u/<username>")
 def user(username=None):
     user = User.objects.get(username=username)
-    return render_template('prof.html', user=user)
+    return render_template('profile.html', user=user)
 
 
 @main.route("/logout")
@@ -297,20 +298,24 @@ def signup():
 
             if user:
                 login_user(user)
-                return redirect(url_for('main.home'))
+                return redirect_angular(url_for('main.home'))
             else:
                 form.start.add_msg(
                     message='Unknown database error, please retry.', error=True)
 
-    return render_template('register.html', form=form.render())
+    return render_template('sign_up.html', form=form.render())
 
 
 @main.route("/plans")
 def plans():
     return render_template('plans.html')
 
-
 @main.route("/", methods=['GET', 'POST'])
+def root():
+    return render_template('base.html')
+
+
+@main.route("/home", methods=['GET', 'POST'])
 def home():
     if g.user is not None and g.user.is_authenticated():
         projects = g.user.get_projects()

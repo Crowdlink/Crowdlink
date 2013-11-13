@@ -1,10 +1,19 @@
 'use strict'
-mainApp = angular.module("mainApp", ['mainServices', 'mainControllers', 'mainFilters'])
+mainApp = angular.module("mainApp", ['mainServices', 'mainControllers', 'mainFilters', 'ngRoute'])
 # Avoid collision with Jinja templates
 mainApp.config ($interpolateProvider) ->
   $interpolateProvider.startSymbol "{[{"
   $interpolateProvider.endSymbol "}]}"
 
+mainApp.config ["$routeProvider", ($routeProvider) ->
+  $routeProvider.when("/neverhappening",
+    templateUrl: "improvement.html"
+    controller: "PhoneListCtrl"
+  ).otherwise(
+    templateUrl: "main.html"
+    controller: "remoteController"
+  )
+]
 mainServices = angular.module("mainServices", ["ngResource"])
 mainServices.factory("ImpService", ['$resource', ($resource) ->
   $resource window.api_path + "improvement", {},
@@ -92,6 +101,33 @@ mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService'
     $scope.toggle = (s) ->
         s.prev = s.val
         s.editing = !s.editing
+])
+
+mainControllers.controller('remoteController', ['$scope', '$routeParams', '$location', '$http', '$sce', ($scope, $routeParams, $location, $http, $sce)->
+  $scope.init = () ->
+    $scope.test = "false"
+    loc = $location.path()
+    # this catch feels sketchy because it causes infinite loop if it doesn't work.
+    # should probably switch at some point XXX
+    if loc == "/" or loc == ""
+      loc = "/home"
+
+    console.log(loc)
+    $http.get(loc).success((data, status, headers, config) ->
+      if "application/json" in headers('Content-Type')
+        console.log(data)
+      else
+        $scope.html_out = $sce.trustAsHtml(data)
+        $scope.test = "true"
+    )
+
+])
+
+mainControllers.controller('loginController', ['$scope', '$routeParams', '$location', '$http', '$sce', ($scope, $routeParams, $location, $http, $sce)->
+  $scope.submit = () ->
+    debugger
+  $scope.test = () ->
+    console.log("dsflgjsdfg")
 ])
 
 mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->

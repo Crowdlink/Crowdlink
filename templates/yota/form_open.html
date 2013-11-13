@@ -1,4 +1,9 @@
-<form method="post" class="{{ form_class }}" id="{{ id }}" action="{{action}}" enctype="{{enctype}}">
+<form method="post"
+      class="{{ form_class }}"
+      name="{{ name }}"
+      id="{{ id }}"
+      action="{{action}}"
+      enctype="{{enctype}}">
     {% if g.ajax %}
         <script type="text/javascript">
         $(function () {
