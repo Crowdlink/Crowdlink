@@ -6,6 +6,7 @@ static/lib/css/bootstrap.min.css
 *.py[cod]
 *.swp
 *.swo
+*.swn
 .idea
 node_modules
 application.cfg
