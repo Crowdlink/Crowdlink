@@ -1,6 +1,6 @@
-from flask import Flask, g, current_app
+from flask import Flask, g, current_app, abort, jsonify
 from flask.ext.mongoengine import MongoEngine
-from flask.ext.login import LoginManager, current_user
+from flask.ext.login import LoginManager, current_user, user_unauthorized
 from jinja2 import FileSystemLoader
 from yota.renderers import JinjaRenderer
 from yota import Form
@@ -34,6 +34,24 @@ lm = LoginManager()
 lm.init_app(app)
 lm.login_view = 'main.login'
 
+# Monkey patch the login managers error function
+def unauthorized(self):
+    '''
+    This is a slightly patched version of the default flask-login
+    de-auth function. Instead of a 302 redirect we pass some json back
+    for angular to catch
+    '''
+    user_unauthorized.send(current_app._get_current_object())
+
+    if self.unauthorized_callback:
+        return self.unauthorized_callback()
+
+    if not self.login_view:
+        abort(401)
+
+    return jsonify(access_denied=True)
+LoginManager.unauthorized = unauthorized
+
 # OAuth configuration
 oauth = OAuth(app)
 github = oauth.remote_app(
@@ -49,7 +67,8 @@ github = oauth.remote_app(
 )
 
 
-# Try to force a server reload if we can't connect to mongodb. Inelegant
+# Try to force a server reload if we can't connect to mongodb. Inelegant, really
+# should be changed before release! XXX
 error_occured = False
 try:
     db = MongoEngine(app)

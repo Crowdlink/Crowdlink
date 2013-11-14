@@ -3,7 +3,6 @@ from flask.ext.login import login_required, logout_user, current_user, login_use
 
 from . import root, lm, app
 from .models import User, Project, Improvement, UserSubscriber, ProjectSubscriber, ImpSubscriber, Transaction
-from .forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm
 from .lib import get_json_joined, redirect_angular
 
 import json

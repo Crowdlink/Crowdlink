@@ -37,9 +37,11 @@
     <!-- My libs -->
     <script src="/static/js/lib.js"></script>
     <script src="/static/js/main.js"></script>
-    <script src="/static/js/improvement.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/controllers.js"></script>
+    <script src="/static/js/services.js"></script>
     {% block post_script %}{% endblock %}
-    <div id="wrap">
+    <div id="wrap" ng-controller="rootController" ng-init="init({{logged_in}}, '{{username}}')">
       <div class="navbar navbar-default navbar-fixed-top">
           <div class="container no-gutter">
               <a class="navbar-brand logo" href="#/home">
@@ -47,41 +49,41 @@
                 <span class="visible-xs"><img src="/static/img/logo_sm.jpg" border="0" /></span>
               </a>
               <ul class="nav nav-pills main-nav-pills">
-                <!-- <li{% if request.path == "/plans" %} class="active"{%endif%}><a href="/plans">Plans</a></li> -->
-                {% if g.user.is_authenticated() %}
-                <li{% if request.path == url_for('main.account') %} class="active"{%endif%}>
+                <li ng-show="logged_in"
+                ng-class="{true: 'active'}[location.path()=='{{url_for('main.account')}}']">
                   <a href="#{{url_for('main.account')}}">
                     <i class="fa fa-large fa-gear"></i>
                     <span class="hidden-xs"> Account</span>
                   </a>
                 </li>
-                {% set url = g.user.get_abs_url() %}
-                  <li{% if request.path == url %} class="active"{%endif%}>
-                    <a href="#{{url}}">
-                      <i class="fa fa-large fa-user"></i>
-                      <span class="hidden-xs"> Profile</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#{{url_for('main.logout')}}">
-                      <i class="fa fa-large fa-sign-out"></i>
-                      <span class="hidden-xs"> Logout</span>
-                    </a>
-                  </li>
-                {% else %}
-                  <li{% if request.path == url_for('main.signup') %} class="active"{%endif%}>
+                <li ng-show="logged_in"
+                    ng-class="{true: 'active'}[location.path()==profile]">
+                  <a href="#{[{profile}]}">
+                    <i class="fa fa-large fa-user"></i>
+                    <span class="hidden-xs"> Profile</span>
+                  </a>
+                </li>
+                <li ng-show="logged_in"
+                ng-class="{true: 'active'}[location.path()=='{{url_for('main.logout')}}']">
+                  <a href="#{{url_for('main.logout')}}">
+                    <i class="fa fa-large fa-sign-out"></i>
+                    <span class="hidden-xs"> Logout</span>
+                  </a>
+                </li>
+                <li ng-hide="logged_in"
+                ng-class="{true: 'active'}[location.path()=='{{url_for('main.signup')}}']">
                   <a href="#{{url_for('main.signup')}}">
-                      <i class="fa fa-large fa-edit"></i>
-                      <span class="hidden-xs"> Sign Up</span>
-                    </a>
-                  </li>
-                  <li{% if request.path == url_for('main.login') %} class="active"{%endif%}>
-                    <a href="#{{url_for('main.login')}}">
-                      <i class="fa fa-sign-in fa-large"></i>
-                      <span class="hidden-xs"> Login</span>
-                    </a>
-                  </li>
-                {% endif %}
+                    <i class="fa fa-large fa-edit"></i>
+                    <span class="hidden-xs"> Sign Up</span>
+                  </a>
+                </li>
+                <li ng-hide="logged_in"
+                ng-class="{true: 'active'}[location.path()=='{{url_for('main.login')}}']">
+                  <a href="#{{url_for('main.login')}}">
+                    <i class="fa fa-sign-in fa-large"></i>
+                    <span class="hidden-xs"> Login</span>
+                  </a>
+                </li>
               </ul>
           </div>
       </div>

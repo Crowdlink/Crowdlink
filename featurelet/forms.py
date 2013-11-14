@@ -176,8 +176,3 @@ class SyncForm(Form):
             form.repo.items.append((repo, repo['full_name']))
 
         return form
-
-class LoginForm(Form):
-    username = nodes.Entry(css_class="form-control input-sm")
-    password = nodes.Password(css_class="form-control input-sm")
-    submit = nodes.Submit(title="Login", css_class="btn-sm btn btn-success")

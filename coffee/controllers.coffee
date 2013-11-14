@@ -1,47 +1,24 @@
-'use strict'
-mainApp = angular.module("mainApp", ['mainServices', 'mainControllers', 'mainFilters', 'ngRoute'])
-# Avoid collision with Jinja templates
-mainApp.config ($interpolateProvider) ->
-  $interpolateProvider.startSymbol "{[{"
-  $interpolateProvider.endSymbol "}]}"
-
-mainApp.config ["$routeProvider", ($routeProvider) ->
-  $routeProvider.when("/neverhappening",
-    templateUrl: "improvement.html"
-    controller: "PhoneListCtrl"
-  ).otherwise(
-    templateUrl: "main.html"
-    controller: "remoteController"
-  )
-]
-mainServices = angular.module("mainServices", ["ngResource"])
-mainServices.factory("ImpService", ['$resource', ($resource) ->
-  $resource window.api_path + "improvement", {},
-    update:
-      method: "POST"
-      timeout: 5000
-    query:
-      method: "GET"
-      timeout: 5000
-      isArray: true
-])
-mainServices.factory("UserService", ['$resource', ($resource) ->
-  $resource window.api_path + "login", {},
-    update:
-      method: "POST"
-      timeout: 5000
-      isArray: false
-])
-
-mainServices.factory("StripeService", ['$resource', ($resource) ->
-  $resource window.api_path + "charge", {},
-    update:
-      method: "POST"
-      timeout: 5000
-])
-
 mainControllers = angular.module("mainControllers", [])
-mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
+
+# RootController ==============================================================
+mainControllers.controller('rootController',
+  ($scope, $location, $rootScope)->
+    $scope.init = (logged_in, curr_username) ->
+      $rootScope.logged_in = logged_in
+      $rootScope.curr_username = curr_username
+
+    # update the profile url when the username changes
+    $rootScope.$watch('curr_username', ->
+      $scope.profile = '/u/' + $rootScope.curr_username
+    )
+
+    $rootScope.location = $location
+    $rootScope.strings =
+      err_comm = "Error communicating with server."
+)
+# EditController ==============================================================
+mainControllers.controller('problemEditController',
+  ($scope, $timeout, ImpService)->
     $scope.init = (id, brief, desc_md, desc, status, close_reason) ->
         $scope.id = id
         $scope.brief = brief
@@ -108,11 +85,11 @@ mainControllers.controller('editController', ['$scope', '$timeout', 'ImpService'
     $scope.toggle = (s) ->
         s.prev = s.val
         s.editing = !s.editing
-])
+)
 
-mainControllers.controller('remoteController', ['$scope', '$routeParams', '$location', '$http', '$sce', ($scope, $routeParams, $location, $http, $sce)->
+# RemoteController ============================================================
+mainControllers.controller('remoteController', ($scope, $rootScope, $routeParams, $location, $http, $sce)->
   $scope.init = () ->
-    $scope.test = "false"
     loc = $location.path()
     # this catch feels sketchy because it causes infinite loop if it doesn't work.
     # should probably switch at some point XXX
@@ -121,16 +98,20 @@ mainControllers.controller('remoteController', ['$scope', '$routeParams', '$loca
 
     console.log(loc)
     $http.get(loc).success((data, status, headers, config) ->
-      if "application/json" in headers('Content-Type')
-        console.log(data)
+      if "application/json" == headers('Content-Type')
+        if 'access_denied' of data
+          $rootScope.logged_in = false
+          $rootScope.curr_username = undefined
+          $location.path("/login")
+          console.log("Logging out!")
       else
         $scope.html_out = data
-        $scope.test = "true"
     )
 
-])
+)
 
-mainControllers.controller('loginController', ['$scope', 'UserService', '$location', ($scope, UserService, $location)->
+# LoginController ============================================================
+mainControllers.controller('loginController', ($scope, $rootScope, UserService, $location)->
   $scope.submit = () ->
     $scope.errors = []
     UserService.update(
@@ -138,20 +119,21 @@ mainControllers.controller('loginController', ['$scope', 'UserService', '$locati
         password: $scope.password
     ,(value) ->
         if 'success' of value and value.success
+          $rootScope.logged_in = true
+          $rootScope.curr_username = $scope.username
           $location.path("/")
         else
-            if 'message' of value
-              $scope.errors = [value.message, ]
-            else
-                text = "There was an unknown error committing your action. #{value.code}"
-                noty
-                    text: text
-                    type: 'error'
-                    timout: 2000
+          if 'message' of value
+            $scope.errors = [value.message, ]
+          else
+            $scope.errors = [value.message, ]
       )
-])
+)
 
-mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
+# ProjectSearch ===============================================================
+mainControllers.controller('projectSearch',
+['$scope', '$timeout', 'ImpService',
+  ($scope, $timeout, ImpService)->
     $scope.init = (project, imps) ->
         $scope.project = project
         $scope.imps = JSON.parse(unescape(imps))
@@ -168,7 +150,7 @@ mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpServic
                 , 100
             else
                 if 'message' of value
-                    text = "Error communicating with server. #{value.message}"
+                    text = " #{value.message}"
                 else
                     text = "There was an unknown error committing your action. #{value.code}"
                 noty
@@ -186,6 +168,7 @@ mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpServic
 
 ])
 
+# ChargeController ============================================================
 mainControllers.controller('chargeController', ['$scope', 'StripeService', ($scope, StripeService)->
     $scope.init = (sk, userid) ->
       window.handler = StripeCheckout.configure
@@ -220,30 +203,10 @@ mainControllers.controller('chargeController', ['$scope', 'StripeService', ($sco
         amount: $scope.amount
 ])
 
+# TransactionController =======================================================
 mainControllers.controller('transactionsController', ['$scope', 'StripeService', ($scope, StripeService)->
     $scope.init = (transactions) ->
       $scope.transactions = JSON.parse(unescape(transactions))
       for trans in $scope.transactions
         trans.details = false
 ])
-
-mainFilters = angular.module("mainFilters", [])
-mainFilters.filter('searchFilter', ->
-  (input, query, option) ->
-    input.replace(RegExp('('+ query + ')', 'gi'), '<span class="match">$1</span>')
-)
-mainFilters.filter('impFilter', ->
-  (input, query, option) ->
-    if query in input.brief or query in input.description
-        return true
-    else
-        return false
-)
-
-mainApp.directive "dynamic", ($compile) ->
-  replace: true
-  link: (scope, ele, attrs) ->
-    scope.$watch attrs.dynamic, (html) ->
-      ele.html html
-      $compile(ele.contents()) scope
-

@@ -257,30 +257,11 @@ def user(username=None):
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('main.home'))
+    return jsonify(access_denied=True)
 
 @main.route("/login", methods=['GET', 'POST'])
 def login():
-    if g.user is not None and g.user.is_authenticated():
-        return redirect(url_for('main.home'))
-    form = LoginForm()
-    if request.method == 'POST':
-        success = form.validate(request.form)
-        data = form.data_by_attr()
-        if success:
-            try:
-                user = User.objects.get(username=data['username'].lower())
-            except User.DoesNotExist:
-                form.start.add_msg(message="Invalid credentials")
-            except Exception:
-                catch_error_graceful(form)
-            else:
-                if user and user.check_password(data['password']):
-                    login_user(user)
-                    return redirect(url_for('main.home'))
-                else:
-                    form.start.add_msg(message="Invalid credentials")
-    return render_template('login.html', form=form.render())
+    return render_template('login.html')
 
 
 @main.route("/signup", methods=['GET', 'POST'])
@@ -312,7 +293,11 @@ def plans():
 
 @main.route("/", methods=['GET', 'POST'])
 def angular_root():
-    return render_template('base.html')
+    logged_in = "true" if g.user.is_authenticated() else "false"
+    username = g.user.username if g.user.is_authenticated() else "undefined"
+    return render_template('base.html',
+                           logged_in=logged_in,
+                           username=username)
 
 
 @main.route("/home", methods=['GET', 'POST'])
