@@ -311,7 +311,7 @@ def plans():
     return render_template('plans.html')
 
 @main.route("/", methods=['GET', 'POST'])
-def root():
+def angular_root():
     return render_template('base.html')
 
 

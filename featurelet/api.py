@@ -1,10 +1,10 @@
 from flask import Blueprint, request, g, current_app, jsonify, abort
-from flask.ext.login import login_required, logout_user, current_user
+from flask.ext.login import login_required, logout_user, current_user, login_user
 
 from . import root, lm, app
 from .models import User, Project, Improvement, UserSubscriber, ProjectSubscriber, ImpSubscriber, Transaction
 from .forms import RegisterForm, LoginForm, NewProjectForm, NewImprovementForm
-from .lib import get_json_joined
+from .lib import get_json_joined, redirect_angular
 
 import json
 import bson
@@ -140,6 +140,22 @@ def get_improvements():
     except Improvement.DoesNotExist:
         return resource_not_found()
 
+@api.route("/login", methods=['POST'])
+def login():
+    js = request.json
+
+    try:
+        user = User.objects.get(username=js['username'])
+        if user.check_password(js['password']):
+            login_user(user)
+        else:
+            return jsonify(success=False, message="Invalid credentials")
+    except KeyError:
+        return jsonify(success=False, message="Invalid credentials")
+    except User.DoesNotExist:
+        return jsonify(success=False, message="Invalid credentials")
+
+    return jsonify(success=True)
 
 @api.route("/improvement", methods=['POST'])
 @login_required

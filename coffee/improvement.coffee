@@ -25,6 +25,13 @@ mainServices.factory("ImpService", ['$resource', ($resource) ->
       timeout: 5000
       isArray: true
 ])
+mainServices.factory("UserService", ['$resource', ($resource) ->
+  $resource window.api_path + "login", {},
+    update:
+      method: "POST"
+      timeout: 5000
+      isArray: false
+])
 
 mainServices.factory("StripeService", ['$resource', ($resource) ->
   $resource window.api_path + "charge", {},
@@ -117,17 +124,31 @@ mainControllers.controller('remoteController', ['$scope', '$routeParams', '$loca
       if "application/json" in headers('Content-Type')
         console.log(data)
       else
-        $scope.html_out = $sce.trustAsHtml(data)
+        $scope.html_out = data
         $scope.test = "true"
     )
 
 ])
 
-mainControllers.controller('loginController', ['$scope', '$routeParams', '$location', '$http', '$sce', ($scope, $routeParams, $location, $http, $sce)->
+mainControllers.controller('loginController', ['$scope', 'UserService', '$location', ($scope, UserService, $location)->
   $scope.submit = () ->
-    debugger
-  $scope.test = () ->
-    console.log("dsflgjsdfg")
+    $scope.errors = []
+    UserService.update(
+        username: $scope.username
+        password: $scope.password
+    ,(value) ->
+        if 'success' of value and value.success
+          $location.path("/")
+        else
+            if 'message' of value
+              $scope.errors = [value.message, ]
+            else
+                text = "There was an unknown error committing your action. #{value.code}"
+                noty
+                    text: text
+                    type: 'error'
+                    timout: 2000
+      )
 ])
 
 mainControllers.controller('projectImpSearch', ['$scope', '$timeout', 'ImpService', ($scope, $timeout, ImpService)->
@@ -218,3 +239,11 @@ mainFilters.filter('impFilter', ->
     else
         return false
 )
+
+mainApp.directive "dynamic", ($compile) ->
+  replace: true
+  link: (scope, ele, attrs) ->
+    scope.$watch attrs.dynamic, (html) ->
+      ele.html html
+      $compile(ele.contents()) scope
+
