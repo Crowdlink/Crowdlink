@@ -43,34 +43,20 @@ def vote_api():
     return jsonify(success=True)
 
 
-@api.route("/project", methods=['POST'])
-@login_required
-def update_project():
-    js = request.json
+@api.route("/project", methods=['GET'])
+def get_project():
+    username = request.args.get('username', '')
+    url_key = request.args.get('url_key', '')
 
     # try to access the improvement with identifying information
     try:
-        proj_id = js.pop('id')
-        project = Project.objects.get(id=proj_id)
-    except KeyError:
+        project = Project.objects(username=username, url_key=url_key)
+        return get_json_joined(project)
+    except KeyError as e:
+        current_app.logger.exception("Incorrectly hit repo")
         return incorrect_syntax()
     except Improvement.DoesNotExist:
         return resource_not_found()
-
-    status = js.pop('subscribed', None)
-    if status == True:
-        # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = ProjectSubscriber(user=g.user.id)
-        project.subscribe(subscribe)
-    elif status == False:
-        project.unsubscribe(g.user)
-
-    try:
-        project.save()
-    except mongoengine.errors.ValidationError as e:
-        return jsonify(success=False, validation_errors=e.to_dict())
-
-    return jsonify(success=True)
 
 
 @api.route("/user", methods=['POST'])
@@ -133,7 +119,9 @@ def get_improvements():
             return bson.json_util.dumps(improvements)
         # otherwise, just dump the project results back
         else:
-            return get_json_joined(Improvement.objects(project=args['project'])[:limit])
+            project = args.get('project', '')
+            imps = Improvement.objects(project=project)[:limit]
+            return get_json_joined(imps)
     except KeyError:
         return incorrect_syntax()
     except Improvement.DoesNotExist:

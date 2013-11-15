@@ -1,10 +1,10 @@
 from . import db
 from .lib import distribute_event, catch_error_graceful
-from .models import User
+from .models import User, CommonMixin
 
 import datetime
 
-class Event(db.EmbeddedDocument):
+class Event(db.EmbeddedDocument, CommonMixin):
     # this represents the key in the subscriber entry that dictates whether it
     # should be publishe
     attr = None

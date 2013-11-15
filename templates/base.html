@@ -78,8 +78,8 @@
                   </a>
                 </li>
                 <li ng-hide="logged_in"
-                ng-class="{true: 'active'}[location.path()=='{{url_for('main.login')}}']">
-                  <a href="#{{url_for('main.login')}}">
+                ng-class="{true: 'active'}[location.path()=='/login']">
+                  <a href="#/login">
                     <i class="fa fa-sign-in fa-large"></i>
                     <span class="hidden-xs"> Login</span>
                   </a>

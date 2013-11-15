@@ -161,14 +161,6 @@ def project_settings(username=None, url_key=None):
                            sync_form=sync_form_out)
 
 
-@main.route("/<username>/<url_key>/")
-def view_project(username=None, url_key=None):
-    usr = User.objects.get(username=username)
-    project = Project.objects.get(maintainer=usr,
-                                  url_key=url_key)
-    return render_template('project.html', project=project)
-
-
 @main.route("/<username>/<purl_key>/<url_key>", methods=['GET', 'POST'])
 def view_improvement(username=None, purl_key=None, url_key=None):
     usr = User.objects.get(username=username)
@@ -206,6 +198,7 @@ def new_project():
             try:
                 proj = Project(
                     maintainer=g.user.id,
+                    username=g.user.username,
                     name=data['ptitle'],
                     website=data['website'],
                     source_url=data['source'],
@@ -258,10 +251,6 @@ def user(username=None):
 def logout():
     logout_user()
     return jsonify(access_denied=True)
-
-@main.route("/login", methods=['GET', 'POST'])
-def login():
-    return render_template('login.html')
 
 
 @main.route("/signup", methods=['GET', 'POST'])

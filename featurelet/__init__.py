@@ -32,7 +32,6 @@ if app.config['DEBUG']:
 # Setup login stuff
 lm = LoginManager()
 lm.init_app(app)
-lm.login_view = 'main.login'
 
 # Monkey patch the login managers error function
 def unauthorized(self):
@@ -45,9 +44,6 @@ def unauthorized(self):
 
     if self.unauthorized_callback:
         return self.unauthorized_callback()
-
-    if not self.login_view:
-        abort(401)
 
     return jsonify(access_denied=True)
 LoginManager.unauthorized = unauthorized

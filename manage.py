@@ -35,6 +35,7 @@ def provision():
     # Create the project for featurelet
     proj = Project(
         maintainer=usr.id,
+        username=usr.username,
         name='Featurelet',
         website="http://featurelet.com",
         url_key='featurelet',

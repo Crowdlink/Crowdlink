@@ -63,24 +63,40 @@ def send_email(to_addr, typ, **kwargs):
         return False
 
 
-def get_json_joined(queryset, join=None):
+def get_json_joined(queryset, join=None, raw=True):
     lst = []
 
     # get our standard join dictionary
     if join:
         join_dct = join
     else:
-        try:
-            join_dct = queryset[0].standard_join
-        except IndexError:
-            return []
+        join_dct = queryset[0].standard_join
+
+    subs = {}
+    # build up an object of all subobject joins
+    for key, val in join_dct.items():
+        parts = key.split("__", 1)
+        if len(parts) > 1:
+            join_dct.pop(key)  # don't let the lower loop touch this attr
+            subs.setdefault(parts[0], {}).setdefault(parts[1])
 
     for obj, bson in zip(queryset, queryset.as_pymongo()):
         dct = _json_convert(bson)
         dct.update(obj.jsonize(raw=1, **join_dct))
+        for key, join_keys in subs.items():
+            subobj = getattr(obj, key)
+            if isinstance(subobj, list):
+                for idx, val in enumerate(subobj):
+                    dct[key][idx].update(subobj[idx].jsonize(raw=True, **join_keys))
+            else:
+                dct[key].update(dct[key].jsonize(**val))
         lst.append(dct)
-
-    return json.dumps(lst)
+    if raw:
+        import pprint
+        current_app.logger.debug(pprint.pformat(lst))
+        return json.dumps(lst)
+    else:
+        return lst
 
 def catch_error_graceful(form=None, out_flash=False):
     """ This is a utility function that handles exceptions that might be omitted

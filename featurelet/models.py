@@ -69,6 +69,10 @@ class CommonMixin(object):
         return True
 
     def jsonize(self, raw=False, **kwargs):
+        """ Used to join attributes or functions to an objects json representation.
+        For passing back object state via the api
+        """
+
         for key, val in kwargs.items():
             try:
                 attr = getattr(self, key)
@@ -226,6 +230,7 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
     id = db.ObjectIdField()
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     maintainer = db.ReferenceField('User')
+    username = db.StringField()
     url_key = db.StringField(min_length=3, max_length=64)
 
     # description info
@@ -244,6 +249,15 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
     gh_synced_at = db.DateTimeField()
     gh_synced = db.BooleanField(default=False)
 
+    standard_join = {#'can_edit_settings': 1,
+                     #'can_edit_imp': 1,
+                     'get_abs_url': 1,
+                     'subscribed': 1,
+                     #'can_sync': 1
+                     'id': 1,
+                     'maintainer': 1,
+                     'events__template': 1
+                     }
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
 
     @property
@@ -283,7 +297,7 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
         return self.maintainer == user
 
     def get_abs_url(self):
-        return url_for('main.view_project',
+        return "/{username}/{url_key}/".format(
                        username=self.maintainer.username,
                        url_key=self.url_key)
 

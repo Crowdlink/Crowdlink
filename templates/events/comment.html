@@ -1,14 +1,15 @@
 <h4 class="pull-left">
   <!-- { set hash = post.get_comment_hash(comment) } -->
-    <a href="{{event.user.get_abs_url()}}" name="">
-        {{event.user.username}}
+    <a href="{[{event.user.get_abs_url()}]}" name="">
+        {[{event.user.username}]}
     </a>
 </h4>
-  <h4 class="pull-right">{{event.created_at|datetime}}</h4>
-  <div class="clearfix"></div>
-  <div class="well well-sm">
-    {{ event.md_body|safe }}
-  </div>
-  {% if event.user.username == g.user.username %}
-  <a href="" class="fa fa-edit fa-large"> &nbsp;Edit</a><br><br>
-  {% endif %}
+<h4 class="pull-right">{[{event.created_at|datetime}]}</h4>
+<div class="clearfix"></div>
+<div class="well well-sm">
+  {[{ event.md_body|safe }]}
+</div>
+<a ng-show="curr_username == event.username"
+  class="fa fa-edit fa-large clickable">
+  &nbsp;Edit
+</a><br><br>

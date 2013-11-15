@@ -130,19 +130,24 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
       )
 )
 
-# ProjectSearch ===============================================================
-mainControllers.controller('projectSearch',
-['$scope', '$timeout', 'ImpService',
-  ($scope, $timeout, ImpService)->
-    $scope.init = (project, imps) ->
-        $scope.project = project
-        $scope.imps = JSON.parse(unescape(imps))
+# ProjectController============================================================
+mainControllers.controller('projectController',
+  ($scope, $timeout, ImpService, ProjectService, $routeParams)->
+    $scope.init = () ->
+        $scope.filter = ""
+        ProjectService.query(
+          username: $routeParams.username
+          url_key: $routeParams.url_key
+        ,(value) ->
+          $scope.project = value[0]
+          $scope.search()
+        )
 
     $scope.search = ->
         $scope.saving = true
         ImpService.query(
             filter: $scope.filter
-            project: $scope.project
+            project: $scope.project.id
         ,(value) -> # Function to be run when function returns
             if 'success' not of value
                 $timeout ->
@@ -165,8 +170,7 @@ mainControllers.controller('projectSearch',
         imp.votes += 1
       else
         imp.votes -= 1
-
-])
+)
 
 # ChargeController ============================================================
 mainControllers.controller('chargeController', ['$scope', 'StripeService', ($scope, StripeService)->
