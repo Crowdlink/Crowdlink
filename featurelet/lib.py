@@ -7,6 +7,7 @@ import sys
 import mongoengine
 import json
 import smtplib
+from mongoengine.base import BaseList
 
 from bson.json_util import _json_convert
 from email.mime.text import MIMEText
@@ -63,40 +64,44 @@ def send_email(to_addr, typ, **kwargs):
         return False
 
 
-def get_json_joined(queryset, join=None, raw=True):
-    lst = []
+def get_json_joined(*args, **kwargs):
+    return json.dumps(get_joined(*args, **kwargs))
+
+
+def get_joined(obj, join={}, no_std=False):
+    # If it's a list, join each of the items in the list and return modified
+    # list
+    if isinstance(obj, mongoengine.QuerySet) or isinstance(obj, BaseList):
+        lst = []
+        for item in obj:
+            lst.append(get_joined(item, join=join))
+        return lst
 
     # get our standard join dictionary
-    if join:
-        join_dct = join
-    else:
-        join_dct = queryset[0].standard_join
+    if not no_std:
+        join.update(obj.standard_join)
 
+    # build up an dict keeping track of subobj joins
     subs = {}
-    # build up an object of all subobject joins
-    for key, val in join_dct.items():
+    for key, val in join.items():
         parts = key.split("__", 1)
         if len(parts) > 1:
-            join_dct.pop(key)  # don't let the lower loop touch this attr
+            join.pop(key)  # don't let the regular join use this attr
             subs.setdefault(parts[0], {}).setdefault(parts[1])
 
-    for obj, bson in zip(queryset, queryset.as_pymongo()):
-        dct = _json_convert(bson)
-        dct.update(obj.jsonize(raw=1, **join_dct))
-        for key, join_keys in subs.items():
-            subobj = getattr(obj, key)
-            if isinstance(subobj, list):
-                for idx, val in enumerate(subobj):
-                    dct[key][idx].update(subobj[idx].jsonize(raw=True, **join_keys))
-            else:
-                dct[key].update(dct[key].jsonize(**val))
-        lst.append(dct)
-    if raw:
-        import pprint
-        current_app.logger.debug(pprint.pformat(lst))
-        return json.dumps(lst)
+    # run the primary object join
+    join_vals = obj.jsonize(raw=True, **join)
+    if '_base' in join:
+        dct = join_vals
     else:
-        return lst
+        dct = _json_convert(obj.to_mongo())
+        dct.update(join_vals)
+
+    # run all the subobject joins
+    for key, sub_join in subs.items():
+        subobj = getattr(obj, key)
+        dct[key] = get_joined(subobj, join=sub_join)
+    return dct
 
 def catch_error_graceful(form=None, out_flash=False):
     """ This is a utility function that handles exceptions that might be omitted

@@ -142,9 +142,11 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     # event dist
     events = db.ListField(db.GenericEmbeddedDocumentField())
     subscribers = db.ListField(db.EmbeddedDocumentField('ImpSubscriber'))
-    meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
 
-    standard_join = {'get_abs_url': 1, 'vote_status': 1, 'project': 1}
+    meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
+    standard_join = {'get_abs_url': 1,
+                     'vote_status': 1,
+                     'project': 1}
 
     # Closevalue masking for render
     @property
@@ -256,7 +258,6 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
                      #'can_sync': 1
                      'id': 1,
                      'maintainer': 1,
-                     'events__template': 1
                      }
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
 

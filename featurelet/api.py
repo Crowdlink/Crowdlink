@@ -51,7 +51,9 @@ def get_project():
     # try to access the improvement with identifying information
     try:
         project = Project.objects(username=username, url_key=url_key)
-        return get_json_joined(project)
+        return get_json_joined(project,
+                               join={'events__template': 1,
+                                     })
     except KeyError as e:
         current_app.logger.exception("Incorrectly hit repo")
         return incorrect_syntax()

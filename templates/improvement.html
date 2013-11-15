@@ -1,123 +1,127 @@
-<!-- {% block title %}View Improvement "{{ imp.brief }}"{% endblock %} -->
-{% block content %}
 <div class="row">
   <ol class="breadcrumb">
-    <li><a href="#{{imp.project.maintainer.get_abs_url()}}">{{imp.project.maintainer}}</a></li>
-    <li><a href="#{{imp.project.get_abs_url()}}">{{ imp.project.name }}</a></li>
+    <li><a href="#{[{imp.project.maintainer.get_abs_url()}]}">{[{imp.project.maintainer}]}</a></li>
+    <li><a href="#{[{imp.project.get_abs_url()}]}">{[{ imp.project.name }]}</a></li>
     <li><a href="">Improvements</a></li>
-    <li class="active">{{imp.brief}}</li>
+    <li class="active">{[{imp.brief}]}</li>
   </ol>
 </div>
-<div ng-controller="editController" ng-init="init('{{imp.id}}', '{{imp.brief|urlencode}}', '{{imp.md|urlencode}}', '{{imp.description|urlencode}}', '{{imp.open}}', '{{imp._close_reason}}')">
+<div ng-controller="editController" ng-init="init('{[{imp.id}]}', '{[{imp.brief|urlencode}]}', '{[{imp.md|urlencode}]}', '{[{imp.description|urlencode}]}', '{[{imp.open}]}', '{[{imp._close_reason}]}')">
   <div class="row">
     <div class="col-md-8 no-gutter">
       <h2>
-        {% if can_edit %}
-        <span ng-show="brief.editing">
-          <div class="input-group">
-            <input type="text" class="form-control" ng-model="brief.val" />
-            <span class="btn btn-info input-group-addon" ng-click="save(brief)">
-              <i class="fa fa-save" ng-hide="brief.saving"></i>
-              <i class="fa fa-spinner fa-spin" ng-show="brief.saving"></i>
-            </span>
-            <span class="btn btn-primary input-group-addon" ng-click="revert(brief)"><i class="fa fa-times-circle"></i></span>
-          </div>
+        <span ng-hide="imp.can_edit">
+          <span ng-show="editing.brief">
+            <div class="input-group">
+              <input type="text" class="form-control" ng-model="imp.brief" />
+              <span class="btn btn-info input-group-addon" ng-click="save('brief')">
+                <i class="fa fa-save" ng-hide="saving.brief"></i>
+                <i class="fa fa-spinner fa-spin" ng-show="saving.brief"></i>
+              </span>
+              <span class="btn btn-primary input-group-addon" ng-click="revert('brief')"><i class="fa fa-times-circle"></i></span>
+            </div>
+          </span>
+          <span ng-hide="editing.brief">
+            {[{ imp.brief }]}&nbsp;
+            <small class="fa fa-edit icon-hover" ng-click="toggle('brief')"></small>
+          </span>
         </span>
-        <span ng-hide="brief.editing">
-          {[{ brief.val }]}&nbsp;
-          <small class="fa fa-edit icon-hover" ng-click="toggle(brief)"></small>
+        <span ng-show="imp.can_edit">
+          {[{ imp.brief }]}
         </span>
-        {% else %}
-          {{ imp.brief }}
-        {% endif %}
       </h2>
     </div>
     <div class="col-md-4 no-gutter">
       <div class="pull-right" style="width:50%;">
         <a class="btn btn-default fill-link"
-            data-type="watch"
-            data-json="{{imp.jsonize(url_key=1, project=1, subscribed=1)}}"
-            data-url="improvement">
-          <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
-          <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
+          ng-click="subscribe()"
+          ng-class="{true: 'btn-info active', false: 'btn-info'}[imp.subscribed]">
+        <span ng-hide="imp.subscribed"><i class="fa fa-eye"></i> &nbsp;Watch</span>
+        <span ng-show="imp.subscribed"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
         </a>
-        <a data-json="{{imp.jsonize(url_key=1, project=1, vote_status=1)}}"
-            data-type="vote"
-            class="btn btn-info fill-link">
-          <span class="false-div"><i class="fa fa-plus"></i> &nbsp;Vote</span>
-          <span class="true-div"><i class="fa fa-minus"></i> &nbsp;Unvote</span>
+        <a class="btn btn-info fill-link"
+          ng-click="vote()"
+          ng-class="{true: 'btn-success', false: 'btn-info'}[imp.subscribed]">
+          <span ng-hide="imp.vote_status">
+            Vote&nbsp;
+            <i class="fa fa-plus" ng-show="saving.status"></i>
+            <i class="fa fa-minus-circle" ng-hide="saving.status"></i>
+          </span>
+          <span ng-show="imp.vote_status">
+            Unvote&nbsp;
+            <i class="fa fa-plus" ng-show="saving.status"></i>
+            <i class="fa fa-minus-circle" ng-hide="saving.status"></i>
+          </span>
         </a>
-        {% if can_edit %}
         <a class="btn fill-link"
+            ng-show="imp.can_edit"
             ng-class="{'btn-danger': status.val, 'btn-success': !status.val}"
             ng-click="swap_save(status)">
-          <span ng-show="status.val">
+          <span ng-show="imp.status">
             <i class="fa fa-minus-circle" ng-hide="status.saving"></i>
             <i class="fa fa-spinner fa-spin" ng-show="status.saving"></i> &nbsp;Close
           </span>
-          <span ng-hide="status.val">
+          <span ng-hide="imp.status">
             <i class="fa fa-plus-circle" ng-hide="status.saving"></i>
             <i class="fa fa-spinner fa-spin" ng-show="status.saving"></i> &nbsp;Open
           </span>
         </a>
-        {% if not imp.open %}
-        <div class="btn-group-vertical">
-          {% for val in Improvement.CloseVals: %}
+        <div ng-show="imp.open" class="btn-group-vertical">
           <label class="btn"
-            ng-class="{true: 'active btn-info', false: 'btn-default'}[close_reason.val=={{val.index}}]">
-            <input type="radio" ng-model="close_reason.val" ng-value="{{val.index}}" class="hide">
-            {{ val }}
+            ng-repeat="reason in imp.close_reason"
+            ng-class="{true: 'active btn-info', false: 'btn-default'}[imp.close_reason==reason]">
+            <input type="radio" ng-model="imp.close_reason" ng-value="reason" class="hide">
+            {[{ val }]}
           </label>
-          {% endfor %}
         </div>
-        {% endif %}
-        {% endif %}
       </div>
     </div>
   </div>
   <br />
   <div class="row">
     <h4>
-      <b>Proposed on </b>{{ imp.created_at|date }}
-      ({{ imp.created_at|date_ago }})
+      <b>Proposed on </b>{[{ imp.created_at|date:'medium' }]}
+      ({[{ imp.created_at|date_ago }]})
     </h4>
     <br>
     <div class="row well well-lg center">
-        {% if can_edit %}
-        <div class="row col-lg-11" ng-show="desc.editing">
+        <div class="row col-lg-11" ng-show="editing.desc">
           <script type="text/javascript" >
             $(document).ready(function() {
               $(".markItUp").markItUp(mySettings);
             });
           </script>
-          <textarea class="markItUp" ng-model="desc.val"></textarea>
+          <textarea class="markItUp" ng-model="imp.desc"></textarea>
           <span class="btn btn-info" ng-click="save(desc)">
             <i class="fa fa-save" ng-hide="desc.saving"></i> &nbsp;Save
             <i class="fa fa-spinner fa-spin" ng-show="desc.saving"></i>
           </span>
-          <span class="btn btn-primary" ng-click="revert(desc)"><i class="fa fa-times-circle"></i> &nbsp;Discard</span>
+          <span class="btn btn-primary" ng-click="revert(desc)">
+            <i class="fa fa-times-circle"></i>
+            &nbsp;Discard
+          </span>
         </div>
         <div ng-hide="desc.editing">
           <i class="fa fa-edit fa-3x icon-hover pull-right" ng-click="toggle(desc)"></i>
           <span ng-bind-html-unsafe="desc.md"></span>
         </div>
-        {% else %}
-        {{imp.md|safe}}
-        {% endif %}
+        <span ng-hide="imp.can_edit">
+          {[{imp.md}]}
+        </span>
     </div>
-    {% if can_edit %}
-    {% endif %}
   </div>
 </div>
-{% if events %}
-<div class="row">
+<div class="row" ng-show="imp.events.length > 0">
   <h3>Events</h3>
-  {% for event in imp.events %}
-    {% include event.template %}
-  {% endfor %}
+  <div ng-repeat="event in project.events">
+    <span ng-include="'templates/' + event.template" />
+  </div>
 </div>
-{% endif %}
-<div class="row">
-  {{ comment_form|safe }}
+<div class="row" ng-show="logged_in">
+  <script type="text/javascript" >
+    $(document).ready(function() {
+      $(".markItUp").markItUp(mySettings);
+    });
+  </script>
+  <textarea class="markItUp" ng-model="new_comment.body"></textarea>
 </div>
-{% endblock %}

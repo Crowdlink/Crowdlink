@@ -17,7 +17,7 @@ mainControllers.controller('rootController',
       err_comm = "Error communicating with server."
 )
 # EditController ==============================================================
-mainControllers.controller('problemEditController',
+mainControllers.controller('problemController',
   ($scope, $timeout, ImpService)->
     $scope.init = (id, brief, desc_md, desc, status, close_reason) ->
         $scope.id = id
@@ -148,7 +148,7 @@ mainControllers.controller('projectController',
         ImpService.query(
             filter: $scope.filter
             project: $scope.project.id
-        ,(value) -> # Function to be run when function returns
+        , (value) -> # Function to be run when function returns
             if 'success' not of value
                 $timeout ->
                     $scope.imps = value

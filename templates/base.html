@@ -50,8 +50,8 @@
               </a>
               <ul class="nav nav-pills main-nav-pills">
                 <li ng-show="logged_in"
-                ng-class="{true: 'active'}[location.path()=='{{url_for('main.account')}}']">
-                  <a href="#{{url_for('main.account')}}">
+                ng-class="{true: 'active'}[location.path()=='/account']">
+                  <a href="#/account">
                     <i class="fa fa-large fa-gear"></i>
                     <span class="hidden-xs"> Account</span>
                   </a>
@@ -63,16 +63,15 @@
                     <span class="hidden-xs"> Profile</span>
                   </a>
                 </li>
-                <li ng-show="logged_in"
-                ng-class="{true: 'active'}[location.path()=='{{url_for('main.logout')}}']">
-                  <a href="#{{url_for('main.logout')}}">
+                <li ng-show="logged_in">
+                  <a href="#/logout">
                     <i class="fa fa-large fa-sign-out"></i>
                     <span class="hidden-xs"> Logout</span>
                   </a>
                 </li>
                 <li ng-hide="logged_in"
-                ng-class="{true: 'active'}[location.path()=='{{url_for('main.signup')}}']">
-                  <a href="#{{url_for('main.signup')}}">
+                ng-class="{true: 'active'}[location.path()=='/signup']">
+                  <a href="#/signup">
                     <i class="fa fa-large fa-edit"></i>
                     <span class="hidden-xs"> Sign Up</span>
                   </a>
