@@ -93,35 +93,23 @@ def update_user():
 @api.route("/improvement", methods=['GET'])
 def get_improvements():
     args = request.args
-    fltr = args.get('filter', None)
     limit = args.get('limit', 15)
+    username = args.get('username', None)
+    purl_key = args.get('purl_key', None)
+    project = args.get('project', None)
+    url_key = args.get('url_key', None)
+    if (purl_key and username) and not project:
+        try:
+            project = Project.objects.get(username=username, url_key=purl_key).id
+        except Improvement.DoesNotExist:
+            return resource_not_found()
 
-    # try to access the improvements with identifying information
     try:
-        # If the user is running a fulltext search
-        if fltr:
-            coll = Improvement._get_collection()
-            # Run the fulltext search command manually
-            results = coll.database.command(
-                "text",
-                coll.name,
-                search=fltr,
-                limit=limit)
-            improvements = []
-            for res in results['results']:
-                # Kinda hacky. We make an in memory improvement to generate
-                # properties and join them in for return
-                prop = Improvement(**res['obj']).jsonize(
-                    raw=1,
-                    **Improvement.standard_join)
-                res['obj'].update(prop)
-                improvements.append(res['obj'])
-            # Serialize the bson directly, rather than proxying to improvement
-            # objects
-            return bson.json_util.dumps(improvements)
-        # otherwise, just dump the project results back
+        # if the request was for a single improvement
+        if url_key:
+            imp = Improvement.objects(project=project, url_key=url_key)
+            return get_json_joined(imp)
         else:
-            project = args.get('project', '')
             imps = Improvement.objects(project=project)[:limit]
             return get_json_joined(imps)
     except KeyError:
@@ -171,11 +159,9 @@ def update_improvement():
     if brief:
         imp.brief = brief
 
-    desc = js.pop('description', None)
+    desc = js.pop('desc', None)
     if desc:
-        imp.description = desc
-        if js.pop('render_md', True):
-            return_val['md'] = imp.md
+        imp.desc = desc
 
     sub_status = js.pop('subscribed', None)
     if sub_status == True:

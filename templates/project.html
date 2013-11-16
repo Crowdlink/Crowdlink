@@ -38,21 +38,21 @@
   </div><!-- /input-group -->
   <table class="table table-hover">
     <tbody>
-     <tr ng-repeat="imp in imps | filter:filter">
+     <tr ng-repeat="prob in probs | filter:filter">
       <td class="fit-width">
         <a class="btn btn-xs"
-            ng-class="{'btn-success': imp.vote_status, 'btn-info': !imp.vote_status}"
-            ng-click="vote(imp)">
-          <span ng-hide="imp.vote_status">Vote&nbsp; <i class="fa fa-plus"></i></span>
-          <span ng-hide="!imp.vote_status">Unvote&nbsp; <i class="fa fa-minus"></i></span>
+            ng-class="{'btn-success': prob.vote_status, 'btn-info': !prob.vote_status}"
+            ng-click="vote(prob)">
+          <span ng-hide="prob.vote_status">Vote&nbsp; <i class="fa fa-plus"></i></span>
+          <span ng-hide="!prob.vote_status">Unvote&nbsp; <i class="fa fa-minus"></i></span>
         </a>
         &nbsp;&nbsp;
-        <b><ng-pluralize count="imp.votes"
+        <b><ng-pluralize count="prob.votes"
                          when="{'0': 'No votes',
                                 'one': '1 vote',
                                 'other': '{} votes'}"></ng-pluralize></b>
       </td>
-      <td><a href="#{[{ imp.get_abs_url }]}" ng-bind-html="imp.brief | searchFilter:filter"></a></td>
+      <td><a href="#{[{ prob.get_abs_url }]}" ng-bind-html="prob.brief | searchFilter:filter"></a></td>
     </tr>
     </tbody>
   </table>

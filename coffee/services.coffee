@@ -1,5 +1,5 @@
 mainServices = angular.module("mainServices", ["ngResource"])
-mainServices.factory("ImpService", ($resource) ->
+mainServices.factory("ProblemService", ($resource) ->
   $resource window.api_path + "improvement", {},
     update:
       method: "POST"

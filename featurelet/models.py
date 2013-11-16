@@ -81,10 +81,7 @@ class CommonMixin(object):
                 elif isinstance(attr, bool):
                     pass
                 elif callable(attr):
-                    try:
-                        attr = attr()
-                    except TypeError:
-                        pass
+                    attr = attr()
                 else:
                     attr = str(attr)
             except AttributeError:
@@ -126,7 +123,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     open = db.BooleanField(default=True)
     _close_reason = db.IntField(default=CloseVals.Other.index)
     brief = db.StringField(max_length=512, min_length=3)
-    description = db.StringField(min_length=15)
+    desc = db.StringField(min_length=15)
     creator = db.ReferenceField('User')
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
 
@@ -146,6 +143,16 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
     standard_join = {'get_abs_url': 1,
                      'vote_status': 1,
+                     'subscribed': 1,
+                     'created_at': 1,
+                     'can_edit': 1,
+                     'id': 1,
+                     'project___base': 1,
+                     'project__name': 1,
+                     'project__maintainer': 1,
+                     'project__maintainer__get_abs_url': 1,
+                     'project__maintainer__username': 1,
+                     'project__maintainer___base': 1,
                      'project': 1}
 
     # Closevalue masking for render
@@ -159,7 +166,9 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
                        username=self.project.maintainer.username,
                        url_key=self.url_key)
 
-    def can_edit_imp(self, user):
+    def can_edit(self):
+        return self.can_user_edit(g.user)
+    def can_user_edit(self, user):
         return user == self.creator or self.project.can_edit_imp(user)
 
     def gh_desync(self, flatten=False):

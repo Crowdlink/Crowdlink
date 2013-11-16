@@ -16,54 +16,53 @@ mainControllers.controller('rootController',
     $rootScope.strings =
       err_comm = "Error communicating with server."
 )
-# EditController ==============================================================
+# Problemcontroller ============================================================
 mainControllers.controller('problemController',
-  ($scope, $timeout, ImpService)->
-    $scope.init = (id, brief, desc_md, desc, status, close_reason) ->
-        $scope.id = id
-        $scope.brief = brief
-        # data type edit templates
-        $scope.brief =
-          val: unescape(brief)
-          editing: false
-          saving: false
-          prev: ""
-        $scope.desc =
-          val: unescape(desc)
-          md: unescape(desc_md)
-          editing: false
-          saving: false
-          prev: ""
-        # toggle type templates
-        $scope.status =
-          val: status == 'True'
-          saving: false
-        # toggle type templates
-        $scope.close_reason =
-          val: close_reason
-          saving: false
+  ($scope, $timeout, $routeParams, ProblemService)->
+    $scope.init = () ->
+        ProblemService.query(
+          username: $routeParams.username
+          purl_key: $routeParams.purl_key
+          url_key: $routeParams.url_key
+        ,(value) ->
+          $scope.prob = value[0]
+          $scope.prev =
+            prob: $.extend({}, value[0])
+        )
+        $scope.editing =
+          brief: false
+          desc: false
+        $scope.saving =
+          brief: false
+          desc: false
+          close_reason: false
+          status: false
 
     $scope.revert = (s) ->
-        s.val = s.prev
+        $scope.prob[s] = $scope.prev.prob[s]
         $scope.toggle(s)
 
-    $scope.save = (s, callback) ->
-        s.saving = true
-        ImpService.update(
-            brief: $scope.brief.val
-            description: $scope.desc.val
-            open: $scope.status.send_val
-            render_md: true
-            id: $scope.id
+    $scope.save = (s, extra_data={}, callback) ->
+        $scope.saving[s] = true
+        data =
+          id: $scope.prob.id
+        if s == 'brief'
+          data.brief = $scope.prob.brief
+        if s == 'desc'
+          data.desc = $scope.prob.desc
+        if s == 'open'
+          data.open = $scope.prob.open
+
+        ProblemService.update(
+          $.extend(data, extra_data)
         ,(value) -> # Function to be run when function returns
-            if value.success
-                $scope.desc.md = value.md
+            if 'success' of value and value.success
                 $timeout ->
                     if callback
                       callback()
-                    s.saving = false
-                    s.editing = false
-                , 1000
+                    $scope.saving[s] = false
+                    $scope.editing[s] = false
+                , 500
             else
                 if 'message' of value
                     text = "Error communicating with server. #{value.message}"
@@ -73,18 +72,21 @@ mainControllers.controller('problemController',
                     text: text
                     type: 'error'
                     timout: 2000
-                s.saving = false
+                $scope.saving[s] = false
+                $scope.editing[s] = false
         )
 
     $scope.swap_save = (s) ->
       s.send_val = !s.val
-      $scope.save(s, ->
-        s.val = !s.val
+      extra_data = {}
+      extra_data[s] = !$scope.prob[s]
+      $scope.save(s, extra_data, ->
+        $scope.prob[s] = !$scope.prob[s]
       )
 
     $scope.toggle = (s) ->
-        s.prev = s.val
-        s.editing = !s.editing
+      $scope.prev.prob[s] = $scope.prob[s]
+      $scope.editing[s] = !$scope.editing[s]
 )
 
 # RemoteController ============================================================
@@ -132,7 +134,7 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
 
 # ProjectController============================================================
 mainControllers.controller('projectController',
-  ($scope, $timeout, ImpService, ProjectService, $routeParams)->
+  ($scope, $timeout, ProjectService, $routeParams)->
     $scope.init = () ->
         $scope.filter = ""
         ProjectService.query(
@@ -145,13 +147,13 @@ mainControllers.controller('projectController',
 
     $scope.search = ->
         $scope.saving = true
-        ImpService.query(
+        ProplemService.query(
             filter: $scope.filter
             project: $scope.project.id
         , (value) -> # Function to be run when function returns
             if 'success' not of value
                 $timeout ->
-                    $scope.imps = value
+                    $scope.probs = value
                 , 100
             else
                 if 'message' of value
@@ -164,12 +166,12 @@ mainControllers.controller('projectController',
                     timout: 2000
         )
 
-    $scope.vote = (imp) ->
-      imp.vote_status = !imp.vote_status
-      if imp.vote_status
-        imp.votes += 1
+    $scope.vote = (prob) ->
+      prob.vote_status = !prob.vote_status
+      if prob.vote_status
+        prob.votes += 1
       else
-        imp.votes -= 1
+        prob.votes -= 1
 )
 
 # ChargeController ============================================================

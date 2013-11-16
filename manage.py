@@ -54,7 +54,7 @@ def provision():
         imp = Improvement(
             creator=usr.id,
             brief=title,
-            description=desc)
+            desc=desc)
         proj.add_improvement(imp, usr)
 
 @manager.command

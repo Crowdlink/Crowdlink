@@ -106,3 +106,27 @@ mainApp.directive "dynamic", ($compile) ->
       ele.html html
       $compile(ele.contents()) scope
 
+mainApp.directive "btfMarkdown", ->
+  converter = new Showdown.converter()
+  restrict: "AE"
+  link: (scope, element, attrs) ->
+    if attrs.btfMarkdown
+      scope.$watch attrs.btfMarkdown, (newVal) ->
+        html = (if newVal then converter.makeHtml(newVal) else "")
+        element.html html
+
+    else
+      html = converter.makeHtml(element.text())
+      element.html html
+
+mainApp.directive "markItUp", ->
+  restrict: "A"
+  link: (scope, element, attrs) ->
+    new_settings = $.extend(mySettings,
+      afterInsert: ->
+        scope.$apply(
+            element.trigger('input')
+            element.trigger('change')
+        )
+    )
+    element.markItUp(new_settings)
