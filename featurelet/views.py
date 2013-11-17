@@ -40,40 +40,6 @@ def favicon():
     return send_file(os.path.join(root, 'static/favicon.ico'))
 
 
-@main.route("/charge/", methods=['GET', 'POST'])
-@login_required
-def charge():
-    return render_template('charge.html',
-                           sk=app.config['STRIPE_PUBLISH_KEY'])
-
-@main.route("/transactions/", methods=['GET'])
-@login_required
-def transactions():
-    transactions = Transaction.objects(user=g.user.id)
-    transactions = get_json_joined(transactions, join=None)
-    return render_template('transactions.html',
-                           transactions=transactions)
-
-@main.route("/account/", methods=['GET', 'POST'])
-@login_required
-def account():
-    password_form = PasswordForm()
-    if request.method == 'POST':
-        # Handle new password logic
-        if request.form.get('_arg_form', None) == 'password':
-            if password_form.validate(request.form):
-                data = password_form.data_by_attr()
-                try:
-                    g.user.password = data['password']
-                    g.user.save()
-                    password_form.start.add_msg(
-                        message='Password successfully updated', type='success')
-                except Exception:
-                    catch_error_graceful(password_form)
-
-    return render_template('account.html',
-                           password_form=password_form.render())
-
 @main.route("/login/github/deauthorize/")
 def unlink_github():
     current_app.logger.warn(
@@ -283,10 +249,10 @@ def plans():
 @main.route("/", methods=['GET', 'POST'])
 def angular_root():
     logged_in = "true" if g.user.is_authenticated() else "false"
-    username = g.user.username if g.user.is_authenticated() else "undefined"
+    userid = g.user.id if g.user.is_authenticated() else "undefined"
     return render_template('base.html',
                            logged_in=logged_in,
-                           username=username)
+                           userid=userid)
 
 
 @main.route("/home", methods=['GET', 'POST'])

@@ -1,40 +1,135 @@
-<!-- {% block title %}Account Settings{% endblock %} -->
-{% block content %}
-<div class="row">
-  {% include "acct_nav.html" %}
-  <div class="col-md-9">
+<script src="https://checkout.stripe.com/checkout.js"></script>
+<div class="row" ng-init="init()">
+  <div class="col-md-3" style="padding:30px;">
+    <h4>Account Information</h4>
+    <ul class="nav nav-pills nav-stacked">
+      <li ng-class="{true: 'active'}[view=='general']">
+          <a ng-click="view='general'">General</a>
+      </li>
+      <li ng-class="{true: 'active'}[view=='general']"
+          ng-show="user.gh_linked">
+        <a href="/login/github">
+          <i class="fa fa-github fa-large"></i>&nbsp; Link You Github
+        </a>
+      </li>
+    </ul>
+    <h4>Financial</h4>
+    <ul class="nav nav-pills nav-stacked">
+      <li ng-class="{true: 'active'}[view=='add_credit']">
+          <a ng-click="view='add_credit'">Add Credit</a>
+      </li>
+      <li ng-class="{true: 'active'}[view=='transactions']">
+          <a ng-click="view='transactions'">Transactions</a>
+      </li>
+    </ul>
+  </div>
+  <!-- General ========================================================-->
+  <div class="col-md-9" ng-show="view=='general'">
     <h3>Account Information</h3>
     <div class="panel panel-default">
       <table class="table">
         <tr>
           <th>Username</th>
-          <td>{{g.user.username}}</td>
+          <td ng-bind="user.username"></td>
         </tr>
         <tr>
           <th>Primary Email</th>
           <td>
-            {{g.user.primary_email.address}}
-            {% if g.user.primary_email.verified %}
-            <span class="label label-primary">Verified</span>
-            {% else %}
-            <span class="label label-danger">Un-verified</span>
-            {% endif %}
+            {[{user.primary_email.address}]}
+            <span class="label"
+                  ng-class="{true: 'label-success', false: 'label-danger'}[user.primary_email.verified]">
+              <span ng-show="user.primary_email.verified">Verified</span>
+              <span ng-hide="user.primary_email.verified">Un-Verified</span>
+            </span>
           </td>
         </tr>
-        {% if g.user.gh_linked %}
-        <tr>
+        <tr ng-show="user.gh_linked">
           <th>Github Account</th>
           <td>
-            {{g.user.gh['login']}} {{g.user.gh_token}}
-            <a href="#{{url_for('main.unlink_github')}}" class="btn btn-danger btn-xs">Unlink</a>
+            {[{user.gh.login}]} {[{user.gh_token}]}
           </td>
         </tr>
-        {% endif %}
       </table>
     </div>
-    <div class="col-md-7">
-      {{ password_form|safe }}
+  </div>
+  <!-- Transactions ========================================================-->
+  <div class="col-md-9"
+    style="padding:30px;"
+    ng-controller="transactionsController"
+    ng-show="view=='transactions'">
+    <div ng-show="transactions">
+      <h4>Transactions</h4>
+      <table class="table table-hover">
+        <tr>
+          <th>Amount</th>
+          <th>Date</th>
+          <th>Card</th>
+          <th>Status</th>
+          <th></th>
+        </th>
+        <tbody ng-repeat="trans in transactions">
+          <tr ng-click="trans.details=!trans.details"
+            ng-class="{1: 'success', 0: 'warning'}[trans._status]"
+            class="clickable">
+            <td>
+              <i class="fa fa-dollar"></i> {[{ trans.amount/100 }]}
+            </td>
+            <td>
+              <i class="fa fa-calendar"></i>
+              {[{ trans.created.$date | date:'short' }]}
+            </td>
+            <td class="mono">
+                <i class="fa fa-credit-card"></i>
+                **** **** **** {[{ trans.last_four }]}
+            </td>
+            <td>
+                {[{ trans.status }]}
+            </td>
+            <td>
+              <i class="fa"
+                ng-class="{true: 'fa-caret-up', false: 'fa-caret-down'}[trans.details]"></i>
+            </td>
+          </tr>
+          <tr ng-show="trans.details">
+            <td colspan="5">Look at all the details</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+    <h4 ng-hide="transactions">No transactions to show.</h4>
+  </div>
+  <!-- Add Credit ========================================================-->
+  <div class="col-md-9"
+    style="padding:30px;"
+    ng-show="view=='add_credit'"
+    ng-controller="chargeController"
+    ng-init="init()">
+    <div ng-show="result.show" class="alert alert-{[{result.type}]} fade in">
+      <a class="close" data-dismiss="alert" href="#">×</a>
+      {[{ result.text }]}
+    </div>
+    <form class="form-horizontal" role="form" novalidate name="charge_form">
+      <div class="form-group">
+        <h4>Select an amount to pay</h4>
+        <ul class="nav nav-pills nav-stacked">
+          <li ng-class="{true: 'active'}[parent.amount==opt_amt]"
+              ng-repeat="opt_amt in options">
+            <a ng-click="amount=opt_amt">
+              <input type="radio" ng-model="parent.amount" ng-value="opt_amt">&nbsp;&nbsp;
+              <i class="fa fa-dollar"></i> {[{ opt_amt/100 }]}
+            </a>
+          </li>
+          <li ng-class="{true: 'active'}[amount==false]">
+            <a ng-click="amount=false">
+              <input type="radio" style="margin-bottom:15px;" ng-model="parent.amount" ng-value="false">&nbsp;&nbsp;
+              Other <input type="number" name="custom_amount" min="5" max="1000" class="form-control" ng-model="custom_amount" />
+            </a>
+            <span ng-show="charge_form.custom_amount.$error.min || charge_form.custom_amount.$error.max"><b>The value must be in range 5 to 1000!</b></span>
+          </li>
+        </div>
+        <div class="form-group">
+          <button type="button" class="btn btn-info" ng-click="pay()">Pay Now</button>
+        </div>
+    </form>
   </div>
 </div>
-{% endblock %}

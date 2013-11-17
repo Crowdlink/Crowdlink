@@ -2,14 +2,19 @@ mainControllers = angular.module("mainControllers", [])
 
 # RootController ==============================================================
 mainControllers.controller('rootController',
-  ($scope, $location, $rootScope)->
-    $scope.init = (logged_in, curr_username) ->
+  ($scope, $location, $rootScope, UserService)->
+    $scope.init = (logged_in, user_id) ->
       $rootScope.logged_in = logged_in
-      $rootScope.curr_username = curr_username
+      $rootScope.user = {}
+      UserService.query(
+        id: user_id
+      ,(value) ->
+        $rootScope.user = value
+      )
 
     # update the profile url when the username changes
-    $rootScope.$watch('curr_username', ->
-      $scope.profile = '/u/' + $rootScope.curr_username
+    $rootScope.$watch('user.username', ->
+      $scope.profile = '/u/' + $rootScope.user.username
     )
 
     $rootScope.location = $location
@@ -112,11 +117,25 @@ mainControllers.controller('remoteController', ($scope, $rootScope, $routeParams
 
 )
 
+# AccountController ===========================================================
+mainControllers.controller('accountController', ($scope, $location, $rootScope, $routeParams, UserService)->
+  $scope.init = ->
+    if 'subsection' of $routeParams
+      $scope.view = $routeParams.subsection
+    else
+      $scope.view = 'general'
+
+    # update the profile url when the username changes
+    $scope.$watch('view', ->
+      $location.path("/account/" + $scope.view)
+    )
+)
+
 # LoginController ============================================================
 mainControllers.controller('loginController', ($scope, $rootScope, UserService, $location)->
   $scope.submit = () ->
     $scope.errors = []
-    UserService.update(
+    UserService.login(
         username: $scope.username
         password: $scope.password
     ,(value) ->
@@ -134,7 +153,7 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
 
 # ProjectController============================================================
 mainControllers.controller('projectController',
-  ($scope, $timeout, ProjectService, $routeParams)->
+  ($scope, $timeout, ProjectService, ProblemService, $routeParams)->
     $scope.init = () ->
         $scope.filter = ""
         ProjectService.query(
@@ -147,7 +166,7 @@ mainControllers.controller('projectController',
 
     $scope.search = ->
         $scope.saving = true
-        ProplemService.query(
+        ProblemService.query(
             filter: $scope.filter
             project: $scope.project.id
         , (value) -> # Function to be run when function returns
@@ -176,12 +195,12 @@ mainControllers.controller('projectController',
 
 # ChargeController ============================================================
 mainControllers.controller('chargeController', ['$scope', 'StripeService', ($scope, StripeService)->
-    $scope.init = (sk, userid) ->
+    $scope.init = () ->
+      $scope.options = [500, 1000, 2500, 5000]
       window.handler = StripeCheckout.configure
         token: $scope.recv_token
-        key: sk
-      $scope.amount = 500
-      $scope.userid = userid
+        key: ""
+      $scope.amount = options[0]
       $scope.result =
         text: ""
         type: ""
@@ -192,7 +211,7 @@ mainControllers.controller('chargeController', ['$scope', 'StripeService', ($sco
       StripeService.update(
           token: token
           amount: $scope.amount
-          userid: $scope.userid
+          userid: $scope.user.id
       ,(value) -> # Function to be run when function returns
           $scope.result =
             text: "You're card has been successfully charged"

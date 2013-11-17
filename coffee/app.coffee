@@ -9,6 +9,12 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   $routeProvider.when("/login",
     templateUrl: "templates/login.html"
     controller: "loginController"
+  ).when("/account",
+    templateUrl: "templates/account.html"
+    controller: "accountController"
+  ).when("/account/:subsection",
+    templateUrl: "templates/account.html"
+    controller: "accountController"
   ).when("/:username/:url_key",
     templateUrl: "templates/project.html"
     controller: "projectController"

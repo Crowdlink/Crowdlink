@@ -61,6 +61,28 @@ def get_project():
         return resource_not_found()
 
 
+@api.route("/user", methods=['GET'])
+@login_required
+def get_user():
+    js = request.args
+
+    # try to access the improvement with identifying information
+    try:
+        username = js.get('username', None)
+        userid = js.get('id', None)
+
+        if username:
+            user = User.objects.get(username=username)
+        elif userid:
+            user = User.objects.get(id=userid)
+        else:
+            return incorrect_syntax()
+        return get_json_joined(user)
+    except User.DoesNotExist:
+        pass
+    return resource_not_found()
+
+
 @api.route("/user", methods=['POST'])
 @login_required
 def update_user():
@@ -72,7 +94,7 @@ def update_user():
         user = User.objects.get(username=username)
     except KeyError:
         return incorrect_syntax()
-    except Improvement.DoesNotExist:
+    except User.DoesNotExist:
         return resource_not_found()
 
     status = js.pop('subscribed', None)

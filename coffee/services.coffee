@@ -11,10 +11,14 @@ mainServices.factory("ProblemService", ($resource) ->
 )
 
 mainServices.factory("UserService", ($resource) ->
-  $resource window.api_path + "login", {},
-    update:
+  $resource window.api_path + "user", {},
+    login:
+      url: window.api_path + "login"
       method: "POST"
       timeout: 5000
+      isArray: false
+    query:
+      method: "GET"
       isArray: false
 )
 

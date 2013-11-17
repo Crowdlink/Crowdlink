@@ -43,7 +43,7 @@
     <script src="/static/js/controllers.js"></script>
     <script src="/static/js/services.js"></script>
     {% block post_script %}{% endblock %}
-    <div id="wrap" ng-controller="rootController" ng-init="init({{logged_in}}, '{{username}}')">
+    <div id="wrap" ng-controller="rootController" ng-init="init({{logged_in}}, '{{userid}}')">
       <div class="navbar navbar-default navbar-fixed-top">
           <div class="container no-gutter">
               <a class="navbar-brand logo" href="#/home">
@@ -52,7 +52,7 @@
               </a>
               <ul class="nav nav-pills main-nav-pills">
                 <li ng-show="logged_in"
-                ng-class="{true: 'active'}[location.path()=='/account']">
+                ng-class="{true: 'active'}[location.path().lastIndexOf('/account', 0) === 0]">
                   <a href="#/account">
                     <i class="fa fa-large fa-gear"></i>
                     <span class="hidden-xs"> Account</span>

@@ -96,7 +96,7 @@ class CommonMixin(object):
 
     meta = {'allow_inheritance': True}
 
-class Email(db.EmbeddedDocument):
+class Email(db.EmbeddedDocument, CommonMixin):
     address = db.StringField(max_length=1023, required=True, unique=True)
     verified = db.BooleanField(default=False)
     primary = db.BooleanField(default=True)
@@ -399,6 +399,9 @@ class User(db.Document, SubscribableMixin, CommonMixin):
     gh_token = db.StringField()
 
     meta = {'indexes': [{'fields': ['gh_token'], 'unique': True, 'sparse': True}]}
+    standard_join = {'gh_linked': 1,
+                     'gh': 1,
+                     'primary_email__address': 1}
 
     @property
     def password(self):
