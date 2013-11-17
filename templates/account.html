@@ -1,4 +1,3 @@
-<script src="https://checkout.stripe.com/checkout.js"></script>
 <div class="row" ng-init="init()">
   <div class="col-md-3" style="padding:30px;">
     <h4>Account Information</h4>
@@ -112,23 +111,26 @@
       <div class="form-group">
         <h4>Select an amount to pay</h4>
         <ul class="nav nav-pills nav-stacked">
-          <li ng-class="{true: 'active'}[parent.amount==opt_amt]"
+          <li ng-class="{true: 'active'}[$parent.amount==opt_amt]"
               ng-repeat="opt_amt in options">
-            <a ng-click="amount=opt_amt">
-              <input type="radio" ng-model="parent.amount" ng-value="opt_amt">&nbsp;&nbsp;
+            <a ng-click="$parent.amount=opt_amt">
+              <input type="radio" ng-model="$parent.amount" ng-value="opt_amt">&nbsp;&nbsp;
               <i class="fa fa-dollar"></i> {[{ opt_amt/100 }]}
             </a>
           </li>
           <li ng-class="{true: 'active'}[amount==false]">
             <a ng-click="amount=false">
-              <input type="radio" style="margin-bottom:15px;" ng-model="parent.amount" ng-value="false">&nbsp;&nbsp;
-              Other <input type="number" name="custom_amount" min="5" max="1000" class="form-control" ng-model="custom_amount" />
+              <input type="radio" style="margin-bottom:15px;" ng-model="amount" ng-value="false">&nbsp;&nbsp;
+              Other <input type="number" name="custom_amount" required min="5" max="1000" class="form-control" ng-model="custom_amount" />
             </a>
             <span ng-show="charge_form.custom_amount.$error.min || charge_form.custom_amount.$error.max"><b>The value must be in range 5 to 1000!</b></span>
           </li>
         </div>
         <div class="form-group">
-          <button type="button" class="btn btn-info" ng-click="pay()">Pay Now</button>
+          <button type="button"
+            class="btn btn-info"
+            ng-click="pay()"
+            ng-disabled="actual_amt === false">Pay Now</button>
         </div>
     </form>
   </div>

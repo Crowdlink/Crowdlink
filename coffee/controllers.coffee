@@ -197,20 +197,36 @@ mainControllers.controller('projectController',
 mainControllers.controller('chargeController', ['$scope', 'StripeService', ($scope, StripeService)->
     $scope.init = () ->
       $scope.options = [500, 1000, 2500, 5000]
-      window.handler = StripeCheckout.configure
-        token: $scope.recv_token
-        key: ""
-      $scope.amount = options[0]
+      $scope.amount = $scope.options[0]
       $scope.result =
         text: ""
         type: ""
         show: false
+      window.handler = StripeCheckout.configure
+        token: $scope.recv_token
+        key: ""
+
+    reload_custom = ->
+      if $scope.amount == false
+        if $scope.charge_form.$valid and $scope.custom_amount
+          $scope.actual_amt = parseInt($scope.custom_amount) * 100
+        else
+          $scope.actual_amt = false
+    $scope.$watch('custom_amount', reload_custom)
+
+    $scope.$watch('amount', ->
+      if $scope.amount
+        $scope.actual_amt = $scope.amount
+      else
+        reload_custom()
+    )
+
 
     $scope.recv_token = (token, args) ->
       console.log(args)
       StripeService.update(
           token: token
-          amount: $scope.amount
+          amount: $scope.actual_amt
           userid: $scope.user.id
       ,(value) -> # Function to be run when function returns
           $scope.result =
@@ -224,8 +240,8 @@ mainControllers.controller('chargeController', ['$scope', 'StripeService', ($sco
       handler.open
         image: window.static_path + "/img/logo_stripe.png"
         name: "Featurelet"
-        description: "Credits ($" + $scope.amount/100 + ")"
-        amount: $scope.amount
+        description: "Credits ($" + $scope.actual_amt/100 + ")"
+        amount: $scope.actual_amt
 ])
 
 # TransactionController =======================================================

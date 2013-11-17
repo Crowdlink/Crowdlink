@@ -244,6 +244,9 @@ input[type="checkbox"],
 .ng-invalid {
   .form-control-validation(@state-danger-text; @state-danger-border; @state-danger-bg);
 }
+.ng-invalid.ng-pristine {
+  .form-control-validation();
+}
 // Success
 .has-success {
   .form-control-validation(@state-success-text; @state-success-border; @state-success-bg);
