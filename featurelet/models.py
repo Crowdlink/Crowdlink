@@ -401,6 +401,7 @@ class User(db.Document, SubscribableMixin, CommonMixin):
     meta = {'indexes': [{'fields': ['gh_token'], 'unique': True, 'sparse': True}]}
     standard_join = {'gh_linked': 1,
                      'gh': 1,
+                     'id': 1,
                      'primary_email__address': 1}
 
     @property

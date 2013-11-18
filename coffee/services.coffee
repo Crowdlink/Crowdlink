@@ -36,3 +36,11 @@ mainServices.factory("StripeService", ($resource) ->
       method: "POST"
       timeout: 5000
 )
+
+mainServices.factory("TransService", ($resource) ->
+  $resource window.api_path + "transaction", {}
+    query:
+      method: "GET"
+      timeout: 5000
+      isArray: true
+)

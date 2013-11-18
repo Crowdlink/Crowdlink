@@ -55,7 +55,6 @@ def get_project():
                                join={'events__template': 1,
                                      })
     except KeyError as e:
-        current_app.logger.exception("Incorrectly hit repo")
         return incorrect_syntax()
     except Improvement.DoesNotExist:
         return resource_not_found()
@@ -154,7 +153,7 @@ def login():
     except User.DoesNotExist:
         return jsonify(success=False, message="Invalid credentials")
 
-    return jsonify(success=True)
+    return jsonify(success=True, user=get_json_joined(user))
 
 @api.route("/improvement", methods=['POST'])
 @login_required
@@ -207,6 +206,23 @@ def update_improvement():
     # return a true value to the user
     return_val.update({'success': True})
     return jsonify(return_val)
+
+
+@api.route("/transaction", methods=['GET'])
+def transaction():
+    js = request.args
+
+    userid = request.args.get('userid', None)
+
+    # try to access the improvement with identifying information
+    try:
+        trans = Transaction.objects(user=userid)
+        return get_json_joined(trans)
+    except KeyError as e:
+        return incorrect_syntax()
+    except Transaction.DoesNotExist, mongoengine.errors.ValidationError:
+        return resource_not_found()
+
 
 @api.route("/charge", methods=['POST'])
 def run_charge():

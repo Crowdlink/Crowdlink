@@ -54,9 +54,10 @@
   <!-- Transactions ========================================================-->
   <div class="col-md-9"
     style="padding:30px;"
-    ng-controller="transactionsController"
+    ng-controller="transController"
+    ng-init="init()"
     ng-show="view=='transactions'">
-    <div ng-show="transactions">
+    <div ng-show="trans">
       <h4>Transactions</h4>
       <table class="table table-hover">
         <tr>
@@ -66,8 +67,8 @@
           <th>Status</th>
           <th></th>
         </th>
-        <tbody ng-repeat="trans in transactions">
-          <tr ng-click="trans.details=!trans.details"
+        <tbody ng-repeat="tran in trans">
+          <tr ng-click="tran.details=!tran.details"
             ng-class="{1: 'success', 0: 'warning'}[trans._status]"
             class="clickable">
             <td>
@@ -86,10 +87,10 @@
             </td>
             <td>
               <i class="fa"
-                ng-class="{true: 'fa-caret-up', false: 'fa-caret-down'}[trans.details]"></i>
+                ng-class="{true: 'fa-caret-up', false: 'fa-caret-down'}[tran.details]"></i>
             </td>
           </tr>
-          <tr ng-show="trans.details">
+          <tr ng-show="tran.details">
             <td colspan="5">Look at all the details</td>
           </tr>
         </tbody>

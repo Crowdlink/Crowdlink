@@ -140,8 +140,8 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
         password: $scope.password
     ,(value) ->
         if 'success' of value and value.success
+          $rootScope.user = value.user
           $rootScope.logged_in = true
-          $rootScope.curr_username = $scope.username
           $location.path("/")
         else
           if 'message' of value
@@ -245,9 +245,14 @@ mainControllers.controller('chargeController', ['$scope', 'StripeService', ($sco
 ])
 
 # TransactionController =======================================================
-mainControllers.controller('transactionsController', ['$scope', 'StripeService', ($scope, StripeService)->
-    $scope.init = (transactions) ->
-      $scope.transactions = JSON.parse(unescape(transactions))
-      for trans in $scope.transactions
-        trans.details = false
-])
+mainControllers.controller('transController', ($scope, $rootScope, TransService)->
+  $scope.init = () ->
+    TransService.query(
+      userid: $rootScope.user.id
+    ,(value) ->
+      $scope.trans = value
+      if trans
+        for trans in $scope.transactions
+          trans.details = false
+    )
+)
