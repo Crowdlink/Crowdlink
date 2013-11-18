@@ -1,61 +1,32 @@
-<!-- {% block title %}Home{% endblock %} -->
-{% block content %}
-<div class="row">
+<div class="row" ng-init="init()">
   <div class="col header-col-light-gray">
     <div class="row">
       <div class="col-md-7">
-        <h2>{{ user.username }}</h2>
-        <h4><b>Joined: </b>{{ user.created_at|date }}</h4>
-        <span class="btn btn-default btn-sm"
-            data-type="watch"
-            data-json="{{user.jsonize(username=1, subscribed=1)}}"
-            data-url="user">
-          <span class="false-div"><i class="fa fa-eye"></i> &nbsp;Watch</span>
-          <span class="true-div"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
-        </span>
+        <h2>{[{ prof_user.username }]}</h2>
+        <h4><b>Joined: </b>{[{ prof_user.created_at | date:'mediumDate' }]} ({[{ prof_user.created_at | date_ago }]})</h4>
+        <a class="btn btn-default fill-link"
+          ng-click="swap_save('subscribed')"
+          ng-class="{true: 'btn-info active', false: 'btn-info'}[prof_user.subscribed]">
+          <span ng-hide="prof_user.subscribed">
+            <i class="fa fa-spinner fa-spin" ng-show="saving.subscribed"></i>
+            <i class="fa fa-eye" ng-hide="saving.subscribed"></i>
+            &nbsp;Watch
+          </span>
+          <span ng-show="prof_user.subscribed">
+            <i class="fa fa-spinner fa-spin" ng-show="saving.subscribed"></i>
+            <i class="fa fa-eye-slash" ng-hide="saving.subscribed"></i>
+            &nbsp;Unwatch
+          </span>
+        </a>
       </div>
       <div class="col-md-5 text-right">
-        <h4><b>Waching</b></h4>
-        Users: 4<br>
-        Projects: 12<br>
-        Improvements: 12<br>
       </div>
     </div>
   </div>
 </div>
 <div class="row">
-  {% for event in g.user.public_events %}
-    {% include event.template %}
-  {% endfor %}
-</div>
-{% if proj %}
-<div class="row">
-  <div class="col header-col-light-gray col-md-8">
-    <div class="col-lg-7">
-      <b>No news to display for these projects...</b>
-    </div>
-  </div>
-  <div class="col header-col-light-gray col-md-4">
-    <h3>Projects</h3>
-    {% for project in proj %}
-    <b><a href="{{ project.get_abs_url() }}">{{project.name }}</a></b>
-    {% endfor%}
+  <h3>Events</h3>
+  <div ng-repeat="event in project.events">
+    <span ng-include="'templates/' + event.template" />
   </div>
 </div>
-{% endif %}
-{% if proj_inter %}
-<div class="row">
-  <div class="col header-col-light-gray col-md-8">
-    <div class="col-lg-7">
-      <b>No news to display for these projects...</b>
-    </div>
-  </div>
-  <div class="col header-col-light-gray col-md-4">
-    <h3>Projects {{ user.username }} interacts with</h2>
-    {% for project in proj_inter %}
-    <b><a href="{{ project.get_abs_url() }}">{{project.name }}</a></b>
-    {% endfor%}
-  </div>
-</div>
-{% endif %}
-{% endblock %}

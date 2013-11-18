@@ -21,6 +21,9 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/:username/:purl_key/:url_key",
     templateUrl: "templates/improvement.html"
     controller: "problemController"
+  ).when("/:username",
+    templateUrl: "templates/profile.html"
+    controller: "profileController"
   ).otherwise(
     templateUrl: "main.html"
     controller: "remoteController"

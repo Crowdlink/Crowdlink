@@ -5,7 +5,6 @@ from . import db, github
 from enum import Enum
 
 import cryptacular.bcrypt
-import datetime
 import mongoengine
 import re
 import markdown2
@@ -14,6 +13,8 @@ import json
 import bson
 import urllib
 import hashlib
+import datetime
+import calendar
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
@@ -78,6 +79,8 @@ class CommonMixin(object):
                 attr = getattr(self, key)
                 if isinstance(attr, db.Document):
                     attr = str(attr.id)
+                if isinstance(attr, datetime.datetime):
+                    attr = calendar.timegm(attr.utctimetuple()) * 1000
                 elif isinstance(attr, bool):
                     pass
                 elif callable(attr):
@@ -402,6 +405,8 @@ class User(db.Document, SubscribableMixin, CommonMixin):
     standard_join = {'gh_linked': 1,
                      'gh': 1,
                      'id': 1,
+                     'subscribed': 1,
+                     'created_at': 1,
                      'primary_email__address': 1}
 
     @property

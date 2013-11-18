@@ -14,7 +14,7 @@ mainControllers.controller('rootController',
 
     # update the profile url when the username changes
     $rootScope.$watch('user.username', ->
-      $scope.profile = '/u/' + $rootScope.user.username
+      $scope.profile = '/' + $rootScope.user.username
     )
 
     $rootScope.location = $location
@@ -255,4 +255,17 @@ mainControllers.controller('transController', ($scope, $rootScope, TransService)
         for trans in $scope.transactions
           trans.details = false
     )
+)
+
+# ProfileController =======================================================
+mainControllers.controller('profileController', ($scope, $rootScope, $routeParams, UserService)->
+  $scope.init = () ->
+    if $routeParams.username == $rootScope.user.username
+      $scope.prof_user = $rootScope.user
+    else
+      UserService.query(
+        username: $routeParams.username
+      ,(value) ->
+        $scope.prof_user = value
+      )
 )
