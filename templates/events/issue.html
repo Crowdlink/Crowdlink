@@ -1,0 +1,8 @@
+<div class="clearfix">
+  <i class="pull-left fa fa-rocket fa-2x" style="padding:20px;"></i>
+  <h5 style="padding:10px;">Created an Issue on
+    <b class="pull-right">{[{event.created_at | date_ago}]}</b>
+    <a href="#{[{event.issue.project.get_abs_url}]}">{[{event.issue.project.name}]}</a><br />
+    <small><b><a href="#{[{event.issue.get_abs_url}]}">{[{ event.issue.brief }]}</a></b></small>
+  </h5>
+</div>

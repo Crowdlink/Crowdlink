@@ -1,10 +1,10 @@
 from flask import Blueprint, request, redirect, render_template, url_for, send_file, g, current_app, send_from_directory, abort, flash
 from flask.ext.login import login_user, logout_user, current_user, login_required
 
-from featurelet import root, lm, app, oauth, github
-from featurelet.models import User, Project, Improvement, Transaction
-from featurelet.lib import jsonify
-from featurelet.forms import *
+from . import root, lm, app, oauth, github
+from .models import User, Project, Issue, Transaction
+from .lib import jsonify
+from .forms import *
 
 import json
 import mongoengine
@@ -116,9 +116,7 @@ def project_settings(username=None, url_key=None):
                     type="error")
             else:
                 if project.safe_save(flash=True):
-                    flash('Your project is now synced to {0}, Improvements can '
-                          'now be linked to Issues.'.format(project.gh_repo_path),
-                          category="success")
+                    flash('Your project is linked', category="success")
 
     if sync_form:
         sync_form_out = sync_form.render()
@@ -158,9 +156,9 @@ def new_project():
     return render_template('new_project.html', form=form.render())
 
 
-@main.route("/<username>/<purl_key>/new_improvement", methods=['GET', 'POST'])
+@main.route("/<username>/<purl_key>/new_issue", methods=['GET', 'POST'])
 @login_required
-def new_improvement(username=None, purl_key=None):
+def new_issue(username=None, purl_key=None):
     # XXX Add check on the purl_key
     form = NewImprovementForm()
     if request.method == 'POST':
@@ -168,11 +166,11 @@ def new_improvement(username=None, purl_key=None):
             data = form.data_by_attr()
             try:
                 project = Project.objects.get(maintainer=username, url_key=purl_key)
-                imp = Improvement(
+                imp = Issue(
                     creator=g.user.id,
                     brief=data['brief'],
                     description=data['description'])
-                project.add_improvement(imp, g.user)
+                project.add_issue(imp, g.user)
             except Exception:
                 catch_error_graceful(form)
             else:
@@ -180,7 +178,7 @@ def new_improvement(username=None, purl_key=None):
 
         return form.render_json()
 
-    return render_template('new_improvement.html', form=form.render())
+    return render_template('new_issue.html', form=form.render())
 
 
 @main.route("/logout")

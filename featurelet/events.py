@@ -17,15 +17,15 @@ class Event(db.EmbeddedDocument, CommonMixin):
 
     meta = {'allow_inheritance': True}
 
-class ImprovementNotif(Event):
-    """ Notification of a new improvement being created """
+class IssueNotif(Event):
+    """ Notification of a new issue being created """
     user = db.ReferenceField('User')
-    imp = db.GenericReferenceField()  # The object recieving the comment
+    issue = db.GenericReferenceField()  # The object recieving the comment
     created_at = db.DateTimeField(default=datetime.datetime.now)
 
-    template = "events/improvement.html"
+    template = "events/issue.html"
     standard_join = ['template',
-                     {'obj': 'imp',
+                     {'obj': 'issue',
                       'join_prof': "disp_join"},
                      {'obj': 'user',
                       'join_prof': "disp_join"},
@@ -34,17 +34,17 @@ class ImprovementNotif(Event):
 
     def distribute(self):
         # send to the project, and people watching the project
-        distribute_event(self.imp.project,
+        distribute_event(self.issue.project,
                          self,
-                         "improvement",
+                         "issue",
                          self_send=True,
                          subscriber_send=True
                     )
 
-        # sent to the user who created the improvement's feed and their subscribers
+        # sent to the user who created the issues's feed and their subscribers
         distribute_event(self.user,
                          self,
-                         "improvement",
+                         "issue",
                          subscriber_send=True,
                          self_send=True
                     )
@@ -59,8 +59,8 @@ class CommentNotif(Event):
     standard_join = ['template']
 
     def distribute(self):
-        if type(self.obj) == "Improvement":
-            # pass it on to the improvement's project if it is from improvement
+        if type(self.obj) == "Issue":
+            # pass it on to the issues's project if it is from issue
             distribute_event(self.obj.project, self, "comment_notif", self_send=True)
 
         # we never distribute notifications of the comment to itself, it gets a
@@ -78,12 +78,12 @@ class Comment(Event):
     body = db.StringField()
     template = "events/comment.html"
 
-    def distribute(self, improvement):
+    def distribute(self, issue):
         """ In this instance more of a create. The even obj distributes itself
         and then notifications of its creation. really just to save space on
         the contents of the post body """
-        # send to the event queue of the improvement
-        distribute_event(improvement, self, "comment", self_send=True)
+        # send to the event queue of the issue
+        distribute_event(issue, self, "comment", self_send=True)
         # create the notification, and distribute based on CommentNotif logic
         notif = CommentNotif(user=self.user, obj=self)
         notif.distribute()

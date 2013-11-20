@@ -1,6 +1,6 @@
 mainServices = angular.module("mainServices", ["ngResource"])
-mainServices.factory("ProblemService", ($resource) ->
-  $resource window.api_path + "improvement", {},
+mainServices.factory("IssueService", ($resource) ->
+  $resource window.api_path + "issue", {},
     update:
       method: "POST"
       timeout: 5000
@@ -38,7 +38,7 @@ mainServices.factory("StripeService", ($resource) ->
 )
 
 mainServices.factory("TransService", ($resource) ->
-  $resource window.api_path + "transaction", {}
+  $resource window.api_path + "transaction",
     query:
       method: "GET"
       timeout: 5000

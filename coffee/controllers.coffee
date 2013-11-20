@@ -21,19 +21,19 @@ mainControllers.controller('rootController',
     $rootScope.strings =
       err_comm = "Error communicating with server."
 )
-# Problemcontroller ============================================================
-mainControllers.controller('problemController',
-  ($scope, $timeout, $routeParams, ProblemService)->
+# IssueController ============================================================
+mainControllers.controller('issueController',
+  ($scope, $timeout, $routeParams, IssueService)->
     $scope.init = () ->
-        ProblemService.query(
+        IssueService.query(
           username: $routeParams.username
           purl_key: $routeParams.purl_key
           url_key: $routeParams.url_key
           join_prof: "page_join"
         ,(value) ->
-          $scope.prob = value[0]
+          $scope.issue = value[0]
           $scope.prev =
-            prob: $.extend({}, value[0])
+            issue: $.extend({}, value[0])
         )
         $scope.editing =
           brief: false
@@ -45,21 +45,21 @@ mainControllers.controller('problemController',
           status: false
 
     $scope.revert = (s) ->
-        $scope.prob[s] = $scope.prev.prob[s]
+        $scope.issue[s] = $scope.prev.issue[s]
         $scope.toggle(s)
 
     $scope.save = (s, extra_data={}, callback) ->
         $scope.saving[s] = true
         data =
-          id: $scope.prob.id
+          id: $scope.issue.id
         if s == 'brief'
-          data.brief = $scope.prob.brief
+          data.brief = $scope.issue.brief
         if s == 'desc'
-          data.desc = $scope.prob.desc
+          data.desc = $scope.issue.desc
         if s == 'open'
-          data.open = $scope.prob.open
+          data.open = $scope.issue.open
 
-        ProblemService.update(
+        IssueService.update(
           $.extend(data, extra_data)
         ,(value) -> # Function to be run when function returns
             if 'success' of value and value.success
@@ -85,13 +85,13 @@ mainControllers.controller('problemController',
     $scope.swap_save = (s) ->
       s.send_val = !s.val
       extra_data = {}
-      extra_data[s] = !$scope.prob[s]
+      extra_data[s] = !$scope.issue[s]
       $scope.save(s, extra_data, ->
-        $scope.prob[s] = !$scope.prob[s]
+        $scope.issue[s] = !$scope.issue[s]
       )
 
     $scope.toggle = (s) ->
-      $scope.prev.prob[s] = $scope.prob[s]
+      $scope.prev.issue[s] = $scope.issue[s]
       $scope.editing[s] = !$scope.editing[s]
 )
 
@@ -154,7 +154,7 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
 
 # ProjectController============================================================
 mainControllers.controller('projectController',
-  ($scope, $timeout, ProjectService, ProblemService, $routeParams)->
+  ($scope, $timeout, ProjectService, IssueService, $routeParams)->
     $scope.init = () ->
         $scope.filter = ""
         ProjectService.query(
@@ -168,13 +168,13 @@ mainControllers.controller('projectController',
 
     $scope.search = ->
         $scope.saving = true
-        ProblemService.query(
+        IssueService.query(
             filter: $scope.filter
             project: $scope.project.id
         , (value) -> # Function to be run when function returns
             if 'success' not of value
                 $timeout ->
-                    $scope.probs = value
+                    $scope.issues = value
                 , 100
             else
                 if 'message' of value
@@ -187,12 +187,12 @@ mainControllers.controller('projectController',
                     timout: 2000
         )
 
-    $scope.vote = (prob) ->
-      prob.vote_status = !prob.vote_status
-      if prob.vote_status
-        prob.votes += 1
+    $scope.vote = (issue) ->
+      issue.vote_status = !issue.vote_status
+      if issue.vote_status
+        issue.votes += 1
       else
-        prob.votes -= 1
+        issue.votes -= 1
 )
 
 # ChargeController ============================================================

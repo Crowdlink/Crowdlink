@@ -29,7 +29,7 @@
   </div>
 </div>
 <div class="row">
-  <h3>Improvements</h3>
+  <h3>Issues</h3>
   <div class="input-group">
     <input type="text" ng-model="filter" class="form-control" />
     <span class="btn btn-info input-group-addon">
@@ -38,21 +38,21 @@
   </div><!-- /input-group -->
   <table class="table table-hover">
     <tbody>
-     <tr ng-repeat="prob in probs | filter:filter">
+     <tr ng-repeat="issue in issues | filter:filter">
       <td class="fit-width">
         <a class="btn btn-xs"
-            ng-class="{'btn-success': prob.vote_status, 'btn-info': !prob.vote_status}"
-            ng-click="vote(prob)">
-          <span ng-hide="prob.vote_status">Vote&nbsp; <i class="fa fa-plus"></i></span>
-          <span ng-hide="!prob.vote_status">Unvote&nbsp; <i class="fa fa-minus"></i></span>
+            ng-class="{'btn-success': issue.vote_status, 'btn-info': !issue.vote_status}"
+            ng-click="vote(issue)">
+          <span ng-hide="issue.vote_status">Vote&nbsp; <i class="fa fa-plus"></i></span>
+          <span ng-hide="!issue.vote_status">Unvote&nbsp; <i class="fa fa-minus"></i></span>
         </a>
         &nbsp;&nbsp;
-        <b><ng-pluralize count="prob.votes"
+        <b><ng-pluralize count="issue.votes"
                          when="{'0': 'No votes',
                                 'one': '1 vote',
                                 'other': '{} votes'}"></ng-pluralize></b>
       </td>
-      <td><a href="#{[{ prob.get_abs_url }]}" ng-bind-html="prob.brief | searchFilter:filter"></a></td>
+      <td><a href="#{[{ issue.get_abs_url }]}" ng-bind-html="issue.brief | searchFilter:filter"></a></td>
     </tr>
     </tbody>
   </table>

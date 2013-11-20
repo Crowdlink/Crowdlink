@@ -55,7 +55,7 @@ class SubscribableMixin(object):
         return False
 
 
-class ImpSubscriber(db.EmbeddedDocument):
+class IssueSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
     comment_notif = db.BooleanField(default=True)
     vote = db.BooleanField(default=False)
@@ -66,14 +66,14 @@ class ImpSubscriber(db.EmbeddedDocument):
 class ProjectSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
     comment_notif = db.BooleanField(default=True)
-    improvement = db.BooleanField(default=True)
+    issue = db.BooleanField(default=True)
 
 
 class UserSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
     comment = db.BooleanField(default=True)
     vote = db.BooleanField(default=False)
-    improvement = db.BooleanField(default=True)
+    issue = db.BooleanField(default=True)
     project = db.BooleanField(default=True)
 
 
@@ -176,7 +176,7 @@ class Comment(db.EmbeddedDocument):
         return markdown2.markdown(self.body)
 
 
-class Improvement(db.Document, SubscribableMixin, CommonMixin):
+class Issue(db.Document, SubscribableMixin, CommonMixin):
 
     CloseVals = Enum('Completed', 'Duplicate', 'Won\'t Fix', 'Other')
 
@@ -203,7 +203,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
 
     # event dist
     events = db.ListField(db.GenericEmbeddedDocumentField())
-    subscribers = db.ListField(db.EmbeddedDocumentField('ImpSubscriber'))
+    subscribers = db.ListField(db.EmbeddedDocumentField('IssueSubscriber'))
 
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
     acl = flatten_dict(
@@ -222,7 +222,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
                      ]
     page_join = inherit_lst(standard_join,
                              [{'obj': 'project',
-                               'join_prof': 'imp_page_join'}]
+                               'join_prof': 'issue_page_join'}]
                              )
 
     # used for displaying the project in noifications, etc
@@ -254,7 +254,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
 
     # Closevalue masking for render
     def get_abs_url(self):
-        return "{username}/{purl_key}/{url_key}".format(
+        return "/{username}/{purl_key}/{url_key}".format(
             purl_key=self.project.url_key,
             username=self.project.maintainer.username,
             url_key=self.url_key)
@@ -283,7 +283,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
         self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100]).lower()
 
     def add_comment(self, user, body):
-        # Send the actual comment to the improvement event queue
+        # Send the actual comment to the Issue event queue
         c = Comment(user=user.id, body=body)
         c.distribute(self)
 
@@ -291,7 +291,7 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     # Github Synchronization Logic
     # ========================================================================
     def gh_desync(self, flatten=False):
-        """ Used to disconnect an improvement from github. Really just a
+        """ Used to disconnect an Issue from github. Really just a
         trickle down call from de-syncing the project, but nicer to keep the
         logic in here"""
         self.gh_synced = False
@@ -307,13 +307,13 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     # Voting
     # ========================================================================
     def set_vote(self, user):
-        return Improvement.objects(project=self.project,
+        return Issue.objects(project=self.project,
                             url_key=self.url_key,
                             vote_list__ne=user.id).\
                     update_one(add_to_set__vote_list=user.id, inc__votes=1)
 
     def set_unvote(self, user):
-        return Improvement.objects(
+        return Issue.objects(
             project=self.project,
             url_key=self.url_key,
             vote_list__in=[user.id, ]).\
@@ -334,7 +334,7 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
     # description info
     name = db.StringField(max_length=64, min_length=3)
     website = db.StringField(max_length=2048)
-    improvement_count = db.IntField(default=1)  # XXX: Currently not implemented
+    issue_count = db.IntField(default=1)  # XXX: Currently not implemented
 
     # Event log
     subscribers = db.ListField(db.EmbeddedDocumentField('ProjectSubscriber'))
@@ -358,7 +358,7 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
                  'name',
                  {'obj': 'events'},
                 ]
-    imp_page_join = ['__dont_mongo',
+    issue_page_join = ['__dont_mongo',
                      'name',
                      {'obj': 'maintainer',
                       'join_prof': "disp_join"}
@@ -398,21 +398,21 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
                        username=self.username,
                        url_key=self.url_key)
 
-    def add_improvement(self, imp, user):
-        """ Add a new Improvement to this project """
-        imp.create_key()
-        imp.project = self
+    def add_issue(self, issue, user):
+        """ Add a new issue to this project """
+        issue.create_key()
+        issue.project = self
         try:
-            imp.save()
+            issue.save()
         except mongoengine.errors.OperationError:
             return False
 
         # send a notification to all subscribers
-        inotif = ImprovementNotif(user=user.id, imp=imp)
+        inotif = IssueNotif(user=user.id, issue=issue)
         inotif.distribute()
 
     def add_comment(self, body, user):
-        # Send the actual comment to the improvement event queue
+        # Send the actual comment to the issue event queue
         c = Comment(user=user, body=body)
         distribute_event(self, c, "comment", self_send=True)
 
@@ -432,8 +432,8 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
     def gh_desync(self, flatten=False):
         """ Used to disconnect a repository from github. By default will leave
         all data in place for re-syncing, but flatten will cause erasure """
-        for imp in self.get_improvements():
-            imp.gh_desync(flatten=flatten)
+        for issue in self.get_issues():
+            issue.gh_desync(flatten=flatten)
 
         self.gh_synced = False
         # Remove indexes if we're flattening
@@ -533,7 +533,7 @@ class User(db.Document, SubscribableMixin, CommonMixin):
         gravatar_url += urllib.urlencode({'d':default, 's':str(size)})
 
     def get_abs_url(self):
-        return "{username}/".format(username=unicode(self.username).encode('utf-8'))
+        return "/{username}".format(username=unicode(self.username).encode('utf-8'))
 
     def get_projects(self):
         return Project.objects(maintainer=self)
@@ -634,5 +634,5 @@ class User(db.Document, SubscribableMixin, CommonMixin):
             return super(User, self).__eq__(other)
 
 
-from .events import (ImprovementNotif, CommentNotif, Comment)
+from .events import (IssueNotif, CommentNotif, Comment)
 from .lib import (catch_error_graceful, get_json_joined)

@@ -25,8 +25,8 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
     templateUrl: "templates/project.html"
     controller: "projectController"
   ).when("/:username/:purl_key/:url_key",
-    templateUrl: "templates/improvement.html"
-    controller: "problemController"
+    templateUrl: "templates/issue.html"
+    controller: "issueController"
   ).when("/:username",
     templateUrl: "templates/profile.html"
     controller: "profileController"

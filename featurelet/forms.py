@@ -156,8 +156,8 @@ class CommentForm(ModelForm):
 
 class NewImprovementForm(ModelForm):
     g_context = {'ajax': True, 'piecewise': True}
-    brief = nodes.Entry(model=Improvement.brief)
-    description = nodes.Textarea(rows=15, model=Improvement.desc)
+    brief = nodes.Entry(model=Issue.brief)
+    description = nodes.Textarea(rows=15, model=Issue.desc)
     create = nodes.Submit(title="Create", css_class="btn btn-primary")
 
 

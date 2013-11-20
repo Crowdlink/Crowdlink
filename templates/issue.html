@@ -1,19 +1,19 @@
 <div class="row" ng-init="init()">
   <ol class="breadcrumb">
-    <li><a href="#{[{prob.project.maintainer.get_abs_url}]}">{[{prob.project.maintainer.username}]}</a></li>
-    <li><a href="#{[{prob.project.get_abs_url}]}">{[{ prob.project.name }]}</a></li>
-    <li><a href="">Improvements</a></li>
-    <li class="active">{[{prob.brief}]}</li>
+    <li><a href="#{[{issue.project.maintainer.get_abs_url}]}">{[{issue.project.maintainer.username}]}</a></li>
+    <li><a href="#{[{issue.project.get_abs_url}]}">{[{ issue.project.name }]}</a></li>
+    <li><a href="">Issues</a></li>
+    <li class="active">{[{issue.brief}]}</li>
   </ol>
 </div>
 <div>
   <div class="row">
     <div class="col-md-8 no-gutter">
       <h2>
-        <span ng-show="prob.user_acl.edit_brief">
+        <span ng-show="issue.user_acl.edit_brief">
           <span ng-show="editing.brief">
             <div class="input-group">
-              <input type="text" class="form-control" ng-model="prob.brief" />
+              <input type="text" class="form-control" ng-model="issue.brief" />
               <span class="btn btn-info input-group-addon" ng-click="save('brief')">
                 <i class="fa fa-save" ng-hide="saving.brief"></i>
                 <i class="fa fa-spinner fa-spin" ng-show="saving.brief"></i>
@@ -22,12 +22,12 @@
             </div>
           </span>
           <span ng-hide="editing.brief">
-            {[{ prob.brief }]}&nbsp;
+            {[{ issue.brief }]}&nbsp;
             <small class="fa fa-edit icon-hover" ng-click="toggle('brief')"></small>
           </span>
         </span>
-        <span ng-hide="prob.user_acl.edit_brief">
-          {[{ prob.brief }]}
+        <span ng-hide="issue.user_acl.edit_brief">
+          {[{ issue.brief }]}
         </span>
       </h2>
     </div>
@@ -35,13 +35,13 @@
       <div class="pull-right" style="width:50%;">
         <a class="btn btn-default fill-link"
           ng-click="swap_save('subscribed')"
-          ng-class="{true: 'btn-info active', false: 'btn-info'}[prob.subscribed]">
-          <span ng-hide="prob.subscribed">
+          ng-class="{true: 'btn-info active', false: 'btn-info'}[issue.subscribed]">
+          <span ng-hide="issue.subscribed">
             <i class="fa fa-spinner fa-spin" ng-show="saving.subscribed"></i>
             <i class="fa fa-eye" ng-hide="saving.subscribed"></i>
             &nbsp;Watch
           </span>
-          <span ng-show="prob.subscribed">
+          <span ng-show="issue.subscribed">
             <i class="fa fa-spinner fa-spin" ng-show="saving.subscribed"></i>
             <i class="fa fa-eye-slash" ng-hide="saving.subscribed"></i>
             &nbsp;Unwatch
@@ -49,38 +49,38 @@
         </a>
         <a class="btn btn-info fill-link"
           ng-click="swap_save('vote_status')"
-          ng-class="{true: 'btn-info active', false: 'btn-info'}[prob.vote_status]">
-          <span ng-hide="prob.vote_status">
+          ng-class="{true: 'btn-info active', false: 'btn-info'}[issue.vote_status]">
+          <span ng-hide="issue.vote_status">
             <i class="fa fa-spinner fa-spin" ng-show="saving.vote_status"></i>
             <i class="fa fa-plus-circle" ng-hide="saving.vote_status"></i>
             &nbsp;Vote
           </span>
-          <span ng-show="prob.vote_status">
+          <span ng-show="issue.vote_status">
             <i class="fa fa-spinner fa-spin" ng-show="saving.vote_status"></i>
             <i class="fa fa-minus-circle" ng-hide="saving.vote_status"></i>
             &nbsp;Unvote
           </span>
         </a>
         <a class="btn fill-link"
-            ng-show="prob.user_acl.edit__close_reason"
-            ng-class="{false: 'btn-info active', true: 'btn-info'}[prob.open]"
+            ng-show="issue.user_acl.edit__close_reason"
+            ng-class="{false: 'btn-info active', true: 'btn-info'}[issue.open]"
             ng-click="swap_save('open')">
-          <span ng-show="prob.open">
+          <span ng-show="issue.open">
             <i class="fa fa-minus-circle" ng-hide="saving.open"></i>
             <i class="fa fa-spinner fa-spin" ng-show="saving.open"></i>
             &nbsp;Close
           </span>
-          <span ng-hide="prob.open">
+          <span ng-hide="issue.open">
             <i class="fa fa-plus-circle" ng-hide="saving.open"></i>
             <i class="fa fa-spinner fa-spin" ng-show="saving.open"></i>
             &nbsp;Open
           </span>
         </a>
-        <div ng-show="prob.open" class="btn-group-vertical">
+        <div ng-show="issue.open" class="btn-group-vertical">
           <label class="btn"
-            ng-repeat="reason in prob.close_reason"
-            ng-class="{true: 'active btn-info', false: 'btn-default'}[prob.close_reason==reason]">
-            <input type="radio" ng-model="prob.close_reason" ng-value="reason" class="hide">
+            ng-repeat="reason in issue.close_reason"
+            ng-class="{true: 'active btn-info', false: 'btn-default'}[issue.close_reason==reason]">
+            <input type="radio" ng-model="issue.close_reason" ng-value="reason" class="hide">
             {[{ val }]}
           </label>
         </div>
@@ -90,13 +90,13 @@
   <br />
   <div class="row">
     <h4>
-      <b>Proposed on </b>{[{ prob.created_at | date:'medium' }]}
-      ({[{ prob.created_at|date_ago }]})
+      <b>Proposed on </b>{[{ issue.created_at | date:'medium' }]}
+      ({[{ issue.created_at|date_ago }]})
     </h4>
     <br>
     <div class="row well well-lg center">
-        <div class="row col-lg-11" ng-show="editing.desc" ng-show="prob.user_acl.edit_desc">
-          <textarea mark-it-up ng-model="prob.desc"></textarea>
+        <div class="row col-lg-11" ng-show="editing.desc" ng-show="issue.user_acl.edit_desc">
+          <textarea mark-it-up ng-model="issue.desc"></textarea>
           <span class="btn btn-info"
             ng-click="save('desc')"
             ng-disabled="saving.desc">
@@ -114,13 +114,13 @@
         <div ng-hide="editing.desc">
           <i class="fa fa-edit fa-3x icon-hover pull-right"
             ng-click="toggle('desc')"
-            ng-show="prob.user_acl.edit_desc"></i>
-          <span btf-markdown="prob.desc" />
+            ng-show="issue.user_acl.edit_desc"></i>
+          <span btf-markdown="issue.desc" />
         </div>
     </div>
   </div>
 </div>
-<div class="row" ng-show="prob.events.length > 0">
+<div class="row" ng-show="issue.events.length > 0">
   <h3>Events</h3>
   <div ng-repeat="event in project.events">
     <span ng-include="'templates/' + event.template" />

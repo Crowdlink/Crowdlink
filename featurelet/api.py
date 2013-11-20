@@ -2,7 +2,7 @@ from flask import Blueprint, request, g, current_app, jsonify, abort
 from flask.ext.login import login_required, logout_user, current_user, login_user
 
 from . import root, lm, app
-from .models import User, Project, Improvement, UserSubscriber, ProjectSubscriber, ImpSubscriber, Transaction
+from .models import User, Project, Issue, UserSubscriber, ProjectSubscriber, IssueSubscriber, Transaction
 from .lib import get_json_joined, redirect_angular
 
 import json
@@ -20,22 +20,22 @@ api = Blueprint('api', __name__)
 def vote_api():
     js = request.json
     try:
-        imp = Improvement.objects.get(
+        issue = Issue.objects.get(
             project=js['project'],
             url_key=js['url_key'])
         vote_status = js['vote_status']
     except KeyError:
         return incorrect_syntax()
-    except Improvement.DoesNotExist:
+    except Issue.DoesNotExist:
         return resource_not_found()
 
-    if vote_status and not imp.set_vote(g.user):
-        if imp.vote_status:
+    if vote_status and not issue.set_vote(g.user):
+        if issue.vote_status:
             return jsonify(success=False, code='already_voted', disp="Already voted!")
         else:
             return jsonify(success=False)
-    elif not vote_status and not imp.set_unvote(g.user):
-        if not imp.vote_status:
+    elif not vote_status and not issue.set_unvote(g.user):
+        if not issue.vote_status:
             return jsonify(success=False, code='already_voted', disp="Haven't voted yet")
         else:
             return jsonify(success=False)
@@ -49,13 +49,13 @@ def get_project():
     url_key = request.args.get('url_key', '')
     join_prof = request.args.get('join_prof', 'standard_join')
 
-    # try to access the improvement with identifying information
+    # try to access the issue with identifying information
     try:
         project = Project.objects(username=username, url_key=url_key)
         return get_json_joined(project, join_prof=join_prof)
     except KeyError as e:
         return incorrect_syntax()
-    except Improvement.DoesNotExist:
+    except Issue.DoesNotExist:
         return resource_not_found()
 
 
@@ -64,7 +64,7 @@ def get_project():
 def get_user():
     js = request.args
 
-    # try to access the improvement with identifying information
+    # try to access the issue with identifying information
     try:
         username = js.get('username', None)
         userid = js.get('id', None)
@@ -86,7 +86,7 @@ def get_user():
 def update_user():
     js = request.json
 
-    # try to access the improvement with identifying information
+    # try to access the issue with identifying information
     try:
         username = js.pop('username')
         user = User.objects.get(username=username)
@@ -110,8 +110,8 @@ def update_user():
 
     return jsonify(success=True)
 
-@api.route("/improvement", methods=['GET'])
-def get_improvements():
+@api.route("/issue", methods=['GET'])
+def get_issue():
     args = request.args
     limit = args.get('limit', 15)
     username = args.get('username', None)
@@ -122,19 +122,19 @@ def get_improvements():
     if (purl_key and username) and not project:
         try:
             project = Project.objects.get(username=username, url_key=purl_key).id
-        except Improvement.DoesNotExist:
+        except Issue.DoesNotExist:
             return resource_not_found()
 
     try:
-        # if the request was for a single improvement
+        # if the request was for a single issue
         if url_key:
-            imp = Improvement.objects(project=project, url_key=url_key)
+            issue = Issue.objects(project=project, url_key=url_key)
         else:
-            imp = Improvement.objects(project=project)[:limit]
-        return get_json_joined(imp, join_prof=join_prof)
+            issue = Issue.objects(project=project)[:limit]
+        return get_json_joined(issue, join_prof=join_prof)
     except KeyError:
         return incorrect_syntax()
-    except Improvement.DoesNotExist:
+    except Issue.DoesNotExist:
         return resource_not_found()
 
 @api.route("/login", methods=['POST'])
@@ -154,51 +154,51 @@ def login():
 
     return jsonify(success=True, user=get_json_joined(user))
 
-@api.route("/improvement", methods=['POST'])
+@api.route("/issue", methods=['POST'])
 @login_required
-def update_improvement():
+def update_issue():
     js = request.json
     return_val = {}
 
-    # try to access the improvement with identifying information
+    # try to access the issue with identifying information
     try:
         proj_id = js.pop('project', None)
         url_key = js.pop('url_key', None)
         if url_key and proj_id:
-            imp = Improvement.objects.get(project=proj_id,
+            issue = Issue.objects.get(project=proj_id,
                                           url_key=url_key)
         else:
-            imp_id = js.pop('id')
-            imp = Improvement.objects.get(id=imp_id)
+            issue_id = js.pop('id')
+            issue = Issue.objects.get(id=issue_id)
     except KeyError:
         return incorrect_syntax()
-    except Improvement.DoesNotExist:
+    except Issue.DoesNotExist:
         return resource_not_found()
 
     brief = js.pop('brief', None)
-    if brief and 'brief' in imp.user_acl:
-        imp.brief = brief
+    if brief and 'brief' in issue.user_acl:
+        issue.brief = brief
 
     desc = js.pop('desc', None)
-    if desc and 'desc' in imp.user_acl:
-        imp.desc = desc
+    if desc and 'desc' in issue.user_acl:
+        issue.desc = desc
 
     sub_status = js.pop('subscribed', None)
     if sub_status == True:
         # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = ImpSubscriber(user=g.user.id)
-        imp.subscribe(subscribe)
+        subscribe = IssueSubscriber(user=g.user.id)
+        issue.subscribe(subscribe)
     elif sub_status == False:
-        imp.unsubscribe(g.user)
+        issue.unsubscribe(g.user)
 
     open_status = js.pop('open', None)
     if open_status == True:
-        imp.set_open()
+        issue.set_open()
     elif open_status == False:
-        imp.set_close()
+        issue.set_close()
 
     try:
-        imp.save()
+        issue.save()
     except mongoengine.errors.ValidationError as e:
         return jsonify(success=False, validation_errors=e.to_dict())
 
@@ -213,7 +213,7 @@ def transaction():
 
     userid = request.args.get('userid', None)
 
-    # try to access the improvement with identifying information
+    # try to access the issue with identifying information
     try:
         trans = Transaction.objects(user=userid)
         return get_json_joined(trans)
@@ -227,7 +227,7 @@ def transaction():
 def run_charge():
     js = request.json
 
-    # try to access the improvements with identifying information
+    # try to access the issue with identifying information
     try:
         amount = js['amount']
         card = js['token']['id']

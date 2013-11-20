@@ -5,7 +5,7 @@ manager = Manager(app)
 
 import logging
 from featurelet.lib import send_email
-from featurelet.models import User, Project, Improvement
+from featurelet.models import User, Project, Issue
 
 # setup logging to go to stdout
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
@@ -42,7 +42,7 @@ def provision():
         description="A platform for user feedback")
     proj.save()
 
-    imps = [('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.'),
+    issues = [('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.'),
             ('Change log for Improvements', 'Like gists on Github, show a historical revision log for an Improvements descriptions'),
             ('Hot sorting metric for Improvements', 'Periodically re-calculate a "hot" value for various improvements based on how quickly they\'ve recieved votes over time. Similar to reddit, or other websites trending function'),
             ('Allow revoking of Github synchronization via Featurelet', 'Currently, desynchronizing can only be done via Github.'),
@@ -50,12 +50,12 @@ def provision():
             ('Promote with donations', 'Instead of dontaing to the project, donate to a charity, yet earmark this donation towards a project or Improvement to show your support'),
             ('Google Analytics Hooks', 'Allow project maintainers to specify a Google Analytics Key and select from a range of events that they would like logged into their GA account'),
         ]
-    for title, desc in imps:
-        imp = Improvement(
+    for title, desc in issues:
+        issue = Issue(
             creator=usr.id,
             brief=title,
             desc=desc)
-        proj.add_improvement(imp, usr)
+        proj.add_issue(issue, usr)
 
 @manager.command
 def test_email():
