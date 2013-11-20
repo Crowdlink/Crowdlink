@@ -42,6 +42,7 @@ def favicon():
 
 @main.route("/login/github/deauthorize/")
 def unlink_github():
+    """ Not working atm """
     current_app.logger.warn(
         github.get('authorizations',
                    headers={"Authorization": "Basic %s" %\
@@ -54,11 +55,13 @@ def get_github_oauth_token():
 
 @main.route("/login/github/")
 def github_init_auth():
+    """ Redirects to github to obtain auth token """
     return github.authorize(callback=url_for('main.github_auth', _external=True))
 
 @main.route("/login/github/authorize/")
 @github.authorized_handler
 def github_auth(resp):
+    """ The github authorization callback """
     if resp is None:
         return 'Access denied: reason=%s error=%s' % (
             request.args['error_reason'],
@@ -127,32 +130,6 @@ def project_settings(username=None, url_key=None):
                            sync_form=sync_form_out)
 
 
-@main.route("/<username>/<purl_key>/<url_key>", methods=['GET', 'POST'])
-def view_improvement(username=None, purl_key=None, url_key=None):
-    usr = User.objects.get(username=username)
-    proj = Project.objects.get(url_key=purl_key, maintainer=usr)
-    imp = Improvement.objects.get(url_key=url_key,
-                                  project=proj)
-    form = CommentForm()
-    if request.method == 'POST':
-        if form.validate(request.form):
-            # Going to submit a comment
-            data = form.data_by_attr()
-            try:
-                imp.add_comment(data['body'], g.user)
-            except Exception:
-                catch_error_graceful(form)
-            else:
-                form.start.add_msg(message="Comment successfully posted",
-                                   type="success")
-
-    return render_template('improvement.html',
-                           imp=imp,
-                           can_edit=imp.can_edit_imp(g.user),
-                           comment_form=form.render(),
-                           Improvement=Improvement)
-
-
 @main.route("/new_project", methods=['GET', 'POST'])
 @login_required
 def new_project():
@@ -206,12 +183,6 @@ def new_improvement(username=None, purl_key=None):
     return render_template('new_improvement.html', form=form.render())
 
 
-@main.route("/u/<username>")
-def user(username=None):
-    user = User.objects.get(username=username)
-    return render_template('profile.html', user=user)
-
-
 @main.route("/logout")
 @login_required
 def logout():
@@ -241,10 +212,6 @@ def signup():
 
     return render_template('sign_up.html', form=form.render())
 
-
-@main.route("/plans")
-def plans():
-    return render_template('plans.html')
 
 @main.route("/", methods=['GET', 'POST'])
 def angular_root():

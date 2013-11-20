@@ -24,14 +24,13 @@ class ImprovementNotif(Event):
     created_at = db.DateTimeField(default=datetime.datetime.now)
 
     template = "events/improvement.html"
-    standard_join = {'imp__id': 1,
-                     'imp__brief': 1,
-                     'imp___base': 1,
-                     'created_at': 1,
-                     'imp__project___base': 1,
-                     'imp__project__name': 1,
-                     'imp__project__get_abs_url': 1,
-                     }
+    standard_join = ['template',
+                     {'obj': 'imp',
+                      'join_prof': "disp_join"},
+                     {'obj': 'user',
+                      'join_prof': "disp_join"},
+                     'created_at'
+                     ]
 
     def distribute(self):
         # send to the project, and people watching the project
@@ -57,6 +56,7 @@ class CommentNotif(Event):
     obj = db.GenericReferenceField()  # The object recieving the comment
     created_at = db.DateTimeField(default=datetime.datetime.now)
     template = "events/comment_not.html"
+    standard_join = ['template']
 
     def distribute(self):
         if type(self.obj) == "Improvement":

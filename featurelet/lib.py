@@ -68,39 +68,52 @@ def get_json_joined(*args, **kwargs):
     return json.dumps(get_joined(*args, **kwargs))
 
 
-def get_joined(obj, join={}, no_std=False):
+def get_joined(obj, join_prof="standard_join"):
     # If it's a list, join each of the items in the list and return modified
     # list
     if isinstance(obj, mongoengine.QuerySet) or isinstance(obj, BaseList):
         lst = []
         for item in obj:
-            lst.append(get_joined(item, join=join))
+            lst.append(get_joined(item, join_prof=join_prof))
         return lst
 
-    # get our standard join dictionary
-    if not no_std:
-        join.update(obj.standard_join)
-
-    # build up an dict keeping track of subobj joins
-    subs = {}
-    for key, val in join.items():
-        parts = key.split("__", 1)
-        if len(parts) > 1:
-            join.pop(key)  # don't let the regular join use this attr
-            subs.setdefault(parts[0], {}).setdefault(parts[1])
+    # split the join list into it's compoenents, obj to be removed, sub object
+    # join data, and current object join values
+    if isinstance(join_prof, basestring):
+        join = getattr(obj, join_prof)
+    else:
+        join = join_prof
+    remove = []
+    sub_obj = []
+    join_keys = []
+    for key in join:
+        if isinstance(key, basestring):
+            if key.startswith('-'):
+                remove.append(key[1:])
+            else:
+                join_keys.append(key)
+        else:
+            sub_obj.append(key)
 
     # run the primary object join
-    join_vals = obj.jsonize(raw=True, **join)
-    if '_base' in join:
+    join_vals = obj.jsonize(join_keys, raw=True)
+    # catch our special config key
+    if '__dont_mongo' in join_keys:
         dct = join_vals
     else:
         dct = _json_convert(obj.to_mongo())
+        # Remove keys from the bson that the join prefixes with a -
+        for key in remove:
+            dct.pop(key, None)
         dct.update(join_vals)
 
     # run all the subobject joins
-    for key, sub_join in subs.items():
+    for conf in sub_obj:
+        key = conf.get('obj')
+        # allow the conf dictionary to specify a join profiel
+        prof = conf.get('join_prof', "standard_join")
         subobj = getattr(obj, key)
-        dct[key] = get_joined(subobj, join=sub_join)
+        dct[key] = get_joined(subobj, join_prof=prof)
     return dct
 
 def catch_error_graceful(form=None, out_flash=False):

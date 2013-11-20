@@ -9,6 +9,12 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   $routeProvider.when("/login",
     templateUrl: "templates/login.html"
     controller: "loginController"
+  ).when("/logout",
+    templateUrl: "main.html"
+    controller: "remoteController"
+  ).when("/home",
+    templateUrl: "main.html"
+    controller: "remoteController"
   ).when("/account",
     templateUrl: "templates/account.html"
     controller: "accountController"

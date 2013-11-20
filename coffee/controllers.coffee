@@ -29,6 +29,7 @@ mainControllers.controller('problemController',
           username: $routeParams.username
           purl_key: $routeParams.purl_key
           url_key: $routeParams.url_key
+          join_prof: "page_join"
         ,(value) ->
           $scope.prob = value[0]
           $scope.prev =
@@ -159,6 +160,7 @@ mainControllers.controller('projectController',
         ProjectService.query(
           username: $routeParams.username
           url_key: $routeParams.url_key
+          join_prof: 'page_join'
         ,(value) ->
           $scope.project = value[0]
           $scope.search()

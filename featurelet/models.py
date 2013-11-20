@@ -1,6 +1,8 @@
 from flask import url_for, session, g, current_app, flash
 
 from . import db, github
+from .exc import AccessDenied
+from .util import flatten_dict, inherit_lst
 
 from enum import Enum
 
@@ -21,6 +23,7 @@ crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 class SubscribableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
+
 
     def unsubscribe(self, user):
         i = 0
@@ -51,10 +54,74 @@ class SubscribableMixin(object):
                 return True
         return False
 
+
+class ImpSubscriber(db.EmbeddedDocument):
+    user = db.ReferenceField('User')
+    comment_notif = db.BooleanField(default=True)
+    vote = db.BooleanField(default=False)
+    status = db.BooleanField(default=True)  # status change event
+    donate = db.BooleanField(default=True)
+
+
+class ProjectSubscriber(db.EmbeddedDocument):
+    user = db.ReferenceField('User')
+    comment_notif = db.BooleanField(default=True)
+    improvement = db.BooleanField(default=True)
+
+
+class UserSubscriber(db.EmbeddedDocument):
+    user = db.ReferenceField('User')
+    comment = db.BooleanField(default=True)
+    vote = db.BooleanField(default=False)
+    improvement = db.BooleanField(default=True)
+    project = db.BooleanField(default=True)
+
+
 class CommonMixin(object):
     """ mixin for all documents in database. provides some nice utils"""
-    standard_join = {}
+    safe_set = True
+    standard_join = []
+    acl = {}
+
+    def get_acl(self, user=None):
+        """ Generates an acl list for a specific user which defaults to the
+        authed user """
+        if not user:
+            user = g.user
+        roles = self.roles(user=user)
+        allowed = set()
+        for role in roles:
+            allowed |= set(self.acl.get(role, []))
+
+        return allowed
+
+    def roles(user=None):
+        """ This should be overriden to use logic for determining roles """
+        if not user:
+            user = g.user
+        return []
+
+    def can(self, action):
+        """ Can the user perform the action needed? """
+        return action in self.user_acl
+
+    def unsafe_set(self, attr, setter):
+        """ Sets the attribute without a security check """
+        return super(CommonMixin, self).__setattr__(value)
+
+    @property
+    def user_acl(self):
+        """ a lazy loaded acl list for the current user """
+        # Run an extra check to ensure we don't hand out an acl list for the
+        # wrong user. Possibly un-neccesary, I'm paranoid
+        if not hasattr(self, '_user_acl') or self._user_acl[0] != g.user:
+            self._user_acl = (g.user, self.get_acl())
+        return self._user_acl[1]
+
     def safe_save(self, **kwargs):
+        """ Catches a bunch of common mongodb errors when saving and handles
+        them appropriately. A convenient wrapper around catch_error_graceful.
+        """
         form = kwargs.pop('form', None)
         flash = kwargs.pop('flash', False)
         try:
@@ -69,41 +136,35 @@ class CommonMixin(object):
             return True
         return True
 
-    def jsonize(self, raw=False, **kwargs):
+    def jsonize(self, args, raw=False):
         """ Used to join attributes or functions to an objects json representation.
         For passing back object state via the api
         """
 
-        for key, val in kwargs.items():
-            try:
-                attr = getattr(self, key)
-                if isinstance(attr, db.Document):
-                    attr = str(attr.id)
-                if isinstance(attr, datetime.datetime):
-                    attr = calendar.timegm(attr.utctimetuple()) * 1000
-                elif isinstance(attr, bool):
-                    pass
-                elif callable(attr):
-                    attr = attr()
-                else:
-                    attr = str(attr)
-            except AttributeError:
+        dct = {}
+        for key in args:
+            attr = getattr(self, key, 1)
+            if isinstance(attr, db.Document):
+                attr = str(attr.id)
+            elif isinstance(attr, datetime.datetime):
+                attr = calendar.timegm(attr.utctimetuple()) * 1000
+            elif isinstance(attr, bool): # don't convert bool to str
                 pass
+            elif isinstance(attr, set): # don't convert bool to str
+                attr = {x: True for x in attr}
+            elif callable(attr):
+                attr = attr()
             else:
-                kwargs[key] = attr
+                attr = str(attr)
+            dct[key] = attr
+
         if raw:
-            return kwargs
+            return dct
         else:
-            return json.dumps(kwargs)
+            return json.dumps(dct)
 
 
     meta = {'allow_inheritance': True}
-
-class Email(db.EmbeddedDocument, CommonMixin):
-    address = db.StringField(max_length=1023, required=True, unique=True)
-    verified = db.BooleanField(default=False)
-    primary = db.BooleanField(default=True)
-
 
 class Comment(db.EmbeddedDocument):
     body = db.StringField(min_length=10)
@@ -116,6 +177,7 @@ class Comment(db.EmbeddedDocument):
 
 
 class Improvement(db.Document, SubscribableMixin, CommonMixin):
+
     CloseVals = Enum('Completed', 'Duplicate', 'Won\'t Fix', 'Other')
 
     id = db.ObjectIdField()
@@ -144,71 +206,62 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
     subscribers = db.ListField(db.EmbeddedDocumentField('ImpSubscriber'))
 
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
-    standard_join = {'get_abs_url': 1,
-                     'vote_status': 1,
-                     'subscribed': 1,
-                     'created_at': 1,
-                     'can_edit': 1,
-                     'id': 1,
-                     'project___base': 1,
-                     'project__name': 1,
-                     'project__maintainer': 1,
-                     'project__maintainer__get_abs_url': 1,
-                     'project__maintainer__username': 1,
-                     'project__maintainer___base': 1,
-                     'project': 1}
+    acl = flatten_dict(
+        {'maintainer': ('edit', ['url_key',
+                                 '_close_reason',
+                                 'brief',
+                                 'desc'])
+         })
+    standard_join = ['get_abs_url',
+                     'vote_status',
+                     'subscribed',
+                     'user_acl',
+                     'created_at',
+                     'id',
+                     'project',
+                     ]
+    page_join = inherit_lst(standard_join,
+                             [{'obj': 'project',
+                               'join_prof': 'imp_page_join'}]
+                             )
+
+    # used for displaying the project in noifications, etc
+    disp_join = ['__dont_mongo',
+                 'brief',
+                 'get_abs_url',
+                 {'obj': 'project',
+                  'join_prof': 'disp_join'}]
+
+    def roles(self, user=None):
+        """ Logic to determin what roles a person gets """
+        if not user:
+            user = g.user
+
+        roles = []
+
+        if self.project.maintainer == user:
+            roles.append('maintainer')
+
+        if self.creator == user or 'maintainer' in roles:
+            roles.append('creator')
+
+        if user.is_anonymous:
+            roles.append('anonymous')
+        else:
+            roles.append('user')
+
+        return roles
 
     # Closevalue masking for render
+    def get_abs_url(self):
+        return "{username}/{purl_key}/{url_key}".format(
+            purl_key=self.project.url_key,
+            username=self.project.maintainer.username,
+            url_key=self.url_key)
+
     @property
     def close_reason(self):
         return self.CloseVals[self._close_reason]
-
-    def get_abs_url(self):
-        return url_for('main.view_improvement',
-                       purl_key=self.project.url_key,
-                       username=self.project.maintainer.username,
-                       url_key=self.url_key)
-
-    def can_edit(self):
-        return self.can_user_edit(g.user)
-    def can_user_edit(self, user):
-        return user == self.creator or self.project.can_edit_imp(user)
-
-    def gh_desync(self, flatten=False):
-        """ Used to disconnect an improvement from github. Really just a
-        trickle down call from de-syncing the project, but nicer to keep the
-        logic in here"""
-        self.gh_synced = False
-        # Remove indexes if we're flattening
-        if flatten:
-            self.gh_issue_num = None
-            self.gh_labels = []
-        try:
-            self.save()
-        except Exception:
-            catch_error_graceful()
-
-    @property
-    def md(self):
-        return markdown2.markdown(self.description)
-
-    def set_vote(self, user):
-        return Improvement.objects(project=self.project,
-                            url_key=self.url_key,
-                            vote_list__ne=user.id).\
-                    update_one(add_to_set__vote_list=user.id, inc__votes=1)
-
-    def set_unvote(self, user):
-        return Improvement.objects(
-            project=self.project,
-            url_key=self.url_key,
-            vote_list__in=[user.id, ]).\
-                update_one(pull__vote_list=user.id, dec__votes=1)
-
-
-    @property
-    def vote_status(self):
-        return g.user in self.vote_list
 
     def set_open(self):
         """ Let the caller know if it was already set """
@@ -234,10 +287,41 @@ class Improvement(db.Document, SubscribableMixin, CommonMixin):
         c = Comment(user=user.id, body=body)
         c.distribute(self)
 
-    #def to_json(self):
-    #    """ Define how a straight json serialization is generated """
-    #    return jsonize(raw=1, url_key=1, project=1, get_abs_url=1, brief=1)
-Improvement._get_collection().ensure_index([('brief', 'text')])
+
+    # Github Synchronization Logic
+    # ========================================================================
+    def gh_desync(self, flatten=False):
+        """ Used to disconnect an improvement from github. Really just a
+        trickle down call from de-syncing the project, but nicer to keep the
+        logic in here"""
+        self.gh_synced = False
+        # Remove indexes if we're flattening
+        if flatten:
+            self.gh_issue_num = None
+            self.gh_labels = []
+        try:
+            self.save()
+        except Exception:
+            catch_error_graceful()
+
+    # Voting
+    # ========================================================================
+    def set_vote(self, user):
+        return Improvement.objects(project=self.project,
+                            url_key=self.url_key,
+                            vote_list__ne=user.id).\
+                    update_one(add_to_set__vote_list=user.id, inc__votes=1)
+
+    def set_unvote(self, user):
+        return Improvement.objects(
+            project=self.project,
+            url_key=self.url_key,
+            vote_list__in=[user.id, ]).\
+                update_one(pull__vote_list=user.id, dec__votes=1)
+
+    @property
+    def vote_status(self):
+        return g.user in self.vote_list
 
 
 class Project(db.Document, SubscribableMixin, CommonMixin):
@@ -249,9 +333,8 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
 
     # description info
     name = db.StringField(max_length=64, min_length=3)
-    improvement_count = db.IntField(default=1)  # XXX: Currently not implemented
     website = db.StringField(max_length=2048)
-    source_url = db.StringField(max_length=2048)
+    improvement_count = db.IntField(default=1)  # XXX: Currently not implemented
 
     # Event log
     subscribers = db.ListField(db.EmbeddedDocumentField('ProjectSubscriber'))
@@ -263,16 +346,78 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
     gh_synced_at = db.DateTimeField()
     gh_synced = db.BooleanField(default=False)
 
-    standard_join = {#'can_edit_settings': 1,
-                     #'can_edit_imp': 1,
-                     'get_abs_url': 1,
-                     'subscribed': 1,
-                     #'can_sync': 1
-                     'id': 1,
-                     'maintainer': 1,
-                     }
+    # Join profiles
+    standard_join = ['get_abs_url',
+                     'subscribed',
+                     'maintainer',
+                     'user_acl',
+                     'id',
+                     {'obj': 'events'}
+                    ]
+    page_join = ['__dont_mongo',
+                 'name',
+                 {'obj': 'events'},
+                ]
+    imp_page_join = ['__dont_mongo',
+                     'name',
+                     {'obj': 'maintainer',
+                      'join_prof': "disp_join"}
+                    ]
+    # used for displaying the project in noifications, etc
+    disp_join = ['__dont_mongo',
+                 'name',
+                 'get_abs_url',
+                 'username']
+    page_join = inherit_lst(standard_join,
+                             [])
+    acl = flatten_dict({'maintainer': ('edit', ['name',
+                                                'website'])
+                        })
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
 
+    def roles(self, user=None):
+        """ Logic to determin what auth roles a user gets """
+        if not user:
+            user = g.user
+
+        roles = []
+
+        if self.maintainer == user:
+            roles.append('maintainer')
+
+        if user.is_anonymous:
+            roles.append('anonymous')
+        else:
+            roles.append('user')
+
+        return roles
+
+    @property
+    def get_abs_url(self):
+        return "/{username}/{url_key}/".format(
+                       username=self.username,
+                       url_key=self.url_key)
+
+    def add_improvement(self, imp, user):
+        """ Add a new Improvement to this project """
+        imp.create_key()
+        imp.project = self
+        try:
+            imp.save()
+        except mongoengine.errors.OperationError:
+            return False
+
+        # send a notification to all subscribers
+        inotif = ImprovementNotif(user=user.id, imp=imp)
+        inotif.distribute()
+
+    def add_comment(self, body, user):
+        # Send the actual comment to the improvement event queue
+        c = Comment(user=user, body=body)
+        distribute_event(self, c, "comment", self_send=True)
+
+    # Github Synchronization Logic
+    # ========================================================================
     @property
     def gh_sync_meta(self):
         return self.gh_repo_id > 0
@@ -300,67 +445,6 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
         current_app.logger.debug("Desynchronized repository")
 
 
-    def can_edit_settings(self, user):
-        return self.maintainer == user
-
-    def can_edit_imp(self, user):
-        return self.maintainer == user
-
-    def can_sync(self, user):
-        return self.maintainer == user
-
-    def get_abs_url(self):
-        return "/{username}/{url_key}/".format(
-                       username=self.maintainer.username,
-                       url_key=self.url_key)
-
-    def get_improvements(self, json=False, join=None):
-        vals = Improvement.objects(project=self)
-        if json:
-            return get_json_joined(vals, join=None)
-        return vals
-
-    def add_improvement(self, imp, user):
-        imp.create_key()
-        imp.project = self
-        try:
-            imp.save()
-        except mongoengine.errors.OperationError:
-            return False
-
-        # send a notification to all subscribers that the notification is left
-        inotif = ImprovementNotif(user=user.id, imp=imp)
-        inotif.distribute()
-
-    def add_comment(self, body, user):
-        # Send the actual comment to the improvement event queue
-        c = Comment(user=user,
-                    body=body)
-        distribute_event(self, c, "comment", self_send=True)
-
-
-class ImpSubscriber(db.EmbeddedDocument):
-    user = db.ReferenceField('User')
-    comment_notif = db.BooleanField(default=True)
-    vote = db.BooleanField(default=False)
-    status = db.BooleanField(default=True)  # status change event
-    donate = db.BooleanField(default=True)
-
-
-class ProjectSubscriber(db.EmbeddedDocument):
-    user = db.ReferenceField('User')
-    comment_notif = db.BooleanField(default=True)
-    improvement = db.BooleanField(default=True)
-
-
-class UserSubscriber(db.EmbeddedDocument):
-    user = db.ReferenceField('User')
-    comment = db.BooleanField(default=True)
-    vote = db.BooleanField(default=False)
-    improvement = db.BooleanField(default=True)
-    project = db.BooleanField(default=True)
-
-
 class Transaction(db.Document, CommonMixin):
     StatusVals = Enum('Pending', 'Cleared')
     _status = db.IntField(default=StatusVals.Pending.index)
@@ -373,7 +457,7 @@ class Transaction(db.Document, CommonMixin):
     last_four = db.IntField()
     user = db.ReferenceField('User')
 
-    standard_join = {'status': 1}
+    standard_join = ['status']
     meta = {
         'ordering': ['-created']
     }
@@ -381,6 +465,14 @@ class Transaction(db.Document, CommonMixin):
     @property
     def status(self):
         return self.StatusVals[self._status]
+
+
+class Email(db.EmbeddedDocument, CommonMixin):
+    standard_join = []
+
+    address = db.StringField(max_length=1023, required=True, unique=True)
+    verified = db.BooleanField(default=False)
+    primary = db.BooleanField(default=True)
 
 
 class User(db.Document, SubscribableMixin, CommonMixin):
@@ -402,24 +494,56 @@ class User(db.Document, SubscribableMixin, CommonMixin):
     gh_token = db.StringField()
 
     meta = {'indexes': [{'fields': ['gh_token'], 'unique': True, 'sparse': True}]}
-    standard_join = {'gh_linked': 1,
-                     'gh': 1,
-                     'id': 1,
-                     'subscribed': 1,
-                     'created_at': 1,
-                     'primary_email__address': 1}
+    standard_join = ['gh_linked',
+                     'gh',
+                     'id',
+                     'subscribed',
+                     'created_at',
+                     {'obj': 'primary_email'}
+                    ]
+
+    # used for displaying the project in noifications, etc
+    disp_join = ['__dont_mongo',
+                 'username',
+                 'get_abs_url']
 
     @property
     def password(self):
         return self._password
-
     @password.setter
     def password(self, val):
         self._password = unicode(crypt.encode(val))
-
     def check_password(self, password):
         return crypt.check(self._password, password)
 
+    @property
+    def primary_email(self):
+        for email in self.emails:
+            if email.primary:
+                return email
+
+    @property
+    def avatar_lg(self):
+        # Set your variables here
+        default = "http://www.example.com/default.jpg"
+        size = 180
+
+        # construct the url
+        gravatar_url = "http://www.gravatar.com/avatar/" + hashlib.md5(self.primary_email.lower()).hexdigest() + "?"
+        gravatar_url += urllib.urlencode({'d':default, 's':str(size)})
+
+    def get_abs_url(self):
+        return "{username}/".format(username=unicode(self.username).encode('utf-8'))
+
+    def get_projects(self):
+        return Project.objects(maintainer=self)
+
+    def save(self):
+        self.username = self.username.lower()
+        super(User, self).save()
+
+    # Github Synchronization Logic
+    # ========================================================================
     @property
     def gh_linked(self):
         return bool(self.gh_token)
@@ -454,22 +578,8 @@ class User(db.Document, SubscribableMixin, CommonMixin):
         """ Get a single repositories information from the gh_path """
         return github.get('repos/{0}'.format(path)).data
 
-    @property
-    def primary_email(self):
-        for email in self.emails:
-            if email.primary:
-                return email
-
-    @property
-    def avatar_lg(self):
-        # Set your variables here
-        default = "http://www.example.com/default.jpg"
-        size = 180
-
-        # construct the url
-        gravatar_url = "http://www.gravatar.com/avatar/" + hashlib.md5(self.primary_email.lower()).hexdigest() + "?"
-        gravatar_url += urllib.urlencode({'d':default, 's':str(size)})
-
+    # User creation logic
+    # ========================================================================
     @classmethod
     def create_user(cls, username, password, email_address):
         try:
@@ -493,17 +603,8 @@ class User(db.Document, SubscribableMixin, CommonMixin):
 
         return user
 
-    def get_abs_url(self):
-        return url_for('main.user', username=unicode(self.username).encode('utf-8'))
-
-    def get_projects(self):
-        return Project.objects(maintainer=self)
-
-    def save(self):
-        self.username = self.username.lower()
-        super(User, self).save()
-
     # Authentication callbacks
+    # ========================================================================
     def is_authenticated(self):
         return True
 
@@ -520,6 +621,7 @@ class User(db.Document, SubscribableMixin, CommonMixin):
         return str(self.username)
 
     # Convenience functions
+    # ========================================================================
     def __repr__(self):
         return '<User %r>' % (self.username)
 

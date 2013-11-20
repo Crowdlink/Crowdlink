@@ -47,13 +47,12 @@ def vote_api():
 def get_project():
     username = request.args.get('username', '')
     url_key = request.args.get('url_key', '')
+    join_prof = request.args.get('join_prof', 'standard_join')
 
     # try to access the improvement with identifying information
     try:
         project = Project.objects(username=username, url_key=url_key)
-        return get_json_joined(project,
-                               join={'events__template': 1,
-                                     })
+        return get_json_joined(project, join_prof=join_prof)
     except KeyError as e:
         return incorrect_syntax()
     except Improvement.DoesNotExist:
@@ -119,6 +118,7 @@ def get_improvements():
     purl_key = args.get('purl_key', None)
     project = args.get('project', None)
     url_key = args.get('url_key', None)
+    join_prof = request.args.get('join_prof', 'standard_join')
     if (purl_key and username) and not project:
         try:
             project = Project.objects.get(username=username, url_key=purl_key).id
@@ -129,10 +129,9 @@ def get_improvements():
         # if the request was for a single improvement
         if url_key:
             imp = Improvement.objects(project=project, url_key=url_key)
-            return get_json_joined(imp)
         else:
-            imps = Improvement.objects(project=project)[:limit]
-            return get_json_joined(imps)
+            imp = Improvement.objects(project=project)[:limit]
+        return get_json_joined(imp, join_prof=join_prof)
     except KeyError:
         return incorrect_syntax()
     except Improvement.DoesNotExist:
@@ -177,11 +176,11 @@ def update_improvement():
         return resource_not_found()
 
     brief = js.pop('brief', None)
-    if brief:
+    if brief and 'brief' in imp.user_acl:
         imp.brief = brief
 
     desc = js.pop('desc', None)
-    if desc:
+    if desc and 'desc' in imp.user_acl:
         imp.desc = desc
 
     sub_status = js.pop('subscribed', None)

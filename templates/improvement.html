@@ -10,7 +10,7 @@
   <div class="row">
     <div class="col-md-8 no-gutter">
       <h2>
-        <span ng-show="prob.can_edit">
+        <span ng-show="prob.user_acl.edit_brief">
           <span ng-show="editing.brief">
             <div class="input-group">
               <input type="text" class="form-control" ng-model="prob.brief" />
@@ -26,7 +26,7 @@
             <small class="fa fa-edit icon-hover" ng-click="toggle('brief')"></small>
           </span>
         </span>
-        <span ng-hide="prob.can_edit">
+        <span ng-hide="prob.user_acl.edit_brief">
           {[{ prob.brief }]}
         </span>
       </h2>
@@ -62,7 +62,7 @@
           </span>
         </a>
         <a class="btn fill-link"
-            ng-show="prob.can_edit"
+            ng-show="prob.user_acl.edit__close_reason"
             ng-class="{false: 'btn-info active', true: 'btn-info'}[prob.open]"
             ng-click="swap_save('open')">
           <span ng-show="prob.open">
@@ -95,7 +95,7 @@
     </h4>
     <br>
     <div class="row well well-lg center">
-        <div class="row col-lg-11" ng-show="editing.desc">
+        <div class="row col-lg-11" ng-show="editing.desc" ng-show="prob.user_acl.edit_desc">
           <textarea mark-it-up ng-model="prob.desc"></textarea>
           <span class="btn btn-info"
             ng-click="save('desc')"
@@ -112,7 +112,9 @@
           </span>
         </div>
         <div ng-hide="editing.desc">
-          <i class="fa fa-edit fa-3x icon-hover pull-right" ng-click="toggle('desc')"></i>
+          <i class="fa fa-edit fa-3x icon-hover pull-right"
+            ng-click="toggle('desc')"
+            ng-show="prob.user_acl.edit_desc"></i>
           <span btf-markdown="prob.desc" />
         </div>
     </div>
