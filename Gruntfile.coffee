@@ -13,6 +13,21 @@ module.exports = (grunt) ->
           loadPath: ["haml"]
         files:
           "templates/signup.html": "haml/signup.haml"
+          "templates/project.html": "haml/project.haml"
+          "templates/home.html": "haml/home.haml"
+          "templates/login.html": "haml/login.haml"
+          "templates/issue.html": "haml/issue.haml"
+          "templates/profile.html": "haml/profile.haml"
+          "templates/account.html": "haml/account.haml"
+          "templates/403.html": "haml/403.haml"
+          "templates/new_issue.html": "haml/new_issue.haml"
+          "templates/new_project.html": "haml/new_project.haml"
+          "templates/user_home.html": "haml/user_home.haml"
+          "templates/base.html": "haml/base.haml"
+          "templates/psettings.html": "haml/psettings.haml"
+          "templates/events/issue.html": "haml/events/issue.haml"
+          "templates/events/comment.html": "haml/events/comment.haml"
+          "templates/events/fallback.html": "haml/events/fallback.haml"
 
     coffee:
       compile:

@@ -1,0 +1,70 @@
+!!!
+%html{lang: "en", "ng-app" => "mainApp", "ng-controller" => "rootController"}
+  %head
+    %meta{content: "width=device-width, initial-scale=1.0", name: "viewport"}/
+    %link{href: "/static/lib/css/bootstrap.min.css", media: "screen", rel: "stylesheet"}/
+    %link{href: "/static/css/main.css", media: "screen", rel: "stylesheet"}/
+    %link{href: "/static/lib/css/font-awesome.min.css", rel: "stylesheet"}/
+    %title{"ng-bind" => "_title"} Crowd Link
+  %body
+    / Jquery
+    %script{src: "//code.jquery.com/jquery-1.10.1.min.js"}
+    %script{src: "//malsup.github.com/jquery.form.js"}
+    / Yota
+    %script{src: "/static/lib/js/yota.js"}
+    / Showdown
+    %script{src: "//cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"}
+    / Angular
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-resource.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-route.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-sanitize.min.js"}
+    / Noty notifications
+    %script{src: "//cdn.jsdelivr.net/noty/2.1.0/jquery.noty.js"}
+    %script{src: "//cdn.jsdelivr.net/noty/2.1.0/layouts/top.js"}
+    %script{src: "//cdn.jsdelivr.net/noty/2.1.0/themes/default.js"}
+    / Bootstrap
+    %script{src: "//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"}
+    / Markitup Markdown editor
+    %script{src: "/static/lib/js/jquery.markitup.js", type: "text/javascript"}
+    / Strip
+    %script{src: "https://checkout.stripe.com/checkout.js", type: ""}
+    / My libs
+    %script{src: "/static/js/lib.js"}
+    %script{src: "/static/js/app.js"}
+    %script{src: "/static/js/controllers.js"}
+    %script{src: "/static/js/services.js"}
+    #wrap{"ng-init" => "init(, '')"}
+      .navbar.navbar-default.navbar-fixed-top
+        .container.no-gutter
+          %a.navbar-brand.logo{href: "#/home"}
+            %span.hidden-xs
+              %img{border: "0", src: "/static/img/logo.jpg"}/
+            %span.visible-xs
+              %img{border: "0", src: "/static/img/logo_sm.jpg"}/
+          %ul.nav.nav-pills.main-nav-pills
+            %li{"ng-class" => "{true: 'active'}[location.path().lastIndexOf('/account', 0) === 0]", "ng-show" => "logged_in"}
+              %a{href: "#/account"}
+                %i.fa.fa-large.fa-gear
+                %span.hidden-xs Account
+            %li{"ng-class" => "{true: 'active'}[location.path()==profile]", "ng-show" => "logged_in"}
+              %a{href: "\#{[{profile}]}"}
+                %i.fa.fa-large.fa-user
+                %span.hidden-xs Profile
+            %li{"ng-show" => "logged_in"}
+              %a{href: "#/logout"}
+                %i.fa.fa-large.fa-sign-out
+                %span.hidden-xs Logout
+            %li{"ng-class" => "{true: 'active'}[location.path()=='/signup']", "ng-hide" => "logged_in"}
+              %a{href: "#/signup"}
+                %i.fa.fa-large.fa-edit
+                %span.hidden-xs Sign Up
+            %li{"ng-class" => "{true: 'active'}[location.path()=='/login']", "ng-hide" => "logged_in"}
+              %a{href: "#/login"}
+                %i.fa.fa-sign-in.fa-large
+                %span.hidden-xs Login
+      .container.main-cont{"ng-view" => ""}
+    %div{id: "footer navbar-default navbar"}
+      .container
+        %p.text-muted{style: "margin:20px 0px;"}
+          \© Copyright 2013 by me.

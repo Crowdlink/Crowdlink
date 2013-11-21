@@ -1,0 +1,54 @@
+.row{"ng-init" => "init()"}
+  .col-md-8.no-gutter
+    %h2
+      {[{ project.name }]}
+    %h4
+      %b> Created
+      {[{ project.created_at.$date | date:'medium' }]}
+      ({[{ project.created_at.$date | date_ago }]})
+    %h4
+      %b Maintainer
+      %a{:href => "#/u/{[{ project.username }]}"} {[{ project.username }]}
+  .col-md-3.no-gutter
+    %br/
+    %a.btn.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[project.subscribed]", "ng-click" => "subscribe()"}
+      %span{"ng-hide" => "project.subscribed"}
+        %i.fa.fa-eye
+        \&nbsp;Watch
+      %span{"ng-show" => "project.subscribed"}
+        %i.fa.fa-eye-slash
+        \&nbsp;Unwatch
+    %a.btn.btn-info.fill-link{:href => "\#{[{project.get_abs_url}]}new_issue"}
+      %i.fa.fa-large.fa-plus
+      Add an Issue
+    %a.btn.btn-default.fill-link{:href => "\#{[{ project.get_abs_url }]}psettings"}
+      %i.fa.fa-large.fa-gear
+      Project Settings
+.row
+  %h3 Issues
+  .input-group
+    %input.form-control{"ng-model" => "filter", :type => "text"}
+    %span.btn.btn-info.input-group-addon
+      %i.fa.fa-search{"ng-click" => "search()"}
+  / /input-group
+  %table.table.table-hover
+    %tbody
+      %tr{"ng-repeat" => "issue in issues | filter:filter"}
+        %td.fit-width
+          %a.btn.btn-xs{"ng-class" => "{'btn-success': issue.vote_status, 'btn-info': !issue.vote_status}", "ng-click" => "vote(issue)"}
+            %span{"ng-hide" => "issue.vote_status"}
+              Vote&nbsp;
+              %i.fa.fa-plus
+            %span{"ng-hide" => "!issue.vote_status"}
+              Unvote&nbsp;
+              %i.fa.fa-minus
+          \&nbsp;&nbsp;
+          %b
+            %ng-pluralize{:count => "issue.votes",
+              :when => "{'0': 'No votes', 'one': '1 vote', 'other': '{} votes'}"}
+        %td
+          %a{:href => "\#{[{ issue.get_abs_url }]}", "ng-bind-html" => "issue.brief | searchFilter:filter"}
+.row{"ng-show" => "project.events.length > 0"}
+  %h3 Events
+  %div{"ng-repeat" => "event in project.events"}
+    %span{"ng-include" => "'templates/' + event.template"}

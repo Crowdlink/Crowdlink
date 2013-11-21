@@ -1,0 +1,22 @@
+.row{"ng-init" => "init()"}
+  .col.header-col-light-gray
+    .row
+      .col-md-7
+        %h2 {[{ prof_user.username }]}
+        %h4
+          %b> Joined:
+          {[{ prof_user.created_at | date:'mediumDate' }]} ({[{ prof_user.created_at | date_ago }]})
+        %a.btn.btn-default.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[prof_user.subscribed]", "ng-click" => "swap_save('subscribed')"}
+          %span{"ng-hide" => "prof_user.subscribed"}
+            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
+            %i.fa.fa-eye{"ng-hide" => "saving.subscribed"}
+            \ Watch
+          %span{"ng-show" => "prof_user.subscribed"}
+            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
+            %i.fa.fa-eye-slash{"ng-hide" => "saving.subscribed"}
+            \ Unwatch
+      .col-md-5.text-right
+.row
+  %h3 Events
+  %div{"ng-repeat" => "event in project.events"}
+    %span{"ng-include" => "'templates/' + event.template"}

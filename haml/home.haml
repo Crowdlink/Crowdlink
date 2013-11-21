@@ -1,0 +1,70 @@
+.container{"ng-init" => "init()"}
+  .container.header-col.header-col-purple
+    .row
+      .col-lg-6.indent-quote
+        %br/
+        %br/
+        %br/
+        %br/
+        %br/
+        %h2.bs-masthead Crowd-source your user opinion to drive lean, agile development
+        %h4.subtext Sign up for free for open source project hosting. Paid plans coming soon.
+      .col-lg-5
+        %h3.indent-quote Sign Up
+        {{ form|safe }}
+        %p.col-lg-offset-4{style: "padding-left:10px;"}
+        .hr-header
+          %b or
+        %br/
+        %a.col-lg-offset-4{href: "/login/github", style: "padding-left:10px;"}
+          %button.btn.btn-danger.btn-sm{type: "button"}
+            %i.fa.fa-github.fa-li.fa-large>
+            \  Sign in with Github
+  .col-sm-6.header-col.header-col-dark-blue
+    %h3.indent-quote For project maintainers
+    .row{style: "padding-left:15px;"}
+      .col-lg-10
+        %h3
+          %i.fa.fa-thumbs-up
+          \ Integrated voting
+        %p Voting and goal setting allows non-technical users to let their voice be heard and helps you follow user interest for more lean development. Users can vote for free or with money, you decide.
+    .row{style: "padding-left:15px;"}
+      .col-lg-10
+        %h3
+          %i.fa.fa-dollar
+          \ Grow your project
+        %p Generate impetus for your side projects by allowing people to show their interst with money
+    .row{style: "padding-left:15px;"}
+      .col-lg-10
+        %h3
+          %i.fa.fa-gear
+          \ Built in
+        %p Designed to work alongside your issue tracker to avoid duplicating work
+  .col-sm-6.header-col.header-col-light-blue
+    %h3 For users
+    .row{style: "padding-left:15px;"}
+      .col-lg-10
+        %h3
+          %i.fa.fa-comment
+          \ Be heard
+        %p Always wanted that one feature in a project? You can vote for that feature to be implemented, or even give a few dollars towards it.
+    .row{style: "padding-left:15px;"}
+      .col-lg-10
+        %h3
+          %i.fa.fa-bullhorn
+          \ Stay up to date
+        %p Track projects that your intersted in easily and be notified of new releases and features
+    .row{style: "padding-left:15px;"}
+      .col-lg-10
+        %h3
+          %i.fa.fa-flask
+          \ Drive innovation
+        %p Micro-donations can be targeted at specific objectives or improvements in projects that interest you
+  .clearfix
+  .container.header-col.header-col-gray
+    .row
+      .col-lg-4.col-sm-6
+        %h3
+          %i.fa.fa-linux
+          \ Open Source Friendly
+        %p Featurelet is completely free for open source projects
