@@ -8,12 +8,6 @@
     <title ng-bind="_title">Crowd Link</title>
   </head>
   <body>
-    <!-- Templates -->
-    <script type="text/ng-template" id="main.html">
-      <div ng-init="init()">
-        <div dynamic="html_out"></div>
-      </div>
-    </script>
     <!-- Jquery -->
     <script src="//code.jquery.com/jquery-1.10.1.min.js"></script>
     <script src="//malsup.github.com/jquery.form.js"></script>
@@ -38,11 +32,9 @@
     <script type"text/javascript" src="https://checkout.stripe.com/checkout.js"></script>
     <!-- My libs -->
     <script src="/static/js/lib.js"></script>
-    <script src="/static/js/main.js"></script>
     <script src="/static/js/app.js"></script>
     <script src="/static/js/controllers.js"></script>
     <script src="/static/js/services.js"></script>
-    {% block post_script %}{% endblock %}
     <div id="wrap" ng-init="init({{logged_in}}, '{{userid}}')">
       <div class="navbar navbar-default navbar-fixed-top">
           <div class="container no-gutter">
@@ -89,27 +81,12 @@
           </div>
       </div>
       <div class="container main-cont" ng-view>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-           {% for category, message in messages %}
-                <br />
-                {% if category == 'message' %}{% set category = 'danger' %}{% endif %}
-                <div class="alert alert-block alert-{{category}} fade in">
-                    <a class="close" data-dismiss="alert" href="#">×</a>
-                      {{ message }}
-                </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
       </div>
     </div>
     <div id="footer navbar-default navbar">
       <div class="container">
         <p class="text-muted" style="margin:20px 0px;">
-        {% block footer %}
         &copy; Copyright 2013 by me.
-        {% endblock %}
         </p>
       </div>
     </div>

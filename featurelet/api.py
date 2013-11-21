@@ -63,6 +63,7 @@ def get_project():
 @login_required
 def get_user():
     js = request.args
+    join_prof = request.args.get('join_prof', 'standard_join')
 
     # try to access the issue with identifying information
     try:
@@ -75,7 +76,7 @@ def get_user():
             user = User.objects.get(id=userid)
         else:
             return incorrect_syntax()
-        return get_json_joined(user)
+        return get_json_joined(user, join_prof=join_prof)
     except User.DoesNotExist:
         pass
     return resource_not_found()

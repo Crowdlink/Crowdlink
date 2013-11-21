@@ -1,38 +1,34 @@
-<!-- {% block title %}Project Settings for {{project.name}}{% endblock %} -->
-{% block content %}
-<ol class="breadcrumb">
-  <li><a href="">Projects</a></li>
-  <li><a href="{{project.get_abs_url()}}">{{ project.name }}</a></li>
-  <li class="active">Settings</li>
-</ol>
-{% if g.user.gh_linked %}<!-- Synced settings ............................. -->
-<div class="row">
-  {% if sync_form %}
-    {{sync_form|safe}}
-  {% else %}
-  <div class="col-md-9">
-    <h3>GitHub Synchronization Details</h3>
-    <div class="panel panel-default">
-      <table class="table">
-        <tr>
-          <th>Github Repository</th>
-          <td>{{project.gh_repo_path}}</td>
-        </tr>
-        <tr>
-          <th>Repo ID</th>
-          <td class="mono">{{project.gh_repo_id}}</td>
-        </tr>
-        <tr>
-          <th>Last Synced</th>
-          <td>
-            {{project.gh_synced_at|date_ago}} ({{project.gh_synced_at|datetime}})
-          </td>
-        </tr>
-      </table>
+<div ng-init="init()">
+  <ol class="breadcrumb">
+    <li><a href="">Projects</a></li>
+    <li><a href="{[{project.get_abs_url}]}">{[{ project.name }]}</a></li>
+    <li class="active">Settings</li>
+  </ol>
+  <div class="row" ng-show="user.gh_linked">
+    {% if sync_form %}
+      {{sync_form|safe}}
+    {% else %}
+    <div class="col-md-9">
+      <h3>GitHub Synchronization Details</h3>
+      <div class="panel panel-default">
+        <table class="table">
+          <tr>
+            <th>Github Repository</th>
+            <td>{{project.gh_repo_path}}</td>
+          </tr>
+          <tr>
+            <th>Repo ID</th>
+            <td class="mono">{{project.gh_repo_id}}</td>
+          </tr>
+          <tr>
+            <th>Last Synced</th>
+            <td>
+              {{project.gh_synced_at|date_ago}} ({{project.gh_synced_at|datetime}})
+            </td>
+          </tr>
+        </table>
+      </div>
     </div>
+    {%endif%}
   </div>
-  {%endif%}
 </div>
-{% endif %}<!-- End Synced settings .......................... -->
-
-{% endblock %}

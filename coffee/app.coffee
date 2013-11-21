@@ -12,9 +12,15 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/logout",
     templateUrl: "main.html"
     controller: "remoteController"
+  ).when("/",
+    templateUrl: "templates/home.html"
+    controller: "frontpageController"
   ).when("/home",
-    templateUrl: "main.html"
-    controller: "remoteController"
+    templateUrl: "templates/user_home.html"
+    controller: "homeController"
+  ).when("/new_project",
+    templateUrl: "templates/new_project.html"
+    controller: "newProjController"
   ).when("/signup",
     templateUrl: "templates/signup.html"
     controller: "signupController"
@@ -27,6 +33,12 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/:username/:url_key",
     templateUrl: "templates/project.html"
     controller: "projectController"
+  ).when("/:username/:purl_key/new_issue",
+    templateUrl: "templates/new_issue.html"
+    controller: "newissueController"
+  ).when("/:username/:url_key/psettings",
+    templateUrl: "templates/psettings.html"
+    controller: "projectSettingsController"
   ).when("/:username/:purl_key/:url_key",
     templateUrl: "templates/issue.html"
     controller: "issueController"
@@ -34,8 +46,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
     templateUrl: "templates/profile.html"
     controller: "profileController"
   ).otherwise(
-    templateUrl: "main.html"
-    controller: "remoteController"
+    templateUrl: "templates/404.html"
   )
 ]
 

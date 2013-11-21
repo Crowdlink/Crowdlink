@@ -1,27 +1,26 @@
-<!-- {% block title %}Home{% endblock %} -->
-{% block content %}
-<div class="row">
+<div class="row" ng-init="init()">
   <div class="col-md-8 no-gutter">
     <div class="col">
       <h3>Your feed</h3>
-      {% for event in g.user.events %}
-        {% include event.template %}
-      {% else %}
+      <div ng-repeat="event in huser.events">
+        <span ng-include="'templates/' + event.template" />
+      </div>
+      <span ng-show="huser.events.length == 0">
         There's nothing to see here right now... Start watching projects or users to monitor their progress.
-      {% endfor %}
+      </span>
     </div>
   </div>
   <div class="col-md-4 no-gutter">
     <div class="col">
       <h3>Your projects</h3>
-      <ul class="list-group main-list">
-      {% for project in projects %}
-        <a href="#{{project.get_abs_url }}"><li class="list-group-item"><i class="fa fa-tasks"></i>&nbsp; {{ project.name }}</li></a>
-      {% else %}
-        <li class="list-group-item"><i class="fa fa-tasks"></i>&nbsp; No project to display</li>
-      {% endfor %}
+      <ul class="list-group main-list" ng-show="huser.projects.length > 0">
+        <a href="#{[{project.get_abs_url }]}" ng-repeat="project in huser.projects">
+          <li class="list-group-item"><i class="fa fa-tasks"></i>
+            &nbsp; {[{ project.name }]}
+          </li>
+        </a>
       </ul>
-      <a class="btn btn-info " href="/new_project"><i class="fa fa-plus"></i> &nbsp;Create a New Project</a>
+      <a class="btn btn-info " href="#/new_project"><i class="fa fa-plus"></i> &nbsp;Create a New Project</a>
     </div>
     <div class="col">
       <h3>Popular Projects</h3>
@@ -29,4 +28,3 @@
     </div>
   </div>
 </div>
-{% endblock %}

@@ -44,7 +44,7 @@ module.exports = (grunt) ->
 
     shell:
       reload:
-        command: 'uwsgi --stop uwsgi.pid; sleep 1; uwsgi --ini uwsgi.ini'
+        command: 'uwsgi --stop uwsgi.pid; sleep 1.5; uwsgi --ini uwsgi.ini'
 
     watch:
       bootstrap:

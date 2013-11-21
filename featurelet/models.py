@@ -495,12 +495,17 @@ class User(db.Document, SubscribableMixin, CommonMixin):
 
     meta = {'indexes': [{'fields': ['gh_token'], 'unique': True, 'sparse': True}]}
     standard_join = ['gh_linked',
-                     'gh',
                      'id',
                      'subscribed',
                      'created_at',
+                     '-_password',
                      {'obj': 'primary_email'}
                     ]
+    home_join = inherit_lst(standard_join,
+                            [{'obj': 'events'},
+                             {'obj': 'projects',
+                              'join_prof': 'disp_join'}])
+
 
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
@@ -535,7 +540,8 @@ class User(db.Document, SubscribableMixin, CommonMixin):
     def get_abs_url(self):
         return "/{username}".format(username=unicode(self.username).encode('utf-8'))
 
-    def get_projects(self):
+    @property
+    def projects(self):
         return Project.objects(maintainer=self)
 
     def save(self):

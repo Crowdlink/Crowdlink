@@ -111,29 +111,6 @@ mainControllers.controller('issueController',
       $scope.editing[s] = !$scope.editing[s]
 )
 
-# RemoteController ============================================================
-mainControllers.controller('remoteController', ($scope, $rootScope, $routeParams, $location, $http, $sce)->
-  $scope.init = () ->
-    loc = $location.path()
-    # this catch feels sketchy because it causes infinite loop if it doesn't work.
-    # should probably switch at some point XXX
-    if loc == "/" or loc == ""
-      loc = "/home"
-
-    console.log(loc)
-    $http.get(loc).success((data, status, headers, config) ->
-      if "application/json" == headers('Content-Type')
-        if 'access_denied' of data
-          $rootScope.logged_in = false
-          $rootScope.curr_username = undefined
-          $location.path("/login").replace()
-          console.log("Logging out!")
-      else
-        $scope.html_out = data
-    )
-
-)
-
 # AccountController ===========================================================
 mainControllers.controller('accountController', ($scope, $location, $rootScope, $routeParams, UserService)->
   $scope.init = ->
@@ -150,7 +127,7 @@ mainControllers.controller('accountController', ($scope, $location, $rootScope, 
 )
 
 # LoginController ============================================================
-mainControllers.controller('loginController', ($scope, $rootScope, UserService, $location, $window)->
+mainControllers.controller('loginController', ($scope, $rootScope, UserService, $location)->
   $scope.init = ->
     if $rootScope.logged_in
       $location.path("/home").replace()
@@ -164,7 +141,7 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
         if 'success' of value and value.success
           $rootScope.user = value.user
           $rootScope.logged_in = true
-          $location.path("/home").replace()
+          $location.path("/home")
         else
           if 'message' of value
             $scope.errors = [value.message, ]
@@ -319,5 +296,48 @@ mainControllers.controller('signupController', ($scope, $rootScope, $routeParams
           $scope.errors = [value.message, ]
         else
           $scope.errors = [$rootScope.strings.err_comm, ]
+    )
+)
+
+# NewProjController =======================================================
+mainControllers.controller('newProjController', ($scope, $rootScope, $routeParams)->
+  $scope.init = () ->
+    $rootScope.title = "New Project"
+)
+
+# frontpageController =======================================================
+mainControllers.controller('frontpageController', ($scope, $rootScope, $routeParams)->
+  $scope.init = () ->
+    $rootScope.title = ""
+)
+
+# newIssueController =======================================================
+mainControllers.controller('newissueController', ($scope, $rootScope, $routeParams)->
+  $scope.init = () ->
+    $rootScope.title = "New Issue"
+)
+
+# projectSettingsController ====================================================
+mainControllers.controller('projectSettingsController', ($scope, $rootScope, $routeParams, ProjectService)->
+  $scope.init = () ->
+    $rootScope.title = "Project Settings"
+    ProjectService.query(
+      username: $routeParams.username
+      url_key: $routeParams.url_key
+      join_prof: 'page_join'
+    ,(value) ->
+      $scope.project = value[0]
+    )
+)
+
+# homeController =======================================================
+mainControllers.controller('homeController', ($scope, $rootScope, $routeParams, UserService)->
+  $scope.init = () ->
+    $rootScope.title = "Home"
+    UserService.query(
+      id: $rootScope.user.id
+      join_prof: "home_join"
+    ,(value) ->
+      $scope.huser = value
     )
 )

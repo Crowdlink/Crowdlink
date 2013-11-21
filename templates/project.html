@@ -12,20 +12,22 @@
       <a href="#/u/{[{ project.username }]}">{[{ project.username }]}</a>
     </h4>
   </div>
-  <div class="col-md-4 no-gutter">
+  <div class="col-md-3 no-gutter">
     <br />
-    <div class="btn-group-vertical pull-right" style="width:70%;">
-      <a class="btn"
-        ng-click="subscribe()"
-        ng-class="{true: 'btn-info active', false: 'btn-info'}[project.subscribed]">
-        <span ng-hide="project.subscribed"><i class="fa fa-eye"></i> &nbsp;Watch</span>
-        <span ng-show="project.subscribed"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
-      </a>
-      <a class="btn btn-default" href="#">
-        <i class="fa fa-large fa-gear"></i>
-        Project Settings
-      </a>
-    </div>
+    <a class="btn fill-link"
+      ng-click="subscribe()"
+      ng-class="{true: 'btn-info active', false: 'btn-info'}[project.subscribed]">
+      <span ng-hide="project.subscribed"><i class="fa fa-eye"></i> &nbsp;Watch</span>
+      <span ng-show="project.subscribed"><i class="fa fa-eye-slash"></i> &nbsp;Unwatch</span>
+    </a>
+    <a class="btn btn-info fill-link" href="#{[{project.get_abs_url}]}new_issue">
+      <i class="fa fa-large fa-plus"></i>
+      Add an Issue
+    </a>
+    <a class="btn btn-default fill-link" href="#{[{ project.get_abs_url }]}psettings">
+      <i class="fa fa-large fa-gear"></i>
+      Project Settings
+    </a>
   </div>
 </div>
 <div class="row">
