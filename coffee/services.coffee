@@ -17,6 +17,10 @@ mainServices.factory("UserService", ($resource) ->
       method: "POST"
       timeout: 5000
       isArray: false
+    register:
+      url: window.api_path + "register"
+      method: "POST"
+      timeout: 5000
     query:
       method: "GET"
       isArray: false

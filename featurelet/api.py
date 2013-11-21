@@ -81,6 +81,39 @@ def get_user():
     return resource_not_found()
 
 
+@api.route("/user/check", methods=['POST'])
+def check_user():
+    """ Check if a specific username is taken """
+    js = request.json
+
+    # try to access the issue with identifying information
+    try:
+        username = js.pop('value')
+        user = User.objects.get(username=username)
+    except KeyError:
+        return incorrect_syntax()
+    except User.DoesNotExist:
+        return jsonify(taken=False)
+    else:
+        return jsonify(taken=True)
+
+
+@api.route("/email/check", methods=['POST'])
+def check_email():
+    """ Check if a specific username is taken """
+    js = request.json
+
+    # try to access the issue with identifying information
+    try:
+        email = js.pop('value')
+        user = User.objects.get(emails__address=email)
+    except KeyError:
+        return incorrect_syntax()
+    except User.DoesNotExist:
+        return jsonify(taken=False)
+    else:
+        return jsonify(taken=True)
+
 @api.route("/user", methods=['POST'])
 @login_required
 def update_user():

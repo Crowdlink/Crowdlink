@@ -19,7 +19,7 @@ mainControllers.controller('rootController',
 
     $rootScope.location = $location
     $rootScope.strings =
-      err_comm = "Error communicating with server."
+      err_comm: "Error communicating with server."
 )
 # IssueController ============================================================
 mainControllers.controller('issueController',
@@ -270,4 +270,27 @@ mainControllers.controller('profileController', ($scope, $rootScope, $routeParam
       ,(value) ->
         $scope.prof_user = value
       )
+)
+
+# SignupController =======================================================
+mainControllers.controller('signupController', ($scope, $rootScope, $routeParams, UserService)->
+  $scope.init = () ->
+
+  $scope.submit = () ->
+    console.log($scope.form.$error.minlength)
+    ###
+    UserService.reigster(
+      username: $scope.username
+      password: $scope.paswword
+      email: $scope.email
+    ,(value) ->
+      if 'success' of value and value.success
+        $location.path("/")
+      else
+        if 'message' of value
+          $scope.errors = [value.message, ]
+        else
+          $scope.errors = [$rootScope.strings.err_comm, ]
+    )
+    ###
 )

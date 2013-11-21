@@ -144,7 +144,7 @@
 @input-color:                    @text-color;
 @input-border:                   #dce4ec;
 @input-border-radius:            @border-radius-base;
-@input-border-focus:             #1abc9c;
+@input-border-focus:             darken(@input-border, 40%);
 
 @input-color-placeholder:        #acb6c0;
 
@@ -364,19 +364,19 @@
 // Form states and alerts
 // -------------------------
 
-@state-warning-text:             #fff;
+@state-warning-text:             @brand-warning;
 @state-warning-bg:               @brand-warning;
 @state-warning-border:           @brand-warning;
 
-@state-danger-text:              #fff;
+@state-danger-text:              @brand-danger;
 @state-danger-bg:                @brand-danger;
 @state-danger-border:            @brand-danger;
 
-@state-success-text:             #fff;
+@state-success-text:             @brand-success;
 @state-success-bg:               @brand-success;
 @state-success-border:           @brand-success;
 
-@state-info-text:                #fff;
+@state-info-text:                @brand-info;
 @state-info-bg:                  @brand-info;
 @state-info-border:              @brand-info;
 

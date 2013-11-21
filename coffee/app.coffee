@@ -15,6 +15,9 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/home",
     templateUrl: "main.html"
     controller: "remoteController"
+  ).when("/signup",
+    templateUrl: "templates/signup.html"
+    controller: "signupController"
   ).when("/account",
     templateUrl: "templates/account.html"
     controller: "accountController"
@@ -145,3 +148,80 @@ mainApp.directive "markItUp", ->
         )
     )
     element.markItUp(new_settings)
+
+mainApp.directive "passwordMatch", [->
+  restrict: "A"
+  scope: true
+  require: "ngModel"
+  link: (scope, elem, attrs, control) ->
+    checker = ->
+
+      #get the value of the other password
+      e2 = scope.$eval(attrs.passwordMatch).$viewValue
+      control.$viewValue is e2
+
+    scope.$watch checker, (n) ->
+
+      #set the form control to valid if both
+      #passwords are the same, else invalid
+      control.$setValidity "unique", n
+]
+
+mainApp.directive "validClass", [->
+  restrict: "A"
+  scope: true
+  link: (scope, elem, attrs, control) ->
+
+    frm_dat = scope.$eval(attrs.validClass)
+    scope.$watch( ->
+      frm_dat.$valid && frm_dat.$dirty
+    , (ret) ->
+      if ret
+        elem.addClass('has-success')
+      else
+        elem.removeClass('has-success')
+    )
+    scope.$watch( ->
+      frm_dat.$invalid && frm_dat.$dirty
+    , (ret) ->
+      if ret
+        elem.addClass('has-error')
+      else
+        elem.removeClass('has-error')
+    )
+]
+
+mainApp.directive "uniqueServerside", ["$http", "$timeout", ($http, $timeout) ->
+  require: "ngModel"
+  restrict: "A"
+  link: (scope, elem, attrs, ctrl) ->
+    scope.busy = false
+    scope.$watch attrs.ngModel, (value) ->
+      # hide old error messages
+      ctrl.$setValidity "taken", true
+      ctrl.$setValidity "pattern", true
+
+      # don't send undefined to the server during dirty check empty username is
+      # caught by required directive
+      return  unless value
+
+      # show spinner
+      scope.busy = true
+      scope.confirmed = false
+
+      # everything is fine -> do nothing
+      $http.post(window.api_path + attrs.uniqueServerside,
+        value: elem.val()
+      ).success((data) ->
+        $timeout ->
+          # display new error message
+          if data.taken
+            ctrl.$setValidity "taken", false
+            scope.confirmed = false
+          else
+            scope.confirmed = true
+          scope.busy = false
+        , 500
+      ).error (data) ->
+        scope.busy = false
+]
