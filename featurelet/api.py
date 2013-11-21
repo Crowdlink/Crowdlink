@@ -3,7 +3,7 @@ from flask.ext.login import login_required, logout_user, current_user, login_use
 
 from . import root, lm, app
 from .models import User, Project, Issue, UserSubscriber, ProjectSubscriber, IssueSubscriber, Transaction
-from .lib import get_json_joined, redirect_angular
+from .lib import get_json_joined, get_joined, redirect_angular
 
 import json
 import bson
@@ -185,7 +185,7 @@ def login():
     except User.DoesNotExist:
         return jsonify(success=False, message="Invalid credentials")
 
-    return jsonify(success=True, user=get_json_joined(user))
+    return jsonify(success=True, user=get_joined(user))
 
 @api.route("/issue", methods=['POST'])
 @login_required

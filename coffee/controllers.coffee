@@ -6,11 +6,20 @@ mainControllers.controller('rootController',
     $scope.init = (logged_in, user_id) ->
       $rootScope.logged_in = logged_in
       $rootScope.user = {}
+      $rootScope.title = ""
       UserService.query(
         id: user_id
       ,(value) ->
         $rootScope.user = value
       )
+
+    # update the title with a suffix
+    $rootScope.$watch('title', (val) ->
+      if val
+        $rootScope._title = val + " : Crowd Link"
+      else
+        $rootScope._title = "Crowd Link"
+    )
 
     # update the profile url when the username changes
     $rootScope.$watch('user.username', ->
@@ -23,7 +32,7 @@ mainControllers.controller('rootController',
 )
 # IssueController ============================================================
 mainControllers.controller('issueController',
-  ($scope, $timeout, $routeParams, IssueService)->
+  ($scope, $timeout, $routeParams, $rootScope, IssueService)->
     $scope.init = () ->
         IssueService.query(
           username: $routeParams.username
@@ -43,6 +52,13 @@ mainControllers.controller('issueController',
           desc: false
           close_reason: false
           status: false
+
+    $scope.$watch('issue.brief',(val) ->
+      if val
+        $rootScope.title = "Issue '" + $scope.issue.brief + "'"
+      else
+        $rootScope.title = "Issue"
+    )
 
     $scope.revert = (s) ->
         $scope.issue[s] = $scope.prev.issue[s]
@@ -110,7 +126,7 @@ mainControllers.controller('remoteController', ($scope, $rootScope, $routeParams
         if 'access_denied' of data
           $rootScope.logged_in = false
           $rootScope.curr_username = undefined
-          $location.path("/login")
+          $location.path("/login").replace()
           console.log("Logging out!")
       else
         $scope.html_out = data
@@ -121,6 +137,7 @@ mainControllers.controller('remoteController', ($scope, $rootScope, $routeParams
 # AccountController ===========================================================
 mainControllers.controller('accountController', ($scope, $location, $rootScope, $routeParams, UserService)->
   $scope.init = ->
+    $rootScope.title = "Account"
     if 'subsection' of $routeParams
       $scope.view = $routeParams.subsection
     else
@@ -128,12 +145,16 @@ mainControllers.controller('accountController', ($scope, $location, $rootScope, 
 
     # update the profile url when the username changes
     $scope.$watch('view', ->
-      $location.path("/account/" + $scope.view)
+      $location.path("/account/" + $scope.view).replace()
     )
 )
 
 # LoginController ============================================================
-mainControllers.controller('loginController', ($scope, $rootScope, UserService, $location)->
+mainControllers.controller('loginController', ($scope, $rootScope, UserService, $location, $window)->
+  $scope.init = ->
+    if $rootScope.logged_in
+      $location.path("/home").replace()
+    $rootScope.title = "Login"
   $scope.submit = () ->
     $scope.errors = []
     UserService.login(
@@ -143,7 +164,7 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
         if 'success' of value and value.success
           $rootScope.user = value.user
           $rootScope.logged_in = true
-          $location.path("/")
+          $location.path("/home").replace()
         else
           if 'message' of value
             $scope.errors = [value.message, ]
@@ -154,17 +175,17 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
 
 # ProjectController============================================================
 mainControllers.controller('projectController',
-  ($scope, $timeout, ProjectService, IssueService, $routeParams)->
+  ($scope, $timeout, $rootScope, ProjectService, IssueService, $routeParams)->
     $scope.init = () ->
-        $scope.filter = ""
-        ProjectService.query(
-          username: $routeParams.username
-          url_key: $routeParams.url_key
-          join_prof: 'page_join'
-        ,(value) ->
-          $scope.project = value[0]
-          $scope.search()
-        )
+      $scope.filter = ""
+      ProjectService.query(
+        username: $routeParams.username
+        url_key: $routeParams.url_key
+        join_prof: 'page_join'
+      ,(value) ->
+        $scope.project = value[0]
+        $scope.search()
+      )
 
     $scope.search = ->
         $scope.saving = true
@@ -193,6 +214,14 @@ mainControllers.controller('projectController',
         issue.votes += 1
       else
         issue.votes -= 1
+
+    # Page title logic
+    $scope.$watch('project.name',(val) ->
+      if val
+        $rootScope.title = "Project '" + val + "'"
+      else
+        $rootScope.title = "Project"
+    )
 )
 
 # ChargeController ============================================================
@@ -275,22 +304,20 @@ mainControllers.controller('profileController', ($scope, $rootScope, $routeParam
 # SignupController =======================================================
 mainControllers.controller('signupController', ($scope, $rootScope, $routeParams, UserService)->
   $scope.init = () ->
+    $rootScope.title = "Sign Up"
 
   $scope.submit = () ->
-    console.log($scope.form.$error.minlength)
-    ###
     UserService.reigster(
       username: $scope.username
       password: $scope.paswword
       email: $scope.email
     ,(value) ->
       if 'success' of value and value.success
-        $location.path("/")
+        $location.path("/home").replace()
       else
         if 'message' of value
           $scope.errors = [value.message, ]
         else
           $scope.errors = [$rootScope.strings.err_comm, ]
     )
-    ###
 )

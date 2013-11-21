@@ -2,8 +2,8 @@
 %br/
 %br/
 %br/
-.col-lg-6.col-lg-offset-2
-  %h3.col-lg-offset-4 Sign Up
+.col-lg-6.col-lg-offset-2{"ng-init" => "init()"}
+  %h3{class: "center"} Sign Up
   %br/
   %form.form-horizontal{method: "post", name: "f", novalidate: ""}
     %div
@@ -60,6 +60,6 @@
     .form-group
       .col-lg-3
       .col-lg-8
-        %button.btn.btn-info{name: "submit", "ng-click" => "submit()",
-            "ng-disabled" => "!f.$valid", type: "button"}
+        %button.btn.btn-info{name: "submit", "ng-click" => "submit()", class: "fill-link",
+            "ng-disabled" => "!f.$valid", type: "submit"}
           Sign Up

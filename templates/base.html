@@ -1,15 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="mainApp" ng-controller="rootController">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% block head %}
     <link href="/static/lib/css/bootstrap.min.css" rel="stylesheet" media="screen">
     <link href="/static/css/main.css" rel="stylesheet" media="screen">
     <link href="/static/lib/css/font-awesome.min.css" rel="stylesheet">
-    <title>{% block title %}{% endblock %} - Featurelet</title>
-    {% endblock %}
+    <title ng-bind="_title">Crowd Link</title>
   </head>
-  <body ng-app="mainApp">
+  <body>
     <!-- Templates -->
     <script type="text/ng-template" id="main.html">
       <div ng-init="init()">
@@ -45,7 +43,7 @@
     <script src="/static/js/controllers.js"></script>
     <script src="/static/js/services.js"></script>
     {% block post_script %}{% endblock %}
-    <div id="wrap" ng-controller="rootController" ng-init="init({{logged_in}}, '{{userid}}')">
+    <div id="wrap" ng-init="init({{logged_in}}, '{{userid}}')">
       <div class="navbar navbar-default navbar-fixed-top">
           <div class="container no-gutter">
               <a class="navbar-brand logo" href="#/home">

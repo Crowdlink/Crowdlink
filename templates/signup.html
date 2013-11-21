@@ -2,8 +2,8 @@
 <br>
 <br>
 <br>
-<div class='col-lg-6 col-lg-offset-2'>
-  <h3 class='col-lg-offset-4'>Sign Up</h3>
+<div class='col-lg-6 col-lg-offset-2' ng-init='init()'>
+  <h3 class='center'>Sign Up</h3>
   <br>
   <form class='form-horizontal' method='post' name='f' novalidate=''>
     <div>
@@ -75,7 +75,7 @@
     <div class='form-group'>
       <div class='col-lg-3'></div>
       <div class='col-lg-8'>
-        <button class='btn btn-info' name='submit' ng-click='submit()' ng-disabled='!f.$valid' type='button'>
+        <button class='btn btn-info fill-link' name='submit' ng-click='submit()' ng-disabled='!f.$valid' type='submit'>
           Sign Up
         </button>
       </div>
