@@ -13,7 +13,6 @@ requires = ['pymongo',
             'selenium',
             'cryptacular',
             'Flask-OAuthlib',
-            'markdown2',
             'enum',
             'stripe',
             'Babel']

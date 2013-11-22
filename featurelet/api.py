@@ -4,6 +4,7 @@ from flask.ext.login import login_required, logout_user, current_user, login_use
 from . import root, lm, app
 from .models import User, Project, Issue, UserSubscriber, ProjectSubscriber, IssueSubscriber, Transaction
 from .lib import get_json_joined, get_joined, redirect_angular
+from .util import convert_args
 
 import json
 import bson
@@ -15,73 +16,9 @@ import stripe
 
 api = Blueprint('api', __name__)
 
-@api.route("/vote", methods=['POST'])
-@login_required
-def vote_api():
-    js = request.json
-    try:
-        issue = Issue.objects.get(
-            project=js['project'],
-            url_key=js['url_key'])
-        vote_status = js['vote_status']
-    except KeyError:
-        return incorrect_syntax()
-    except Issue.DoesNotExist:
-        return resource_not_found()
 
-    if vote_status and not issue.set_vote(g.user):
-        if issue.vote_status:
-            return jsonify(success=False, code='already_voted', disp="Already voted!")
-        else:
-            return jsonify(success=False)
-    elif not vote_status and not issue.set_unvote(g.user):
-        if not issue.vote_status:
-            return jsonify(success=False, code='already_voted', disp="Haven't voted yet")
-        else:
-            return jsonify(success=False)
-
-    return jsonify(success=True)
-
-
-@api.route("/project", methods=['GET'])
-def get_project():
-    username = request.args.get('username', '')
-    url_key = request.args.get('url_key', '')
-    join_prof = request.args.get('join_prof', 'standard_join')
-
-    # try to access the issue with identifying information
-    try:
-        project = Project.objects(username=username, url_key=url_key)
-        return get_json_joined(project, join_prof=join_prof)
-    except KeyError as e:
-        return incorrect_syntax()
-    except Issue.DoesNotExist:
-        return resource_not_found()
-
-
-@api.route("/user", methods=['GET'])
-@login_required
-def get_user():
-    js = request.args
-    join_prof = request.args.get('join_prof', 'standard_join')
-
-    # try to access the issue with identifying information
-    try:
-        username = js.get('username', None)
-        userid = js.get('id', None)
-
-        if username:
-            user = User.objects.get(username=username)
-        elif userid:
-            user = User.objects.get(id=userid)
-        else:
-            return incorrect_syntax()
-        return get_json_joined(user, join_prof=join_prof)
-    except User.DoesNotExist:
-        pass
-    return resource_not_found()
-
-
+# Utility functions
+# =============================================================================
 @api.route("/user/check", methods=['POST'])
 def check_user():
     """ Check if a specific username is taken """
@@ -115,6 +52,100 @@ def check_email():
     else:
         return jsonify(taken=True)
 
+
+# Project getter/setter
+# =============================================================================
+
+def project_from_req(req_dct):
+    proj_id = req_dct.pop('id', None)
+    username = req_dct.pop('username', None)
+    url_key = req_dct.pop('url_key', None)
+
+    if url_key and username:
+         return Project.objects(url_key=url_key, username=username)
+    else:
+        return Project.objects(id=proj_id)
+
+@api.route("/project", methods=['GET'])
+def get_project():
+    js = convert_args(request.args)
+    join_prof = js.get('join_prof', 'standard_join')
+
+    # try to access the issue with identifying information
+    try:
+        project = project_from_req(js)
+        return get_json_joined(project, join_prof=join_prof)
+    except KeyError as e:
+        return incorrect_syntax()
+    except Issue.DoesNotExist:
+        return resource_not_found()
+
+
+@api.route("/project", methods=['POST'])
+@login_required
+def update_project():
+    js = request.json
+    return_val = {}
+
+    # try to access the issue with identifying information
+    try:
+        project = project_from_req(js)[0]
+    except KeyError:
+        return incorrect_syntax()
+    except Project.DoesNotExist:
+        return resource_not_found()
+
+    name = js.pop('name', None)
+    if name and 'edit_name' in project.user_acl:
+        project.name = name
+
+    sub_status = js.pop('subscribed', None)
+    if sub_status == True:
+        # Subscription logic, will need to be expanded to allow granular selection
+        subscribe = ProjectSubscriber(user=g.user.id)
+        project.subscribe(subscribe)
+    elif sub_status == False:
+        project.unsubscribe(g.user)
+
+    vote_status = js.pop('vote_status', None)
+    if vote_status is not None:
+        project.set_vote(vote_status)
+
+    try:
+        project.save()
+    except mongoengine.errors.ValidationError as e:
+        return jsonify(success=False, validation_errors=e.to_dict())
+
+    # return a true value to the user
+    return_val.update({'success': True})
+    return jsonify(**return_val)
+
+
+# User getter/setter
+# =============================================================================
+@api.route("/user", methods=['GET'])
+@login_required
+def get_user():
+    js = request.args
+    join_prof = request.args.get('join_prof', 'standard_join')
+
+    # try to access the issue with identifying information
+    try:
+        username = js.get('username', None)
+        userid = js.get('id', None)
+
+        if username:
+            user = User.objects.get(username=username)
+        elif userid:
+            user = User.objects.get(id=userid)
+        else:
+            return incorrect_syntax()
+        return get_json_joined(user, join_prof=join_prof)
+    except User.DoesNotExist:
+        pass
+    return resource_not_found()
+
+
 @api.route("/user", methods=['POST'])
 @login_required
 def update_user():
@@ -144,6 +175,9 @@ def update_user():
 
     return jsonify(success=True)
 
+
+# Issue getter/setter
+# =============================================================================
 @api.route("/issue", methods=['GET'])
 def get_issue():
     args = request.args
@@ -171,22 +205,6 @@ def get_issue():
     except Issue.DoesNotExist:
         return resource_not_found()
 
-@api.route("/login", methods=['POST'])
-def login():
-    js = request.json
-
-    try:
-        user = User.objects.get(username=js['username'])
-        if user.check_password(js['password']):
-            login_user(user)
-        else:
-            return jsonify(success=False, message="Invalid credentials")
-    except KeyError:
-        return jsonify(success=False, message="Invalid credentials")
-    except User.DoesNotExist:
-        return jsonify(success=False, message="Invalid credentials")
-
-    return jsonify(success=True, user=get_joined(user))
 
 @api.route("/issue", methods=['POST'])
 @login_required
@@ -225,11 +243,13 @@ def update_issue():
     elif sub_status == False:
         issue.unsubscribe(g.user)
 
-    open_status = js.pop('open', None)
-    if open_status == True:
-        issue.set_open()
-    elif open_status == False:
-        issue.set_close()
+    vote_status = js.pop('vote_status', None)
+    if vote_status is not None:
+        issue.set_vote(vote_status)
+
+    status = js.pop('status', None)
+    if status:
+        issue.set_status(status)
 
     try:
         issue.save()
@@ -241,6 +261,26 @@ def update_issue():
     return jsonify(return_val)
 
 
+@api.route("/login", methods=['POST'])
+def login():
+    js = request.json
+
+    try:
+        user = User.objects.get(username=js['username'])
+        if user.check_password(js['password']):
+            login_user(user)
+        else:
+            return jsonify(success=False, message="Invalid credentials")
+    except KeyError:
+        return jsonify(success=False, message="Invalid credentials")
+    except User.DoesNotExist:
+        return jsonify(success=False, message="Invalid credentials")
+
+    return jsonify(success=True, user=get_joined(user))
+
+
+# Finance related function
+# =============================================================================
 @api.route("/transaction", methods=['GET'])
 def transaction():
     js = request.args

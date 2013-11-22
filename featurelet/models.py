@@ -20,6 +20,33 @@ import calendar
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
+class VotableMixin(object):
+    """ A Mixin providing data model utils for subscribing new users. Maintain
+    uniqueness of user by hand through these checks """
+
+
+    def set_vote(self, vote):
+        """ save isn't needed, this operation must be atomic """
+        stat = self.vote_status
+        idval = g.user.id
+        if stat and not vote:
+            return bool(self.__class__.objects(
+                id=self.id,
+                vote_list__in=[idval, ]).\
+                    update_one(pull__vote_list=idval, dec__votes=1))
+        elif not stat and vote:
+            return bool(self.__class__.objects(id=self.id,
+                            vote_list__ne=idval).\
+                    update_one(add_to_set__vote_list=idval, inc__votes=1))
+
+        return "already_set"
+
+    @property
+    def vote_status(self):
+        return g.user in self.vote_list
+
+
+
 class SubscribableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
@@ -146,6 +173,8 @@ class CommonMixin(object):
             attr = getattr(self, key, 1)
             if isinstance(attr, db.Document):
                 attr = str(attr.id)
+            if isinstance(attr, Enum):
+                attr = dict({str(x): x.index for x in attr})
             elif isinstance(attr, datetime.datetime):
                 attr = calendar.timegm(attr.utctimetuple()) * 1000
             elif isinstance(attr, bool): # don't convert bool to str
@@ -176,30 +205,29 @@ class Comment(db.EmbeddedDocument):
         return markdown2.markdown(self.body)
 
 
-class Issue(db.Document, SubscribableMixin, CommonMixin):
+class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
 
-    CloseVals = Enum('Completed', 'Duplicate', 'Won\'t Fix', 'Other')
+    statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
 
     id = db.ObjectIdField()
     # key pair, unique identifier
     url_key = db.StringField(unique=True)
     project = db.ReferenceField('Project')
 
-    open = db.BooleanField(default=True)
-    _close_reason = db.IntField(default=CloseVals.Other.index)
+    _status = db.IntField(default=statuses.Discussion.index)
     brief = db.StringField(max_length=512, min_length=3)
     desc = db.StringField(min_length=15)
     creator = db.ReferenceField('User')
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
 
+    # voting
+    vote_list = db.ListField(db.ReferenceField('User'))
+    votes = db.IntField(default=0)
+
     # github synchronization
     gh_synced = db.BooleanField(default=False)
     gh_issue_num = db.IntField()
     gh_labels = db.ListField(db.StringField())
-
-    # voting
-    vote_list = db.ListField(db.ReferenceField('User'))
-    votes = db.IntField(default=0)
 
     # event dist
     events = db.ListField(db.GenericEmbeddedDocumentField())
@@ -214,15 +242,18 @@ class Issue(db.Document, SubscribableMixin, CommonMixin):
          })
     standard_join = ['get_abs_url',
                      'vote_status',
+                     'status',
                      'subscribed',
                      'user_acl',
                      'created_at',
+                     '-vote_list',
                      'id',
                      'project',
                      ]
     page_join = inherit_lst(standard_join,
                              [{'obj': 'project',
-                               'join_prof': 'issue_page_join'}]
+                               'join_prof': 'issue_page_join'},
+                              'statuses']
                              )
 
     # used for displaying the project in noifications, etc
@@ -260,23 +291,15 @@ class Issue(db.Document, SubscribableMixin, CommonMixin):
             url_key=self.url_key)
 
     @property
-    def close_reason(self):
-        return self.CloseVals[self._close_reason]
+    def status(self):
+        return self.statuses[self._status]
 
-    def set_open(self):
+    def set_status(self, value):
         """ Let the caller know if it was already set """
-        if self.open:
+        if self._status == int(value):
             return False
         else:
-            self.open = True
-            return True
-
-    def set_close(self):
-        """ Let the caller know if it was already set """
-        if not self.open:
-            return False
-        else:
-            self.open = False
+            self._status = True
             return True
 
     def create_key(self):
@@ -304,27 +327,8 @@ class Issue(db.Document, SubscribableMixin, CommonMixin):
         except Exception:
             catch_error_graceful()
 
-    # Voting
-    # ========================================================================
-    def set_vote(self, user):
-        return Issue.objects(project=self.project,
-                            url_key=self.url_key,
-                            vote_list__ne=user.id).\
-                    update_one(add_to_set__vote_list=user.id, inc__votes=1)
 
-    def set_unvote(self, user):
-        return Issue.objects(
-            project=self.project,
-            url_key=self.url_key,
-            vote_list__in=[user.id, ]).\
-                update_one(pull__vote_list=user.id, dec__votes=1)
-
-    @property
-    def vote_status(self):
-        return g.user in self.vote_list
-
-
-class Project(db.Document, SubscribableMixin, CommonMixin):
+class Project(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
     id = db.ObjectIdField()
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
     maintainer = db.ReferenceField('User')
@@ -335,6 +339,10 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
     name = db.StringField(max_length=64, min_length=3)
     website = db.StringField(max_length=2048)
     issue_count = db.IntField(default=1)  # XXX: Currently not implemented
+
+    # voting
+    vote_list = db.ListField(db.ReferenceField('User'))
+    votes = db.IntField(default=0)
 
     # Event log
     subscribers = db.ListField(db.EmbeddedDocumentField('ProjectSubscriber'))
@@ -348,28 +356,30 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
 
     # Join profiles
     standard_join = ['get_abs_url',
-                     'subscribed',
                      'maintainer',
                      'user_acl',
+                     'created_at',
+                     'username',
                      'id',
-                     {'obj': 'events'}
-                    ]
-    page_join = ['__dont_mongo',
-                 'name',
-                 {'obj': 'events'},
-                ]
-    issue_page_join = ['__dont_mongo',
-                     'name',
-                     {'obj': 'maintainer',
-                      'join_prof': "disp_join"}
+                     '-vote_list',
+                     '-events'
                     ]
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
                  'name',
                  'get_abs_url',
                  'username']
+    issue_page_join = ['__dont_mongo', 'name', 'username', 'get_abs_url']
     page_join = inherit_lst(standard_join,
-                             [])
+                             ['__dont_mongo',
+                              'name',
+                              'subscribed',
+                              'vote_status',
+                              {'obj': 'maintainer',
+                               'join_prof': "disp_join"},
+                              {'obj': 'events'},
+                              ]
+)
     acl = flatten_dict({'maintainer': ('edit', ['name',
                                                 'website'])
                         })
@@ -390,6 +400,7 @@ class Project(db.Document, SubscribableMixin, CommonMixin):
         else:
             roles.append('user')
 
+        current_app.logger.debug("Project " + str(roles))
         return roles
 
     @property

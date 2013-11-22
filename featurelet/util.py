@@ -37,3 +37,6 @@ def inherit_lst(*args):
             if val not in ret:
                 ret.append(val)
     return ret
+
+def convert_args(args):
+    return {one: two for one, two in args.iteritems()}

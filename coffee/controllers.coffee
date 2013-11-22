@@ -1,17 +1,17 @@
 mainControllers = angular.module("mainControllers", [])
 
 # RootController ==============================================================
-mainControllers.controller('rootController',
-  ($scope, $location, $rootScope, UserService)->
+mainControllers.controller('rootController', ($scope, $location, $rootScope, UserService)->
     $scope.init = (logged_in, user_id) ->
       $rootScope.logged_in = logged_in
       $rootScope.user = {}
       $rootScope.title = ""
-      UserService.query(
-        id: user_id
-      ,(value) ->
-        $rootScope.user = value
-      )
+      if logged_in
+        UserService.query(
+          id: user_id
+        ,(value) ->
+          $rootScope.user = value
+        )
 
     # update the title with a suffix
     $rootScope.$watch('title', (val) ->
@@ -22,8 +22,11 @@ mainControllers.controller('rootController',
     )
 
     # update the profile url when the username changes
-    $rootScope.$watch('user.username', ->
-      $scope.profile = '/' + $rootScope.user.username
+    $rootScope.$watch('user.username', (val) ->
+      if $rootScope.logged_in
+        $scope.profile = '/' + val
+      else
+        $scope.profile = ""
     )
 
     $rootScope.location = $location
@@ -151,8 +154,7 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
 )
 
 # ProjectController============================================================
-mainControllers.controller('projectController',
-  ($scope, $timeout, $rootScope, ProjectService, IssueService, $routeParams)->
+mainControllers.controller('projectController', ($scope, $timeout, $rootScope, ProjectService, IssueService, $routeParams)->
     $scope.init = () ->
       $scope.filter = ""
       ProjectService.query(
@@ -161,11 +163,19 @@ mainControllers.controller('projectController',
         join_prof: 'page_join'
       ,(value) ->
         $scope.project = value[0]
+        $scope.prev =
+          project: $.extend({}, value[0])
         $scope.search()
       )
+      $scope.editing =
+        name: false
+      $scope.saving =
+        subscribed: false
+        vote_status: false
+        name: false
 
+    # Update the list of issues in realtime as they type
     $scope.search = ->
-        $scope.saving = true
         IssueService.query(
             filter: $scope.filter
             project: $scope.project.id
@@ -192,7 +202,55 @@ mainControllers.controller('projectController',
       else
         issue.votes -= 1
 
-    # Page title logic
+    $scope.revert = (s) ->  # For canceling an edit
+        $scope.project[s] = $scope.prev.project[s]
+        $scope.toggle(s)
+
+    # Saving the project to the database
+    $scope.save = (s, extra_data={}, callback) ->
+        $scope.saving[s] = true
+        data =
+          id: $scope.project.id
+        if s == 'name'
+          data.name = $scope.project.name
+
+        ProjectService.update(
+          $.extend(data, extra_data)
+        ,(value) -> # Function to be run when function returns
+            if 'success' of value and value.success
+                $timeout ->
+                    if callback
+                      callback()
+                    $scope.saving[s] = false
+                    $scope.editing[s] = false
+                , 500
+            else
+                if 'message' of value
+                    text = "Error communicating with server. #{value.message}"
+                else
+                    text = "There was an unknown error committing your action. #{value.code}"
+                noty
+                    text: text
+                    type: 'error'
+                    timout: 2000
+                $scope.saving[s] = false
+                $scope.editing[s] = false
+        )
+
+    # used for changing boolean values and saving in one step
+    $scope.swap_save = (s) ->
+      extra_data = {}
+      extra_data[s] = !$scope.project[s]
+      $scope.save(s, extra_data, ->
+        $scope.project[s] = !$scope.project[s]
+      )
+
+    # switch editing and back
+    $scope.toggle = (s) ->
+      $scope.prev.project[s] = $scope.project[s]
+      $scope.editing[s] = !$scope.editing[s]
+
+    # Page title logic. watch the name of the project
     $scope.$watch('project.name',(val) ->
       if val
         $rootScope.title = "Project '" + val + "'"

@@ -1,9 +1,9 @@
 .row{"ng-init" => "init()"}
   %ol.breadcrumb
     %li
-      %a{href: "\#{[{issue.project.maintainer.get_abs_url}]}"} {[{issue.project.maintainer.username}]}
+      %a{href: "#/{[{issue.project.username}]}"} {[{issue.project.username}]}
     %li
-      %a{href: "\#{[{issue.project.get_abs_url}]}"} {[{ issue.project.name }]}
+      %a{href: "#\{[{issue.project.get_abs_url}]}"} {[{ issue.project.name }]}
     %li
       %a{href: ""} Issues
     %li.active {[{issue.brief}]}

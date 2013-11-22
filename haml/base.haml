@@ -34,7 +34,7 @@
     %script{src: "/static/js/app.js"}
     %script{src: "/static/js/controllers.js"}
     %script{src: "/static/js/services.js"}
-    #wrap{"ng-init" => "init(, '')"}
+    #wrap{"ng-init" => "init({{logged_in}}, '{{userid}}')"}
       .navbar.navbar-default.navbar-fixed-top
         .container.no-gutter
           %a.navbar-brand.logo{href: "#/home"}
@@ -67,4 +67,4 @@
     %div{id: "footer navbar-default navbar"}
       .container
         %p.text-muted{style: "margin:20px 0px;"}
-          \© Copyright 2013 by me.
+          &copy; Copyright 2013 by me.
