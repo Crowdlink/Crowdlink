@@ -271,6 +271,11 @@ def update_issue():
     return_val.update({'success': True})
     return jsonify(return_val)
 
+@api.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return jsonify(access_denied=True)
 
 @api.route("/login", methods=['POST'])
 def login():

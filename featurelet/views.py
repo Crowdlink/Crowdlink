@@ -84,13 +84,6 @@ def github_auth(resp):
         user = User.create_user_github(resp['access_token'])
 
 
-@main.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return jsonify(access_denied=True)
-
-
 @main.route("/", methods=['GET', 'POST'])
 def angular_root():
     logged_in = "true" if g.user.is_authenticated() else "false"

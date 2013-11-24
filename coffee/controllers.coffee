@@ -1,7 +1,7 @@
 mainControllers = angular.module("mainControllers", [])
 
 # RootController ==============================================================
-mainControllers.controller('rootController', ($scope, $location, $rootScope, UserService)->
+mainControllers.controller('rootController', ($scope, $location, $rootScope, $http, UserService)->
     $scope.init = (logged_in, user_id) ->
       $rootScope.logged_in = logged_in
       $rootScope.user = {}
@@ -12,6 +12,21 @@ mainControllers.controller('rootController', ($scope, $location, $rootScope, Use
         ,(value) ->
           $rootScope.user = value
         )
+
+    $scope.logout = ->
+      $http(
+        method: 'GET'
+        url: window.api_path + 'logout'
+      ).success((data, status, headers) ->
+        if data.access_denied
+          $rootScope.logged_in = false
+          $rootScope.user = {}
+          $location.path('/').replace()
+        # XXX; Need some error handling here
+      ).error((data, status, headers) ->
+        # XXX; Need some error handling here
+      )
+
 
     # update the title with a suffix
     $rootScope.$watch('title', (val) ->
