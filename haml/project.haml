@@ -25,7 +25,7 @@
         %a{:href => "#/{[{ project.username }]}"} {[{ project.username }]}
     .col-md-3.no-gutter
       %br/
-      %a.btn.btn-info.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[project.vote_status]", "ng-click" => "swap_save('vote_status')"}
+      %a.btn.btn-info.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[project.vote_status]", "ng-click" => "swap_save('vote_status')", "ng-show" => "project.user_acl.action_vote"}
         %span{"ng-hide" => "project.vote_status"}
           %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.vote_status"}
           %i.fa.fa-plus-circle{"ng-hide" => "saving.vote_status"}
@@ -35,7 +35,7 @@
           %i.fa.fa-minus-circle{"ng-hide" => "saving.vote_status"}
           \ Unvote
       %a.btn.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[project.subscribed]",
-        "ng-click" => "swap_save('subscribed')"}
+        "ng-click" => "swap_save('subscribed')", "ng-show" => "project.user_acl.action_watch"}
         %span{"ng-hide" => "project.subscribed"}
           %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
           %i.fa.fa-eye{"ng-hide" => "saving.subscribed"}

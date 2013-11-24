@@ -1,7 +1,8 @@
 from flask import Blueprint, request, g, current_app, jsonify, abort
 from flask.ext.login import login_required, logout_user, current_user, login_user
+from flask.ext.restful import Resource
 
-from . import root, lm, app
+from . import root, lm, app, api_restful
 from .models import User, Project, Issue, UserSubscriber, ProjectSubscriber, IssueSubscriber, Transaction
 from .lib import get_json_joined, get_joined, redirect_angular
 from .util import convert_args
@@ -14,7 +15,7 @@ import os
 import sys
 import stripe
 
-api = Blueprint('api', __name__)
+api = Blueprint('api_bp', __name__)
 
 
 # Utility functions
@@ -56,70 +57,80 @@ def check_email():
 # Project getter/setter
 # =============================================================================
 
-def project_from_req(req_dct):
-    proj_id = req_dct.pop('id', None)
-    username = req_dct.pop('username', None)
-    url_key = req_dct.pop('url_key', None)
+def catch_common(func):
+    # tries to catch common exceptions and return properly
+    def decorated(self, *args, **kwargs):
+        # get the auth dictionary
+        try:
+            return func(self, *args, **kwargs)
+        except KeyError:
+            return {'error': 'Incorrect syntax'}, 400
+        except self.model.DoesNotExist:
+            return {'error': 'Could not be found'}, 404
+        except AssertionError:  # all permissions should be done via assertions
+            return {'error': 'You don\'t have permission to do that'}, 403
 
-    if url_key and username:
-         return Project.objects(url_key=url_key, username=username)
-    else:
-        return Project.objects(id=proj_id)
+    return decorated
 
-@api.route("/project", methods=['GET'])
-def get_project():
-    js = convert_args(request.args)
-    join_prof = js.get('join_prof', 'standard_join')
-
-    # try to access the issue with identifying information
-    try:
-        project = project_from_req(js)
-        return get_json_joined(project, join_prof=join_prof)
-    except KeyError as e:
-        return incorrect_syntax()
-    except Issue.DoesNotExist:
-        return resource_not_found()
+class BaseResource(Resource):
+    def update_model(self, data, project):
+        # updates all fields if data is provided, checks acl
+        for field in self.model._fields:
+            new_val = data.pop(field, None)
+            assert project.can('edit_' + field)
+            project[field] = new_val
 
 
-@api.route("/project", methods=['POST'])
-@login_required
-def update_project():
-    js = request.json
-    return_val = {}
+class ProjectAPI(BaseResource):
+    model = Project
 
-    # try to access the issue with identifying information
-    try:
-        project = project_from_req(js)[0]
-    except KeyError:
-        return incorrect_syntax()
-    except Project.DoesNotExist:
-        return resource_not_found()
+    def get_project(self, data):
+        proj_id = data.pop('id', None)
+        username = data.pop('username', None)
+        url_key = data.pop('url_key', None)
 
-    name = js.pop('name', None)
-    if name and 'edit_name' in project.user_acl:
-        project.name = name
+        if url_key and username:
+            return Project.objects.get(url_key=url_key, username=username)
+        else:
+            return Project.objects.get(id=proj_id)
 
-    sub_status = js.pop('subscribed', None)
-    if sub_status == True:
-        # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = ProjectSubscriber(user=g.user.id)
-        project.subscribe(subscribe)
-    elif sub_status == False:
-        project.unsubscribe(g.user)
+    @catch_common
+    def get(self):
+        data = request.dict_args()
+        join_prof = data.pop('join_prof', 'standard_join')
+        project = self.get_project(data)
+        assert project.can('view_' + join_prof)
+        return get_joined(project, join_prof=join_prof)
 
-    vote_status = js.pop('vote_status', None)
-    if vote_status is not None:
-        project.set_vote(vote_status)
+    @catch_common
+    def put(self):
+        data = request.dict_args()
+        project = self.get_project(data)
 
-    try:
-        project.save()
-    except mongoengine.errors.ValidationError as e:
-        return jsonify(success=False, validation_errors=e.to_dict())
+        self.update_model(data, project)
 
-    # return a true value to the user
-    return_val.update({'success': True})
-    return jsonify(**return_val)
+        sub_status = data.pop('subscribed', None)
+        if sub_status == True:
+            # Subscription logic, will need to be expanded to allow granular selection
+            subscribe = ProjectSubscriber(user=g.user.id)
+            project.subscribe(subscribe)
+        elif sub_status == False:
+            project.unsubscribe(g.user)
 
+        vote_status = data.pop('vote_status', None)
+        if vote_status is not None:
+            project.set_vote(vote_status)
+
+        try:
+            project.save()
+        except mongoengine.errors.ValidationError as e:
+            return {'success': False, 'validation_errors': e.to_dict()}
+
+        # return a true value to the user
+        return_val['success'] = True
+        return return_val
+
+api_restful.add_resource(ProjectAPI, '/api/project')
 
 # User getter/setter
 # =============================================================================

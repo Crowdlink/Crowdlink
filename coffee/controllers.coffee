@@ -165,9 +165,9 @@ mainControllers.controller('projectController', ($scope, $rootScope, ProjectServ
         join_prof: 'page_join'
     ,(value) ->
         $timeout ->
-            $scope.project = value[0]
+            $scope.project = value
             $scope.prev =
-                project: $.extend({}, value[0])
+                project: $.extend({}, value)
             $scope.search()
             $timeout ->
                 $rootScope.loading = false

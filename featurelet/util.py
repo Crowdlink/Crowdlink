@@ -1,3 +1,13 @@
+def flatten(tpl):
+    """ Makes a list of values prefixed by the first value of a tuple """
+    if isinstance(tpl, tuple):
+        keys = []
+        for key in tpl[1]:
+            keys += [flatten(key)]
+        return [tpl[0] + "_" + x for x in keys]
+    else:
+        return tpl
+
 def flatten_dict(dct):
     """ Used to make building ACL lists convenient. Create infinitely nested
     keys that will just precipitate keys joined with _. Ex:
@@ -11,14 +21,6 @@ def flatten_dict(dct):
          'edit_those']
     Recursively safe so nesting tuples works as expected.
     """
-    def flatten(tpl):
-        if isinstance(tpl, tuple):
-            keys = []
-            for key in tpl[1]:
-                keys += [flatten(key)]
-            return [tpl[0] + "_" + x for x in keys]
-        else:
-            return tpl
 
     return {key: flatten(value) for (key, value) in dct.iteritems()}
 

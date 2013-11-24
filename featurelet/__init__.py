@@ -1,10 +1,12 @@
-from flask import Flask, g, current_app, abort, jsonify
+from flask import Flask, g, current_app, abort, jsonify, request
 from flask.ext.mongoengine import MongoEngine
 from flask.ext.login import LoginManager, current_user, user_unauthorized
-from jinja2 import FileSystemLoader
-from yota.renderers import JinjaRenderer
-from yota import Form
+from flask.ext.restful import Api
 from flask_oauthlib.client import OAuth
+
+from jinja2 import FileSystemLoader
+
+from . import util
 
 import babel.dates as dates
 import os
@@ -33,6 +35,9 @@ if app.config['DEBUG']:
 lm = LoginManager()
 lm.init_app(app)
 
+# api extension
+api_restful = Api(app)
+
 # Monkey patch the login managers error function
 def unauthorized(self):
     '''
@@ -47,6 +52,13 @@ def unauthorized(self):
 
     return jsonify(access_denied=True)
 LoginManager.unauthorized = unauthorized
+
+# Monkey patch flasks request to inject a helper function
+from flask import Request
+def dict_args(self):
+    return {one: two for one, two in self.args.iteritems()}
+Request.dict_args = dict_args
+
 
 # OAuth configuration
 oauth = OAuth(app)
@@ -80,14 +92,6 @@ def first_req():
         # If there was a database failure, raise an exception to trigger the
         # reload of the application when the first request comes in
         raise AttributeError
-
-# patch yota to use bootstrap3
-JinjaRenderer.templ_type = 'bs3'
-JinjaRenderer.search_path.insert(0, root + "/templates/yota/")
-Form.type_class_map = {'error': 'alert alert-danger',
-                      'info': 'alert alert-info',
-                      'success': 'alert alert-success',
-                      'warn': 'alert alert-warn'}
 
 # General configuration
 # ======================

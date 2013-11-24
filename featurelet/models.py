@@ -3,6 +3,7 @@ from flask import url_for, session, g, current_app, flash
 from . import db, github
 from .exc import AccessDenied
 from .util import flatten_dict, inherit_lst
+from .acl import issue_acl, project_acl
 
 from enum import Enum
 
@@ -130,6 +131,7 @@ class CommonMixin(object):
 
     def can(self, action):
         """ Can the user perform the action needed? """
+        current_app.logger.debug((action, self.user_acl))
         return action in self.user_acl
 
     def unsafe_set(self, attr, setter):
@@ -234,12 +236,7 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
     subscribers = db.ListField(db.EmbeddedDocumentField('IssueSubscriber'))
 
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
-    acl = flatten_dict(
-        {'maintainer': ('edit', ['url_key',
-                                 '_close_reason',
-                                 'brief',
-                                 'desc'])
-         })
+    acl = issue_acl
     standard_join = ['get_abs_url',
                      'vote_status',
                      'status',
@@ -380,9 +377,7 @@ class Project(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
                               {'obj': 'events'},
                               ]
 )
-    acl = flatten_dict({'maintainer': ('edit', ['name',
-                                                'website'])
-                        })
+    acl = project_acl
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
 
     def roles(self, user=None):
@@ -390,18 +385,13 @@ class Project(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
         if not user:
             user = g.user
 
-        roles = []
-
         if self.maintainer == user:
-            roles.append('maintainer')
+            return ['maintainer']
 
-        if user.is_anonymous:
-            roles.append('anonymous')
+        if user.is_anonymous():
+            return ['anonymous']
         else:
-            roles.append('user')
-
-        current_app.logger.debug("Project " + str(roles))
-        return roles
+            return ['user']
 
     @property
     def get_abs_url(self):
@@ -443,8 +433,6 @@ class Project(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
     def gh_desync(self, flatten=False):
         """ Used to disconnect a repository from github. By default will leave
         all data in place for re-syncing, but flatten will cause erasure """
-        for issue in self.get_issues():
-            issue.gh_desync(flatten=flatten)
 
         self.gh_synced = False
         # Remove indexes if we're flattening

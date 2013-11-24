@@ -31,9 +31,9 @@ mainServices.factory("ProjectService", ($resource) ->
     query:
       method: "GET"
       timeout: 10000
-      isArray: true
+      isArray: false
     update:
-      method: "POST"
+      method: "PUT"
       timeout: 10000
 )
 
