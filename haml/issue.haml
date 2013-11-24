@@ -1,86 +1,87 @@
-.row{"ng-init" => "init()"}
-  %ol.breadcrumb
-    %li
-      %a{href: "#/{[{issue.project.username}]}"} {[{issue.project.username}]}
-    %li
-      %a{href: "#\{[{issue.project.get_abs_url}]}"} {[{ issue.project.name }]}
-    %li
-      %a{href: ""} Issues
-    %li.active {[{issue.brief}]}
-%div
+%div.fade{"ng-init" => "init()"}
   .row
-    .col-md-8.no-gutter
-      %h2
-        %span{"ng-show" => "issue.user_acl.edit_brief"}
-          %span{"ng-show" => "editing.brief"}
-            .input-group
-              %input.form-control{"ng-model" => "issue.brief", type: "text"}/
-              %span.btn.btn-info.input-group-addon{"ng-click" => "save('brief')"}
-                %i.fa.fa-save{"ng-hide" => "saving.brief"}
-                %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.brief"}
-              %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('brief')"}
-                %i.fa.fa-times-circle
-          %span{"ng-hide" => "editing.brief"}
-            {[{ issue.brief }]} 
-            %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('brief')"}
-        %span{"ng-hide" => "issue.user_acl.edit_brief"}
-          {[{ issue.brief }]}
-    .col-md-4.no-gutter
-      .pull-right{style: "width:50%;"}
-        %a.btn.btn-default.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[issue.subscribed]", "ng-click" => "swap_save('subscribed')"}
-          %span{"ng-hide" => "issue.subscribed"}
-            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
-            %i.fa.fa-eye{"ng-hide" => "saving.subscribed"}
-            \ Watch
-          %span{"ng-show" => "issue.subscribed"}
-            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
-            %i.fa.fa-eye-slash{"ng-hide" => "saving.subscribed"}
-            \ Unwatch
-        %a.btn.btn-info.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[issue.vote_status]", "ng-click" => "swap_save('vote_status')"}
-          %span{"ng-hide" => "issue.vote_status"}
-            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.vote_status"}
-            %i.fa.fa-plus-circle{"ng-hide" => "saving.vote_status"}
-            \ Vote
-          %span{"ng-show" => "issue.vote_status"}
-            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.vote_status"}
-            %i.fa.fa-minus-circle{"ng-hide" => "saving.vote_status"}
-            \ Unvote
-        %a.btn.fill-link{"ng-class" => "{false: 'btn-info active', true: 'btn-info'}[issue.open]", "ng-click" => "swap_save('open')", "ng-show" => "issue.user_acl.edit__close_reason"}
-          %span{"ng-show" => "issue.open"}
-            %i.fa.fa-minus-circle{"ng-hide" => "saving.open"}
-            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.open"}
-            \ Close
-          %span{"ng-hide" => "issue.open"}
-            %i.fa.fa-plus-circle{"ng-hide" => "saving.open"}
-            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.open"}
-            \ Open
-        .btn-group-vertical{"ng-show" => "issue.open"}
-          %label.btn{"ng-class" => "{true: 'active btn-info', false: 'btn-default'}[issue.close_reason==reason]", "ng-repeat" => "reason in issue.close_reason"}
-            %input.hide{"ng-model" => "issue.close_reason", "ng-value" => "reason", type: "radio"}/
-            {[{ val }]}
-  %br/
-  .row
-    %h4
-      %b> Proposed on
-      {[{ issue.created_at | date:'medium' }]}
-      ({[{ issue.created_at|date_ago }]})
+    %ol.breadcrumb
+      %li
+        %a{href: "#/{[{issue.project.username}]}"} {[{issue.project.username}]}
+      %li
+        %a{href: "#\{[{issue.project.get_abs_url}]}"} {[{ issue.project.name }]}
+      %li
+        %a{href: ""} Issues
+      %li.active {[{issue.brief}]}
+  %div
+    .row
+      .col-md-8.no-gutter
+        %h2
+          %span{"ng-show" => "issue.user_acl.edit_brief"}
+            %span{"ng-show" => "editing.brief"}
+              .input-group
+                %input.form-control{"ng-model" => "issue.brief", type: "text"}/
+                %span.btn.btn-info.input-group-addon{"ng-click" => "save('brief')"}
+                  %i.fa.fa-save{"ng-hide" => "saving.brief"}
+                  %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.brief"}
+                %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('brief')"}
+                  %i.fa.fa-times-circle
+            %span{"ng-hide" => "editing.brief"}
+              {[{ issue.brief }]} 
+              %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('brief')"}
+          %span{"ng-hide" => "issue.user_acl.edit_brief"}
+            {[{ issue.brief }]}
+      .col-md-4.no-gutter
+        .pull-right{style: "width:50%;"}
+          %a.btn.btn-default.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[issue.subscribed]", "ng-click" => "swap_save('subscribed')"}
+            %span{"ng-hide" => "issue.subscribed"}
+              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
+              %i.fa.fa-eye{"ng-hide" => "saving.subscribed"}
+              \ Watch
+            %span{"ng-show" => "issue.subscribed"}
+              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
+              %i.fa.fa-eye-slash{"ng-hide" => "saving.subscribed"}
+              \ Unwatch
+          %a.btn.btn-info.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[issue.vote_status]", "ng-click" => "swap_save('vote_status')"}
+            %span{"ng-hide" => "issue.vote_status"}
+              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.vote_status"}
+              %i.fa.fa-plus-circle{"ng-hide" => "saving.vote_status"}
+              \ Vote
+            %span{"ng-show" => "issue.vote_status"}
+              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.vote_status"}
+              %i.fa.fa-minus-circle{"ng-hide" => "saving.vote_status"}
+              \ Unvote
+          %a.btn.fill-link{"ng-class" => "{false: 'btn-info active', true: 'btn-info'}[issue.open]", "ng-click" => "swap_save('open')", "ng-show" => "issue.user_acl.edit__close_reason"}
+            %span{"ng-show" => "issue.open"}
+              %i.fa.fa-minus-circle{"ng-hide" => "saving.open"}
+              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.open"}
+              \ Close
+            %span{"ng-hide" => "issue.open"}
+              %i.fa.fa-plus-circle{"ng-hide" => "saving.open"}
+              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.open"}
+              \ Open
+          .btn-group-vertical{"ng-show" => "issue.open"}
+            %label.btn{"ng-class" => "{true: 'active btn-info', false: 'btn-default'}[issue.close_reason==reason]", "ng-repeat" => "reason in issue.close_reason"}
+              %input.hide{"ng-model" => "issue.close_reason", "ng-value" => "reason", type: "radio"}/
+              {[{ val }]}
     %br/
-    .row.well.well-lg.center
-      .row.col-lg-11{"ng-show" => "editing.desc"}
-        %textarea{"mark-it-up" => "", "ng-model" => "issue.desc"}
-        %span.btn.btn-info{"ng-click" => "save('desc')", "ng-disabled" => "saving.desc"}
-          %i.fa.fa-save{"ng-hide" => "saving.desc"}
-          %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.desc"}
-          \ Save
-        %span.btn.btn-primary{"ng-click" => "revert('desc')", "ng-disabled" => "saving.desc"}
-          %i.fa.fa-times-circle
-          \ Discard
-      %div{"ng-hide" => "editing.desc"}
-        %i.fa.fa-edit.fa-3x.icon-hover.pull-right{"ng-click" => "toggle('desc')", "ng-show" => "issue.user_acl.edit_desc"}
-        %span{"btf-markdown" => "issue.desc"}
-.row{"ng-show" => "issue.events.length > 0"}
-  %h3 Events
-  %div{"ng-repeat" => "event in project.events"}
-    %span{"ng-include" => "'templates/' + event.template"}
-.row{"ng-show" => "logged_in"}
-  %textarea{"mark-it-up" => "", "ng-model" => "new_comment.body"}
+    .row
+      %h4
+        %b> Proposed on
+        {[{ issue.created_at | date:'medium' }]}
+        ({[{ issue.created_at|date_ago }]})
+      %br/
+      .row.well.well-lg.center
+        .row.col-lg-11{"ng-show" => "editing.desc"}
+          %textarea{"mark-it-up" => "", "ng-model" => "issue.desc"}
+          %span.btn.btn-info{"ng-click" => "save('desc')", "ng-disabled" => "saving.desc"}
+            %i.fa.fa-save{"ng-hide" => "saving.desc"}
+            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.desc"}
+            \ Save
+          %span.btn.btn-primary{"ng-click" => "revert('desc')", "ng-disabled" => "saving.desc"}
+            %i.fa.fa-times-circle
+            \ Discard
+        %div{"ng-hide" => "editing.desc"}
+          %i.fa.fa-edit.fa-3x.icon-hover.pull-right{"ng-click" => "toggle('desc')", "ng-show" => "issue.user_acl.edit_desc"}
+          %span{"btf-markdown" => "issue.desc"}
+  .row{"ng-show" => "issue.events.length > 0"}
+    %h3 Events
+    %div{"ng-repeat" => "event in project.events"}
+      %span{"ng-include" => "'templates/' + event.template"}
+  .row{"ng-show" => "logged_in"}
+    %textarea{"mark-it-up" => "", "ng-model" => "new_comment.body"}

@@ -7,6 +7,8 @@
     %link{href: "/static/lib/css/font-awesome.min.css", rel: "stylesheet"}/
     %title{"ng-bind" => "_title"} Crowd Link
   %body
+    .spinner-overlay.fade{"ng-show" => "loading"}
+      %i.fa.fa-3x.fa-spin.fa-spinner
     / Jquery
     %script{src: "//code.jquery.com/jquery-1.10.1.min.js"}
     %script{src: "//malsup.github.com/jquery.form.js"}
@@ -15,14 +17,15 @@
     / Showdown
     %script{src: "//cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"}
     / Angular
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-resource.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-route.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-sanitize.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-resource.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-route.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-sanitize.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-animate.min.js"}
     / Noty notifications
-    %script{src: "//cdn.jsdelivr.net/noty/2.1.0/jquery.noty.js"}
-    %script{src: "//cdn.jsdelivr.net/noty/2.1.0/layouts/top.js"}
-    %script{src: "//cdn.jsdelivr.net/noty/2.1.0/themes/default.js"}
+    %script{src: "//cdn.jsdelivr.net/noty/2.1.2/jquery.noty.js"}
+    %script{src: "//cdn.jsdelivr.net/noty/2.1.2/layouts/top.js"}
+    %script{src: "//cdn.jsdelivr.net/noty/2.1.2/themes/default.js"}
     / Bootstrap
     %script{src: "//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"}
     / Markitup Markdown editor
@@ -63,8 +66,9 @@
               %a{href: "#/login"}
                 %i.fa.fa-sign-in.fa-large
                 %span.hidden-xs Login
-      .container.main-cont{"ng-view" => ""}
-    %div{id: "footer navbar-default navbar"}
-      .container
-        %p.text-muted{style: "margin:20px 0px;"}
-          &copy; Copyright 2013 by me.
+      .container.main-cont.fade{"ng-view" => "", "ng-cloak" => ""}
+    
+    / %div{id: "footer navbar-default navbar"}
+    /  .container
+    /    %p.text-muted{style: "margin:20px 0px;"}
+    /      &copy; Copyright 2013 by me.

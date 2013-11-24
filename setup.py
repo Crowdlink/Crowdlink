@@ -2,17 +2,17 @@
 
 from setuptools import setup, find_packages
 
-requires = ['pymongo',
-            'flask',
-            'mock',
-            'flask_mongoengine',
-            'mongoengine',
+requires = ['flask',
             'flask-script',
             'flask-login',
+            'Flask-OAuthlib',
+            'flask_mongoengine',
+            'pymongo',
+            'mock',
+            'mongoengine',
             'yota>=0.3',
             'selenium',
             'cryptacular',
-            'Flask-OAuthlib',
             'enum',
             'stripe',
             'Babel']

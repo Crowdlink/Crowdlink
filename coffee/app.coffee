@@ -1,5 +1,5 @@
 'use strict'
-mainApp = angular.module("mainApp", ['mainServices', 'mainControllers', 'mainFilters', 'ngRoute'])
+mainApp = angular.module("mainApp", ['mainServices', 'mainControllers', 'mainFilters', 'ngRoute', 'ngAnimate'])
 # Avoid collision with Jinja templates
 mainApp.config ($interpolateProvider) ->
   $interpolateProvider.startSymbol "{[{"

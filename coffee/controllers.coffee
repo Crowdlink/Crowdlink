@@ -35,18 +35,24 @@ mainControllers.controller('rootController', ($scope, $location, $rootScope, Use
 )
 # IssueController ============================================================
 mainControllers.controller('issueController',
-  ($scope, $timeout, $routeParams, $rootScope, IssueService)->
+  ($scope, $routeParams, $rootScope, IssueService, $timeout)->
     $scope.init = () ->
         IssueService.query(
-          username: $routeParams.username
-          purl_key: $routeParams.purl_key
-          url_key: $routeParams.url_key
-          join_prof: "page_join"
+            username: $routeParams.username
+            purl_key: $routeParams.purl_key
+            url_key: $routeParams.url_key
+            join_prof: "page_join"
         ,(value) ->
-          $scope.issue = value[0]
-          $scope.prev =
-            issue: $.extend({}, value[0])
+            $timeout ->
+                $scope.issue = value[0]
+                $scope.prev =
+                    issue: $.extend({}, value[0])
+                $timeout ->
+                    $rootScope.loading = false
+                , 200
+            , 500
         )
+        $rootScope.loading = true
         $scope.editing =
           brief: false
           desc: false
@@ -82,12 +88,10 @@ mainControllers.controller('issueController',
           $.extend(data, extra_data)
         ,(value) -> # Function to be run when function returns
             if 'success' of value and value.success
-                $timeout ->
-                    if callback
-                      callback()
-                    $scope.saving[s] = false
-                    $scope.editing[s] = false
-                , 500
+                if callback
+                    callback()
+                $scope.saving[s] = false
+                $scope.editing[s] = false
             else
                 if 'message' of value
                     text = "Error communicating with server. #{value.message}"
@@ -154,19 +158,25 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
 )
 
 # ProjectController============================================================
-mainControllers.controller('projectController', ($scope, $timeout, $rootScope, ProjectService, IssueService, $routeParams)->
-    $scope.init = () ->
-      $scope.filter = ""
-      ProjectService.query(
+mainControllers.controller('projectController', ($scope, $rootScope, ProjectService, IssueService, $routeParams, $timeout)->
+    ProjectService.query(
         username: $routeParams.username
         url_key: $routeParams.url_key
         join_prof: 'page_join'
-      ,(value) ->
-        $scope.project = value[0]
-        $scope.prev =
-          project: $.extend({}, value[0])
-        $scope.search()
-      )
+    ,(value) ->
+        $timeout ->
+            $scope.project = value[0]
+            $scope.prev =
+                project: $.extend({}, value[0])
+            $scope.search()
+            $timeout ->
+                $rootScope.loading = false
+            , 200
+        , 500
+    )
+    $scope.init = () ->
+      $rootScope.loading = true
+      $scope.filter = ""
       $scope.editing =
         name: false
       $scope.saving =
@@ -181,9 +191,7 @@ mainControllers.controller('projectController', ($scope, $timeout, $rootScope, P
             project: $scope.project.id
         , (value) -> # Function to be run when function returns
             if 'success' not of value
-                $timeout ->
-                    $scope.issues = value
-                , 100
+                $scope.issues = value
             else
                 if 'message' of value
                     text = " #{value.message}"
@@ -218,12 +226,10 @@ mainControllers.controller('projectController', ($scope, $timeout, $rootScope, P
           $.extend(data, extra_data)
         ,(value) -> # Function to be run when function returns
             if 'success' of value and value.success
-                $timeout ->
-                    if callback
-                      callback()
-                    $scope.saving[s] = false
-                    $scope.editing[s] = false
-                , 500
+                if callback
+                    callback()
+                $scope.saving[s] = false
+                $scope.editing[s] = false
             else
                 if 'message' of value
                     text = "Error communicating with server. #{value.message}"
