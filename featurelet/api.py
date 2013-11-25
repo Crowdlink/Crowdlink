@@ -37,6 +37,24 @@ def check_user():
         return jsonify(taken=True)
 
 
+@api.route("/purl_key/check", methods=['POST'])
+@login_required
+def check_ptitle():
+    """ Check if a specific username is taken """
+    js = request.json
+
+    # try to access the issue with identifying information
+    try:
+        url_key = js.pop('value')
+        project = Project.objects.get(username=g.user.username, url_key=url_key)
+    except KeyError:
+        return incorrect_syntax()
+    except Project.DoesNotExist:
+        return jsonify(taken=False)
+    else:
+        return jsonify(taken=True)
+
+
 @api.route("/email/check", methods=['POST'])
 def check_email():
     """ Check if a specific username is taken """

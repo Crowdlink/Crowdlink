@@ -23,9 +23,9 @@
     %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-sanitize.min.js"}
     %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-animate.min.js"}
     / Noty notifications
-    %script{src: "//cdn.jsdelivr.net/noty/2.1.2/jquery.noty.js"}
-    %script{src: "//cdn.jsdelivr.net/noty/2.1.2/layouts/top.js"}
-    %script{src: "//cdn.jsdelivr.net/noty/2.1.2/themes/default.js"}
+    %script{src: "/bower_components/noty/js/noty/jquery.noty.js"}
+    %script{src: "/bower_components/noty/js/noty/layouts/top.js"}
+    %script{src: "/bower_components/noty/js/noty/themes/default.js"}
     / Bootstrap
     %script{src: "//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"}
     / Markitup Markdown editor
@@ -66,7 +66,7 @@
               %a{href: "#/login"}
                 %i.fa.fa-sign-in.fa-large
                 %span.hidden-xs Login
-      .container.main-cont.fade{"ng-view" => "", "ng-cloak" => ""}
+      .container.main-cont.fade{"ng-view" => ""}
     
     / %div{id: "footer navbar-default navbar"}
     /  .container

@@ -1,0 +1,12 @@
+{
+  "name": "featurelet",
+  "version": "0.0.0",
+  "authors": [
+    "Isaac Cook <isaac@simpload.com>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "noty": "~2.1.2"
+  }
+}

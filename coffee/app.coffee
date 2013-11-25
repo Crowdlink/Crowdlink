@@ -181,7 +181,7 @@ mainApp.directive "passwordMatch", [->
 
 mainApp.directive "validClass", [->
   restrict: "A"
-  scope: true
+  scope: false
   link: (scope, elem, attrs, control) ->
 
     frm_dat = scope.$eval(attrs.validClass)
@@ -211,7 +211,6 @@ mainApp.directive "uniqueServerside", ["$http", "$timeout", ($http, $timeout) ->
     scope.$watch attrs.ngModel, (value) ->
       # hide old error messages
       ctrl.$setValidity "taken", true
-      ctrl.$setValidity "pattern", true
 
       # don't send undefined to the server during dirty check empty username is
       # caught by required directive

@@ -382,6 +382,13 @@ mainControllers.controller('signupController', ($scope, $rootScope, $routeParams
 mainControllers.controller('newProjController', ($scope, $rootScope, $routeParams)->
   $scope.init = () ->
     $rootScope.title = "New Project"
+    $scope.auto_key = true
+
+  $scope.$watch('ptitle', (val) ->
+    if $scope.auto_key and val != undefined
+      $scope.url_key = $scope.ptitle.replace(/\W/g, '-').toLowerCase()
+  )
+
 )
 
 # frontpageController =======================================================

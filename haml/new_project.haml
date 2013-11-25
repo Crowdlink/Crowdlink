@@ -5,49 +5,52 @@
   .col-lg-6.col-lg-offset-2
     %h3.col-lg-offset-4 Create new project
     %br/
-    %form#NewProjectForm.form-horizontal{action: "", enctype: "", method: "post", name: "NewProjectForm"}
-      %input{name: "_piecewise_", type: "hidden", value: "True"}/
-      %input{name: "_ajax_", type: "hidden", value: "True"}/
-      #NewProjectForm_error{style: "display:none;"}
-      .form-group
+    %form.form-horizontal{name: "form", novalidate: ""}
+      .form-group{"valid-class" => "form.ptitle"}
         %label.col-lg-3.control-label{for: "NewProjectForm_ptitle"}
-          Project
-          Name
+          Project Name
         .col-lg-8
-          %input#NewProjectForm_ptitle.form-control{"data-piecewise" => "blur", name: "ptitle", placeholder: "", style: "", type: "text", value: ""}/
-          #NewProjectForm_ptitle_error{style: "display:none;"}
-      .form-group
+          %input.form-control{name: "ptitle", type: "text", "ng-model" => "ptitle",
+            required: "", "ng-change" => "mod_title()",
+            "ng-maxlength" => "64"}
+          .help-block{"ng-show" => "form.ptitle.$error.required"}
+            Please enter a title for your new project
+          .help-block{"ng-show" => "form.ptitle.$error.maxlength"}
+            Cannot be longer than 64 characters
+      .form-group{"valid-class" => "form.url_key", style: "min-height:57px"}
         %label.col-lg-3.control-label{for: "NewProjectForm_url_key"}
-          Url
-          Key
+          Url Key
         .col-lg-8
           .col-md-4{style: "text-align:center; margin-top:10px;"}
-            %b /featurelet/
+            %b /{[{ user.username }]}/
           .col-md-8.no-gutter
-            %input#NewProjectForm_url_key.form-control{"data-piecewise" => "blur", name: "url_key", placeholder: "", type: "text", value: ""}/
-          #NewProjectForm_url_key_error{style: "display:none;"}
-      .form-group
-        %label.col-lg-3.control-label{for: "NewProjectForm_description"} Description
+            %input.form-control{"unique-serverside" => "purl_key/check", name: "url_key", type: "text", "ng-model" => "url_key",
+              "ng-keydown" => "auto_key=false", "ng-pattern" => "/^[a-zA-Z0-9]+$/", "required" => ""}
+          .help-block{"ng-show" => "form.url_key.$error.pattern"}
+            Can only contain letters, numbers, _, and -.
+          .help-block{"ng-show" => "form.url_key.$error.taken"}
+            You've already created a project with this url key
+          %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "busy"}
+          %i.fa.fa-check.right-float{"ng-show" => "confirmed && form.url_key.$valid"}
+      .form-group{"valid-class" => "form.description"}
+        %label.col-lg-3.control-label{for: "NewProjectForm_description"}
+          Description
         .col-lg-8
-          %input#NewProjectForm_description.form-control{"data-piecewise" => "blur", name: "description", placeholder: "(Optional)", style: "", type: "text", value: ""}/
-          #NewProjectForm_description_error{style: "display:none;"}
-      .form-group
-        %label.col-lg-3.control-label{for: "NewProjectForm_website"} Website
+          %input.form-control{name: "description", placeholder: "(Optional)", type: "text", "ng-model" => "description", "ng-maxlength" => "256"}
+          .help-block{"ng-show" => "form.description.$error.maxlength"}
+            Cannot be longer than 256 characters
+      .form-group{"valid-class" => "form.website"}
+        %label.col-lg-3.control-label{for: "NewProjectForm_website"}
+          Website
         .col-lg-8
-          %input#NewProjectForm_website.form-control{"data-piecewise" => "blur", name: "website", placeholder: "(Optional)", style: "", type: "text", value: ""}/
-          #NewProjectForm_website_error{style: "display:none;"}
-      .form-group
-        %label.col-lg-3.control-label{for: "NewProjectForm_source"}
-          Souce Code
-          Location
-        .col-lg-8
-          %input#NewProjectForm_source.form-control{"data-piecewise" => "blur", name: "source", placeholder: "", style: "", type: "text", value: ""}/
-          #NewProjectForm_source_error{style: "display:none;"}
+          %input.form-control{name: "website", "ng-model" => "website", placeholder: "(Optional)", type: "text", "ng-maxlength" => "256"}
+          .help-block{"ng-show" => "form.website.$error.maxlength"}
+            Cannot be longer than 256 characters
       .form-group
         .col-lg-3
         .col-lg-8
-          %button#NewProjectForm_create.btn.btn-primary{name: "create", "ng-click" => "submit()", placeholder: "", style: "", type: "button"} Create
-          #NewProjectForm_create_error{style: "display:none;"}
+          %button.btn.btn-primary{name: "create", "ng-click" => "submit()", type: "submit"}
+            Create
     %br/
     %br/
     %br/

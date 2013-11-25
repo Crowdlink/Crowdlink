@@ -3,6 +3,7 @@ static/css/*
 static/js/*
 static/lib/css/bootstrap.min.css
 templates/**
+bower_components/**
 
 *.py[cod]
 *.swp
