@@ -35,6 +35,9 @@ mainServices.factory("ProjectService", ($resource) ->
     update:
       method: "PUT"
       timeout: 10000
+    create:
+      method: "POST"
+      timeout: 10000
 )
 
 mainServices.factory("StripeService", ($resource) ->

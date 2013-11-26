@@ -6,25 +6,23 @@
   %h3.center Login
   %br/
   %form.form-horizontal{method: "post", "ng-submit" => "submit()"}
-    #LoginForm_error.alert-danger.alert{"ng-show" => "errors"}
+    .alert-danger.alert{"ng-show" => "errors"}
       %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
-      %ul{"ng-show" => "errors.legnth > 1"}
+      %span{"ng-show" => "error_header"} {[{ error_header }]}
+      %ul{"ng-show" => "errors.length > 1"}
         %li{"ng-repeat" => "error in errors"} {[{error}]}
     .form-group
       %label.col-lg-3.control-label{for: "LoginForm_username"} Username
       .col-lg-8
         %input.form-control{"ng-model" => "username", type: "text"}/
-        #LoginForm_username_error{style: "display:none;"}
     .form-group
       %label.col-lg-3.control-label{for: "LoginForm_password"} Password
       .col-lg-8
         %input.form-control{"ng-model" => "password", type: "password"}/
-        #LoginForm_password_error{style: "display:none;"}
     .form-group
       .col-lg-3
       .col-lg-8
-        %button.btn-sm.btn.btn-info.fill-link{"ng-click" => "submit()", type: "submit"} Login
-        #LoginForm_submit_error{style: "display:none;"}
+        %button.btn.btn-info.fill-link{"ng-click" => "submit()", type: "submit"} Login
   %br/
   %br/
   %br/

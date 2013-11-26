@@ -6,6 +6,10 @@
     %h3.col-lg-offset-4 Create new project
     %br/
     %form.form-horizontal{name: "form", novalidate: ""}
+      .alert-danger.alert.fade{"ng-show" => "errors"}
+        %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+        %ul{"ng-show" => "errors.length > 1"}
+          %li{"ng-repeat" => "error in errors"} {[{error}]}
       .form-group{"valid-class" => "form.ptitle"}
         %label.col-lg-3.control-label{for: "NewProjectForm_ptitle"}
           Project Name
@@ -25,7 +29,7 @@
             %b /{[{ user.username }]}/
           .col-md-8.no-gutter
             %input.form-control{"unique-serverside" => "purl_key/check", name: "url_key", type: "text", "ng-model" => "url_key",
-              "ng-keydown" => "auto_key=false", "ng-pattern" => "/^[a-zA-Z0-9]+$/", "required" => ""}
+              "ng-keydown" => "auto_key=false", "ng-pattern" => "/^[a-zA-Z0-9-_]+$/", "required" => ""}
           .help-block{"ng-show" => "form.url_key.$error.pattern"}
             Can only contain letters, numbers, _, and -.
           .help-block{"ng-show" => "form.url_key.$error.taken"}
@@ -49,7 +53,8 @@
       .form-group
         .col-lg-3
         .col-lg-8
-          %button.btn.btn-primary{name: "create", "ng-click" => "submit()", type: "submit"}
+          %button.btn.btn-primary{name: "create", "ng-click" => "submit()", type: "submit",
+            "ng-disabled" => "!form.$valid", type: "submit"}
             Create
     %br/
     %br/

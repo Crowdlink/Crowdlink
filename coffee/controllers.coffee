@@ -379,7 +379,7 @@ mainControllers.controller('signupController', ($scope, $rootScope, $routeParams
 )
 
 # NewProjController =======================================================
-mainControllers.controller('newProjController', ($scope, $rootScope, $routeParams)->
+mainControllers.controller('newProjController', ($scope, $rootScope, $routeParams, $location, ProjectService)->
   $scope.init = () ->
     $rootScope.title = "New Project"
     $scope.auto_key = true
@@ -387,8 +387,35 @@ mainControllers.controller('newProjController', ($scope, $rootScope, $routeParam
   $scope.$watch('ptitle', (val) ->
     if $scope.auto_key and val != undefined
       $scope.url_key = $scope.ptitle.replace(/\W/g, '-').toLowerCase()
+      $scope.form.url_key.$dirty = true
   )
 
+  $scope.submit = ->
+    $scope.error_header = ""
+    $scope.errors = []
+    ProjectService.create(
+      name: $scope.ptitle
+      url_key: $scope.url_key
+      website: $scope.website
+      description: $scope.description
+    ,(value) ->
+      if 'success' of value and value.success
+        $location.path("/" + $rootScope.user.username + "/" + $scope.url_key).replace()
+      else
+        if 'message' of value
+          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+          $scope.errors = [value.message, ]
+        else if 'validation_errors' of value
+          $scope.errors = []
+          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+          for idx of value.validation_errors
+            capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
+            $scope.errors.push(capped + value.validation_errors[idx])
+        else
+          $scope.errors = [$rootScope.strings.err_comm, ]
+    , (error) ->
+      debugger
+    )
 )
 
 # frontpageController =======================================================

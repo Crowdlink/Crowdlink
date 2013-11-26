@@ -169,7 +169,6 @@ class CommonMixin(object):
         """ Used to join attributes or functions to an objects json representation.
         For passing back object state via the api
         """
-
         dct = {}
         for key in args:
             attr = getattr(self, key, 1)
@@ -218,7 +217,7 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
 
     _status = db.IntField(default=statuses.Discussion.index)
     brief = db.StringField(max_length=512, min_length=3)
-    desc = db.StringField(min_length=15)
+    desc = db.StringField()
     creator = db.ReferenceField('User')
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
 
@@ -328,14 +327,15 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
 class Project(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
     id = db.ObjectIdField()
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
-    maintainer = db.ReferenceField('User')
-    username = db.StringField()
-    url_key = db.StringField(min_length=3, max_length=64)
+    maintainer = db.ReferenceField('User', required=True)
+    username = db.StringField(required=True)
+    url_key = db.StringField(max_length=64, required=True)
 
     # description info
-    name = db.StringField(max_length=64, min_length=3)
-    website = db.StringField(max_length=2048)
-    issue_count = db.IntField(default=1)  # XXX: Currently not implemented
+    name = db.StringField(max_length=64, required=True)
+    website = db.StringField(max_length=256)
+    desc = db.StringField(min_length=1)
+    issue_count = db.IntField(default=0)  # XXX: Currently not implemented
 
     # voting
     vote_list = db.ListField(db.ReferenceField('User'))
@@ -637,6 +637,9 @@ class User(db.Document, SubscribableMixin, CommonMixin):
             return self == other._get_current_object()
         else:
             return super(User, self).__eq__(other)
+
+    def get(self):
+        return self
 
 
 from .events import (IssueNotif, CommentNotif, Comment)

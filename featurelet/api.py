@@ -95,8 +95,9 @@ class BaseResource(Resource):
         # updates all fields if data is provided, checks acl
         for field in self.model._fields:
             new_val = data.pop(field, None)
-            assert project.can('edit_' + field)
-            project[field] = new_val
+            if new_val:
+                assert project.can('edit_' + field)
+                project[field] = new_val
 
 
 class ProjectAPI(BaseResource):
@@ -122,8 +123,9 @@ class ProjectAPI(BaseResource):
 
     @catch_common
     def put(self):
-        data = request.dict_args()
+        data = request.json
         project = self.get_project(data)
+        return_val = {}
 
         self.update_model(data, project)
 
@@ -147,6 +149,27 @@ class ProjectAPI(BaseResource):
         # return a true value to the user
         return_val['success'] = True
         return return_val
+
+    def post(self):
+        data = request.json
+        project = Project()
+        project.username = g.user.username
+        project.maintainer = g.user.get()
+        project.url_key = data.get('url_key')
+        project.name = data.get('name')
+        project.website = data.get('website')
+        project.description = data.get('website')
+
+        try:
+            project.save()
+        except mongoengine.errors.NotUniqueError as e:
+            return {'success': False, 'message': e.message}
+        except mongoengine.errors.ValidationError as e:
+            return {'success': False, 'validation_errors': e.to_dict()}
+
+        return {'success': True}
+
+
 
 api_restful.add_resource(ProjectAPI, '/api/project')
 
