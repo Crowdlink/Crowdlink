@@ -66,7 +66,10 @@
         {[{ issue.created_at | date:'medium' }]}
         ({[{ issue.created_at|date_ago }]})
       %br/
-      .row.well.well-lg.center
+      %div.btn.btn-default.pull-right{"ng-click" => "toggle('desc')",
+        "ng-show" => "issue.user_acl.edit_desc", "ng-hide" => "editing.desc"}
+        Edit
+      .row.well.well-lg.center-margin
         .row.col-lg-11{"ng-show" => "editing.desc"}
           %textarea{"mark-it-up" => "", "ng-model" => "issue.desc"}
           %span.btn.btn-info{"ng-click" => "save('desc')", "ng-disabled" => "saving.desc"}
@@ -77,7 +80,6 @@
             %i.fa.fa-times-circle
             \ Discard
         %div{"ng-hide" => "editing.desc"}
-          %i.fa.fa-edit.fa-3x.icon-hover.pull-right{"ng-click" => "toggle('desc')", "ng-show" => "issue.user_acl.edit_desc"}
           %span{"btf-markdown" => "issue.desc"}
   .row{"ng-show" => "issue.events.length > 0"}
     %h3 Events

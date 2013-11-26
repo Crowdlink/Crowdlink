@@ -74,8 +74,10 @@
               %ng-pluralize{:count => "issue.votes",
                 :when => "{'0': 'No votes', 'one': '1 vote', 'other': '{} votes'}"}
           %td
-            %a{:href => "\#{[{ issue.get_abs_url }]}",
-            "ng-bind-html" => "issue.brief | searchFilter:filter"}
+            %a{:href => "\#{[{ issue.get_abs_url }]}"}
+              %i.fa.fa-circle &nbsp;
+              %span{"ng-bind-html" => "issue.title | searchFilter:filter"}
+            
   .row{"ng-show" => "project.events.length > 0"}
     %h3 Events
     %div{"ng-repeat" => "event in project.events"}

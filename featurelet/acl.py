@@ -18,6 +18,7 @@ class P(object):
 issue_anon = P(
     ('view', ['standard_join',
               'page_join',
+              'brief_join',
               'disp_join']
     )
 ).keys
@@ -29,7 +30,7 @@ issue_user = P(issue_anon,
 issue_maintainer = P(issue_anon, issue_user,
     ('edit', ['url_key',
               '_status',
-              'brief',
+              'title',
               'desc']
     )
 ).keys

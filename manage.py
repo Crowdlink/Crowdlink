@@ -53,7 +53,7 @@ def provision():
     for title, desc in issues:
         issue = Issue(
             creator=usr.id,
-            brief=title,
+            title=title,
             desc=desc)
         proj.add_issue(issue, usr)
 

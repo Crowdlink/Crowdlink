@@ -90,34 +90,68 @@ def catch_common(func):
 
     return decorated
 
+def catch_create(func):
+    # catch errors that are common to creation actions
+    def decorated(self, *args, **kwargs):
+        # get the auth dictionary
+        try:
+            return func(self, *args, **kwargs)
+        except KeyError:
+            return {'error': 'Incorrect syntax'}, 400
+        except AssertionError:  # all permissions should be done via assertions
+            return {'error': 'You don\'t have permission to do that'}, 403
+        except mongoengine.errors.NotUniqueError as e:
+            return {'success': False, 'message': e.message}
+        except mongoengine.errors.ValidationError as e:
+            return {'success': False, 'validation_errors': e.to_dict()}
+
+    return decorated
+
 class BaseResource(Resource):
-    def update_model(self, data, project):
+    def update_model(self, data, model):
         # updates all fields if data is provided, checks acl
         for field in self.model._fields:
             new_val = data.pop(field, None)
             if new_val:
-                assert project.can('edit_' + field)
-                project[field] = new_val
+                assert model.can('edit_' + field)
+                model[field] = new_val
 
 
 class ProjectAPI(BaseResource):
     model = Project
 
-    def get_project(self, data):
+    @classmethod
+    def get_project(self, data, minimal=False):
         proj_id = data.pop('id', None)
-        username = data.pop('username', None)
-        url_key = data.pop('url_key', None)
 
-        if url_key and username:
-            return Project.objects.get(url_key=url_key, username=username)
+        # Mild optimization for objects that need to get the project from
+        # url_key and username
+        if minimal:
+            base = Project.objects.only('id', 'url_key')
         else:
-            return Project.objects.get(id=proj_id)
+            base = Project.objects
+
+        if proj_id:
+            return base.get(id=proj_id)
+
+
+        return base.get(url_key=data['url_key'],
+                        username=data['username'])
 
     @catch_common
     def get(self):
         data = request.dict_args()
         join_prof = data.pop('join_prof', 'standard_join')
         project = self.get_project(data)
+
+        # not currently handled elegantly, here's a manual workaround
+        if join_prof == 'issue_join':
+            issues = project.issues()
+            issue_join_prof = data.pop('issue_join_prof', 'standard_join')
+            for issue in issues:
+                assert issue.can('view_brief_join')
+            return {'issues': get_joined(issues, issue_join_prof)}
+
         assert project.can('view_' + join_prof)
         return get_joined(project, join_prof=join_prof)
 
@@ -150,6 +184,7 @@ class ProjectAPI(BaseResource):
         return_val['success'] = True
         return return_val
 
+    @catch_create
     def post(self):
         data = request.json
         project = Project()
@@ -160,18 +195,96 @@ class ProjectAPI(BaseResource):
         project.website = data.get('website')
         project.description = data.get('website')
 
-        try:
-            project.save()
-        except mongoengine.errors.NotUniqueError as e:
-            return {'success': False, 'message': e.message}
-        except mongoengine.errors.ValidationError as e:
-            return {'success': False, 'validation_errors': e.to_dict()}
+        project.save()
 
         return {'success': True}
 
 
+# Issue getter/setter
+# =============================================================================
+class IssueAPI(BaseResource):
+    model = Issue
+
+    @classmethod
+    def get_issue(self, data):
+        idval = data.get('id', None)
+        if idval:
+            return Issue.objects.get(id=idval)
+        else:
+            project = IssueAPI.get_parent_project(data, minimal=True)
+            return Issue.objects.get(url_key=data['url_key'], project=project)
+
+    @classmethod
+    def get_parent_project(self, data, **kwargs):
+        proj_data = {'url_key': data.get('purl_key'),
+                    'id': data.get('pid'),
+                    'username': data.get('username')}
+        try:
+            return ProjectAPI.get_project(proj_data, **kwargs)
+        except Project.DoesNotExist:
+            # re-raise the error in a manner that will get caught and returned
+            # as a 404 error
+            raise self.model.DoesNotExist
+
+    @catch_create
+    def post(self):
+        data = request.json
+        project = IssueAPI.get_parent_project(data, minimal=True)
+
+        issue = Issue()
+        issue.title = data.get('title')
+        issue.desc = data.get('description')
+        issue.project = project
+        issue.creator = g.user.get()
+
+        project.save()
+
+    @catch_common
+    def get(self):
+        data = request.dict_args()
+        join_prof = data.get('join_prof', 'standard_join')
+
+        issue = IssueAPI.get_issue(data)
+        return get_joined(issue, join_prof=join_prof)
+
+
+    @catch_common
+    def put(self):
+        js = request.json
+        return_val = {}
+
+        issue = IssueAPI.get_issue(data)
+
+        self.update_model(data, issue)
+
+        sub_status = js.pop('subscribed', None)
+        if sub_status == True:
+            # Subscription logic, will need to be expanded to allow granular selection
+            subscribe = IssueSubscriber(user=g.user.id)
+            issue.subscribe(subscribe)
+        elif sub_status == False:
+            issue.unsubscribe(g.user)
+
+        vote_status = js.pop('vote_status', None)
+        if vote_status is not None:
+            issue.set_vote(vote_status)
+
+        status = js.pop('status', None)
+        if status:
+            issue.set_status(status)
+
+        try:
+            issue.save()
+        except mongoengine.errors.ValidationError as e:
+            return jsonify(success=False, validation_errors=e.to_dict())
+
+        # return a true value to the user
+        return_val.update({'success': True})
+        return jsonify(return_val)
+
 
 api_restful.add_resource(ProjectAPI, '/api/project')
+api_restful.add_resource(IssueAPI, '/api/issue')
 
 # User getter/setter
 # =============================================================================
@@ -227,90 +340,6 @@ def update_user():
 
     return jsonify(success=True)
 
-
-# Issue getter/setter
-# =============================================================================
-@api.route("/issue", methods=['GET'])
-def get_issue():
-    args = request.args
-    limit = args.get('limit', 15)
-    username = args.get('username', None)
-    purl_key = args.get('purl_key', None)
-    project = args.get('project', None)
-    url_key = args.get('url_key', None)
-    join_prof = request.args.get('join_prof', 'standard_join')
-    if (purl_key and username) and not project:
-        try:
-            project = Project.objects.get(username=username, url_key=purl_key).id
-        except Issue.DoesNotExist:
-            return resource_not_found()
-
-    try:
-        # if the request was for a single issue
-        if url_key:
-            issue = Issue.objects(project=project, url_key=url_key)
-        else:
-            issue = Issue.objects(project=project)[:limit]
-        return get_json_joined(issue, join_prof=join_prof)
-    except KeyError:
-        return incorrect_syntax()
-    except Issue.DoesNotExist:
-        return resource_not_found()
-
-
-@api.route("/issue", methods=['POST'])
-@login_required
-def update_issue():
-    js = request.json
-    return_val = {}
-
-    # try to access the issue with identifying information
-    try:
-        proj_id = js.pop('project', None)
-        url_key = js.pop('url_key', None)
-        if url_key and proj_id:
-            issue = Issue.objects.get(project=proj_id,
-                                          url_key=url_key)
-        else:
-            issue_id = js.pop('id')
-            issue = Issue.objects.get(id=issue_id)
-    except KeyError:
-        return incorrect_syntax()
-    except Issue.DoesNotExist:
-        return resource_not_found()
-
-    brief = js.pop('brief', None)
-    if brief and 'brief' in issue.user_acl:
-        issue.brief = brief
-
-    desc = js.pop('desc', None)
-    if desc and 'desc' in issue.user_acl:
-        issue.desc = desc
-
-    sub_status = js.pop('subscribed', None)
-    if sub_status == True:
-        # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = IssueSubscriber(user=g.user.id)
-        issue.subscribe(subscribe)
-    elif sub_status == False:
-        issue.unsubscribe(g.user)
-
-    vote_status = js.pop('vote_status', None)
-    if vote_status is not None:
-        issue.set_vote(vote_status)
-
-    status = js.pop('status', None)
-    if status:
-        issue.set_status(status)
-
-    try:
-        issue.save()
-    except mongoengine.errors.ValidationError as e:
-        return jsonify(success=False, validation_errors=e.to_dict())
-
-    # return a true value to the user
-    return_val.update({'success': True})
-    return jsonify(return_val)
 
 @api.route("/logout")
 @login_required

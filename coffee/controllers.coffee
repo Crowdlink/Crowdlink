@@ -59,9 +59,9 @@ mainControllers.controller('issueController',
             join_prof: "page_join"
         ,(value) ->
             $timeout ->
-                $scope.issue = value[0]
+                $scope.issue = value
                 $scope.prev =
-                    issue: $.extend({}, value[0])
+                    issue: $.extend({}, value)
                 $timeout ->
                     $rootScope.loading = false
                 , 200
@@ -69,17 +69,17 @@ mainControllers.controller('issueController',
         )
         $rootScope.loading = true
         $scope.editing =
-          brief: false
+          title: false
           desc: false
         $scope.saving =
-          brief: false
+          title: false
           desc: false
           close_reason: false
           status: false
 
-    $scope.$watch('issue.brief',(val) ->
+    $scope.$watch('issue.title',(val) ->
       if val
-        $rootScope.title = "Issue '" + $scope.issue.brief + "'"
+        $rootScope.title = "Issue '" + $scope.issue.title + "'"
       else
         $rootScope.title = "Issue"
     )
@@ -92,8 +92,8 @@ mainControllers.controller('issueController',
         $scope.saving[s] = true
         data =
           id: $scope.issue.id
-        if s == 'brief'
-          data.brief = $scope.issue.brief
+        if s == 'title'
+          data.title = $scope.issue.title
         if s == 'desc'
           data.desc = $scope.issue.desc
         if s == 'open'
@@ -175,6 +175,23 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
 # ProjectController============================================================
 mainControllers.controller('projectController', ($scope, $rootScope, ProjectService, IssueService, $routeParams, $timeout)->
     ProjectService.query(
+      username: $routeParams.username
+      url_key: $routeParams.url_key
+      join_prof: 'issue_join'
+    , (value) -> # Function to be run when function returns
+      if 'success' not of value
+        $scope.issues = value.issues
+      else
+        if 'message' of value
+          text = " #{value.message}"
+        else
+          text = "There was an unknown error committing your action. #{value.code}"
+          noty
+              text: text
+              type: 'error'
+              timout: 2000
+    )
+    ProjectService.query(
         username: $routeParams.username
         url_key: $routeParams.url_key
         join_prof: 'page_join'
@@ -183,7 +200,6 @@ mainControllers.controller('projectController', ($scope, $rootScope, ProjectServ
             $scope.project = value
             $scope.prev =
                 project: $.extend({}, value)
-            $scope.search()
             $timeout ->
                 $rootScope.loading = false
             , 200
@@ -198,25 +214,6 @@ mainControllers.controller('projectController', ($scope, $rootScope, ProjectServ
         subscribed: false
         vote_status: false
         name: false
-
-    # Update the list of issues in realtime as they type
-    $scope.search = ->
-        IssueService.query(
-            filter: $scope.filter
-            project: $scope.project.id
-        , (value) -> # Function to be run when function returns
-            if 'success' not of value
-                $scope.issues = value
-            else
-                if 'message' of value
-                    text = " #{value.message}"
-                else
-                    text = "There was an unknown error committing your action. #{value.code}"
-                noty
-                    text: text
-                    type: 'error'
-                    timout: 2000
-        )
 
     $scope.vote = (issue) ->
       issue.vote_status = !issue.vote_status
@@ -310,7 +307,6 @@ mainControllers.controller('chargeController', ['$scope', 'StripeService', ($sco
 
 
     $scope.recv_token = (token, args) ->
-      console.log(args)
       StripeService.update(
           token: token
           amount: $scope.actual_amt
@@ -425,9 +421,51 @@ mainControllers.controller('frontpageController', ($scope, $rootScope, $routePar
 )
 
 # newIssueController =======================================================
-mainControllers.controller('newissueController', ($scope, $rootScope, $routeParams)->
+mainControllers.controller('newissueController', ($scope, $rootScope, $routeParams, ProjectService)->
   $scope.init = () ->
     $rootScope.title = "New Issue"
+    ProjectService.query(
+      username: $routeParams.username
+      url_key: $routeParams.url_key
+      join_prof: 'issue_join'
+      issue_join_prof: 'brief_join'
+    , (value) -> # Function to be run when function returns
+      if 'success' not of value
+        $scope.issues = value.issues
+      else
+        if 'message' of value
+          text = " #{value.message}"
+        else
+          text = "There was an unknown error committing your action. #{value.code}"
+          noty
+              text: text
+              type: 'error'
+              timout: 2000
+    )
+  $scope.submit = ->
+    $scope.error_header = ""
+    $scope.errors = []
+    IssueService.create(
+      title: $scope.title
+      description: $scope.description
+    ,(value) ->
+      if 'success' of value and value.success
+        $location.path("/" + $rootScope.user.username + "/" + $scope.url_key).replace()
+      else
+        if 'message' of value
+          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+          $scope.errors = [value.message, ]
+        else if 'validation_errors' of value
+          $scope.errors = []
+          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+          for idx of value.validation_errors
+            capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
+            $scope.errors.push(capped + value.validation_errors[idx])
+        else
+          $scope.errors = [$rootScope.strings.err_comm, ]
+    , (error) ->
+      debugger
+    )
 )
 
 # projectSettingsController ====================================================

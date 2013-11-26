@@ -33,7 +33,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/:username/:url_key",
     templateUrl: "templates/project.html"
     controller: "projectController"
-  ).when("/:username/:purl_key/new_issue",
+  ).when("/:username/:url_key/new_issue",
     templateUrl: "templates/new_issue.html"
     controller: "newissueController"
   ).when("/:username/:url_key/psettings",
@@ -56,15 +56,21 @@ mainFilters = angular.module("mainFilters", [])
 mainFilters.filter('searchFilter', ($sce) ->
   trusted = {}
   (input, query, option) ->
-    tmp = input.replace(RegExp('('+ query + ')', 'gi'), '<span class="match">$1</span>')
-    return trusted[tmp] || (trusted[tmp] = $sce.trustAsHtml(tmp))
-)
-mainFilters.filter('impFilter', ->
-  (input, query, option) ->
-    if query in input.brief or query in input.description
-        return true
+    if input
+      tmp = input.replace(RegExp('('+ query + ')', 'gi'), '<span class="match">$1</span>')
+      return trusted[tmp] || (trusted[tmp] = $sce.trustAsHtml(tmp))
     else
-        return false
+      return input
+)
+mainFilters.filter('fuseImpFilter', ->
+  (input, query, option) ->
+    if query
+      f = new Fuse(input,
+        keys: ['title']
+      )
+      return f.search(query)
+    else
+      return input
 )
 
 mainFilters.filter "date_ago", ->

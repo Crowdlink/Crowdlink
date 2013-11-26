@@ -216,7 +216,7 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
     project = db.ReferenceField('Project')
 
     _status = db.IntField(default=statuses.Discussion.index)
-    brief = db.StringField(max_length=512, min_length=3)
+    title = db.StringField(max_length=128, min_length=10)
     desc = db.StringField()
     creator = db.ReferenceField('User')
     created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
@@ -253,8 +253,11 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
                              )
 
     # used for displaying the project in noifications, etc
+    brief_join = ['__dont_mongo',
+                 'title',
+                 'get_abs_url']
     disp_join = ['__dont_mongo',
-                 'brief',
+                 'title',
                  'get_abs_url',
                  {'obj': 'project',
                   'join_prof': 'disp_join'}]
@@ -299,7 +302,7 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
             return True
 
     def create_key(self):
-        self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.brief[:100]).lower()
+        self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.title[:100]).lower()
 
     def add_comment(self, user, body):
         # Send the actual comment to the Issue event queue
@@ -379,6 +382,9 @@ class Project(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
 )
     acl = project_acl
     meta = {'indexes': [{'fields': ['url_key', 'maintainer'], 'unique': True}]}
+
+    def issues(self):
+        return Issue.objects(project=self)
 
     def roles(self, user=None):
         """ Logic to determin what auth roles a user gets """

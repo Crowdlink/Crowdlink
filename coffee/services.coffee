@@ -7,7 +7,7 @@ mainServices.factory("IssueService", ($resource) ->
     query:
       method: "GET"
       timeout: 10000
-      isArray: true
+      isArray: false
 )
 
 mainServices.factory("UserService", ($resource) ->
