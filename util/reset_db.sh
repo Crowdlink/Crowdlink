@@ -1,1 +1,1 @@
-echo "use featurelet\ndb.dropDatabase()\nexit\n" | mongo
+echo "use crowdlink\ndb.dropDatabase()\nexit\n" | mongo

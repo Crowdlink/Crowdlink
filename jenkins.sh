@@ -1,4 +1,4 @@
-project="featurelet"
+project="crowdlink"
 branch=`git rev-parse --abbrev-ref HEAD`
 image="$project-$branch"
 

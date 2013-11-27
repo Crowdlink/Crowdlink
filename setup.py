@@ -18,7 +18,7 @@ requires = ['flask',
             'stripe',
             'Babel']
 
-setup(name='featurelet',
+setup(name='crowdlink',
       version='0.1',
       description='A product feature request and management tool',
       author='Isaac Cook',
