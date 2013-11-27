@@ -164,6 +164,8 @@ class ProjectAPI(BaseResource):
         self.update_model(data, project)
 
         sub_status = data.pop('subscribed', None)
+        if sub_status:
+            assert project.can('action_watch')
         if sub_status == True:
             # Subscription logic, will need to be expanded to allow granular selection
             subscribe = ProjectSubscriber(user=g.user.id)
@@ -172,6 +174,8 @@ class ProjectAPI(BaseResource):
             project.unsubscribe(g.user)
 
         vote_status = data.pop('vote_status', None)
+        if vote_status:
+            assert project.can('action_vote')
         if vote_status is not None:
             project.set_vote(vote_status)
 
@@ -230,6 +234,8 @@ class IssueAPI(BaseResource):
     def post(self):
         data = request.json
         project = IssueAPI.get_parent_project(data, minimal=True)
+        # ensure that the user was allowed to insert that issue
+        assert project.can('action_add_issue')
 
         issue = Issue()
         issue.title = data.get('title')
@@ -261,6 +267,8 @@ class IssueAPI(BaseResource):
         self.update_model(data, issue)
 
         sub_status = data.pop('subscribed', None)
+        if sub_status:
+            assert issue.can('action_watch')
         if sub_status == True:
             # Subscription logic, will need to be expanded to allow granular selection
             subscribe = IssueSubscriber(user=g.user.id)
@@ -269,6 +277,8 @@ class IssueAPI(BaseResource):
             issue.unsubscribe(g.user)
 
         vote_status = data.pop('vote_status', None)
+        if vote_status:
+            assert issue.can('action_vote')
         if vote_status is not None:
             issue.set_vote(vote_status)
 

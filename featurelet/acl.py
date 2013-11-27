@@ -24,6 +24,7 @@ issue_anon = P(
 ).keys
 issue_user = P(issue_anon,
     ('action', ['vote',
+                'add_solution',
                 'watch']
     )
 ).keys
@@ -49,6 +50,7 @@ project_anon = P(
 ).keys
 project_user = P(project_anon,
     ('action', ['vote',
+                'add_issue',
                 'watch']
     )
 ).keys
