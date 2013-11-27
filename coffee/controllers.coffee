@@ -421,7 +421,7 @@ mainControllers.controller('frontpageController', ($scope, $rootScope, $routePar
 )
 
 # newIssueController =======================================================
-mainControllers.controller('newissueController', ($scope, $rootScope, $routeParams, ProjectService)->
+mainControllers.controller('newissueController', ($scope, $rootScope, $routeParams, $location, ProjectService, IssueService)->
   $scope.init = () ->
     $rootScope.title = "New Issue"
     ProjectService.query(
@@ -446,11 +446,13 @@ mainControllers.controller('newissueController', ($scope, $rootScope, $routePara
     $scope.error_header = ""
     $scope.errors = []
     IssueService.create(
-      title: $scope.title
+      username: $routeParams.username
+      purl_key: $routeParams.url_key
       description: $scope.description
+      title: $scope.title
     ,(value) ->
       if 'success' of value and value.success
-        $location.path("/" + $rootScope.user.username + "/" + $scope.url_key).replace()
+        $location.path("/" + $routeParams.username + "/" + $routeParams.url_key + "/" + value.url_key).replace()
       else
         if 'message' of value
           $scope.error_header = "A server side validation error occured, this should not be a common occurance"

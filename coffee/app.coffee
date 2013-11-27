@@ -56,6 +56,8 @@ mainFilters = angular.module("mainFilters", [])
 mainFilters.filter('searchFilter', ($sce) ->
   trusted = {}
   (input, query, option) ->
+    if input == undefined
+      return
     if input
       tmp = input.replace(RegExp('('+ query + ')', 'gi'), '<span class="match">$1</span>')
       return trusted[tmp] || (trusted[tmp] = $sce.trustAsHtml(tmp))
@@ -64,6 +66,8 @@ mainFilters.filter('searchFilter', ($sce) ->
 )
 mainFilters.filter('fuseImpFilter', ->
   (input, query, option) ->
+    if input == undefined
+      return
     if query
       f = new Fuse(input,
         keys: ['title']

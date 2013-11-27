@@ -98,12 +98,12 @@ def catch_create(func):
             return func(self, *args, **kwargs)
         except KeyError:
             return {'error': 'Incorrect syntax'}, 400
+        except mongoengine.errors.ValidationError as e:
+            return {'success': False, 'validation_errors': e.to_dict()}
         except AssertionError:  # all permissions should be done via assertions
             return {'error': 'You don\'t have permission to do that'}, 403
         except mongoengine.errors.NotUniqueError as e:
             return {'success': False, 'message': e.message}
-        except mongoengine.errors.ValidationError as e:
-            return {'success': False, 'validation_errors': e.to_dict()}
 
     return decorated
 
@@ -233,11 +233,14 @@ class IssueAPI(BaseResource):
 
         issue = Issue()
         issue.title = data.get('title')
+        issue.create_key()
         issue.desc = data.get('description')
         issue.project = project
         issue.creator = g.user.get()
 
-        project.save()
+        issue.save()
+
+        return {'success': True, 'url_key': issue.url_key}
 
     @catch_common
     def get(self):

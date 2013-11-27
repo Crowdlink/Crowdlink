@@ -4,6 +4,9 @@ mainServices.factory("IssueService", ($resource) ->
     update:
       method: "PUT"
       timeout: 10000
+    create:
+      method: "POST"
+      timeout: 10000
     query:
       method: "GET"
       timeout: 10000

@@ -303,7 +303,8 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
             return True
 
     def create_key(self):
-        self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.title[:100]).lower()
+        if self.title:
+            self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.title[:100]).lower()
 
     def add_comment(self, user, body):
         # Send the actual comment to the Issue event queue
