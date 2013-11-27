@@ -121,7 +121,7 @@ class ProjectAPI(BaseResource):
     model = Project
 
     @classmethod
-    def get_project(self, data, minimal=False):
+    def get_project(cls, data, minimal=False):
         proj_id = data.pop('id', None)
 
         # Mild optimization for objects that need to get the project from
@@ -206,8 +206,8 @@ class IssueAPI(BaseResource):
     model = Issue
 
     @classmethod
-    def get_issue(self, data):
-        idval = data.get('id', None)
+    def get_issue(cls, data):
+        idval = data.pop('id', None)
         if idval:
             return Issue.objects.get(id=idval)
         else:
@@ -215,16 +215,16 @@ class IssueAPI(BaseResource):
             return Issue.objects.get(url_key=data['url_key'], project=project)
 
     @classmethod
-    def get_parent_project(self, data, **kwargs):
-        proj_data = {'url_key': data.get('purl_key'),
-                    'id': data.get('pid'),
-                    'username': data.get('username')}
+    def get_parent_project(cls, data, **kwargs):
+        proj_data = {'url_key': data.pop('purl_key', None),
+                    'id': data.pop('pid', None),
+                    'username': data.pop('username', None)}
         try:
             return ProjectAPI.get_project(proj_data, **kwargs)
         except Project.DoesNotExist:
             # re-raise the error in a manner that will get caught and returned
             # as a 404 error
-            raise self.model.DoesNotExist
+            raise cls.model.DoesNotExist
 
     @catch_create
     def post(self):
@@ -250,14 +250,14 @@ class IssueAPI(BaseResource):
 
     @catch_common
     def put(self):
-        js = request.json
+        data = request.json
         return_val = {}
 
         issue = IssueAPI.get_issue(data)
 
         self.update_model(data, issue)
 
-        sub_status = js.pop('subscribed', None)
+        sub_status = data.pop('subscribed', None)
         if sub_status == True:
             # Subscription logic, will need to be expanded to allow granular selection
             subscribe = IssueSubscriber(user=g.user.id)
@@ -265,11 +265,11 @@ class IssueAPI(BaseResource):
         elif sub_status == False:
             issue.unsubscribe(g.user)
 
-        vote_status = js.pop('vote_status', None)
+        vote_status = data.pop('vote_status', None)
         if vote_status is not None:
             issue.set_vote(vote_status)
 
-        status = js.pop('status', None)
+        status = data.pop('status', None)
         if status:
             issue.set_status(status)
 

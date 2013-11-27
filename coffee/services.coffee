@@ -2,7 +2,7 @@ mainServices = angular.module("mainServices", ["ngResource"])
 mainServices.factory("IssueService", ($resource) ->
   $resource window.api_path + "issue", {},
     update:
-      method: "POST"
+      method: "PUT"
       timeout: 10000
     query:
       method: "GET"

@@ -7,25 +7,25 @@
         %a{href: "#\{[{issue.project.get_abs_url}]}"} {[{ issue.project.name }]}
       %li
         %a{href: ""} Issues
-      %li.active {[{issue.brief}]}
+      %li.active {[{issue.title}]}
   %div
     .row
       .col-md-8.no-gutter
         %h2
-          %span{"ng-show" => "issue.user_acl.edit_brief"}
-            %span{"ng-show" => "editing.brief"}
+          %span{"ng-show" => "issue.user_acl.edit_title"}
+            %span{"ng-show" => "editing.title"}
               .input-group
-                %input.form-control{"ng-model" => "issue.brief", type: "text"}/
-                %span.btn.btn-info.input-group-addon{"ng-click" => "save('brief')"}
-                  %i.fa.fa-save{"ng-hide" => "saving.brief"}
-                  %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.brief"}
-                %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('brief')"}
+                %input.form-control{"ng-model" => "issue.title", type: "text"}/
+                %span.btn.btn-info.input-group-addon{"ng-click" => "save('title')"}
+                  %i.fa.fa-save{"ng-hide" => "saving.title"}
+                  %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.title"}
+                %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('title')"}
                   %i.fa.fa-times-circle
-            %span{"ng-hide" => "editing.brief"}
-              {[{ issue.brief }]} 
-              %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('brief')"}
-          %span{"ng-hide" => "issue.user_acl.edit_brief"}
-            {[{ issue.brief }]}
+            %span{"ng-hide" => "editing.title"}
+              {[{ issue.title }]} 
+              %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('title')"}
+          %span{"ng-hide" => "issue.user_acl.edit_title"}
+            {[{ issue.title }]}
       .col-md-4.no-gutter
         .pull-right{style: "width:50%;"}
           %a.btn.btn-default.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[issue.subscribed]", "ng-click" => "swap_save('subscribed')"}

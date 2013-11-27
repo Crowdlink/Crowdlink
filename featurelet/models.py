@@ -237,6 +237,7 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
     acl = issue_acl
     standard_join = ['get_abs_url',
+                     'title',
                      'vote_status',
                      'status',
                      'subscribed',
