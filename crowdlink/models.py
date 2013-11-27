@@ -91,6 +91,13 @@ class IssueSubscriber(db.EmbeddedDocument):
     donate = db.BooleanField(default=True)
 
 
+class SolutionSubscriber(db.EmbeddedDocument):
+    user = db.ReferenceField('User')
+    comment_notif = db.BooleanField(default=True)
+    vote = db.BooleanField(default=False)
+    status = db.BooleanField(default=True)  # status change event
+
+
 class ProjectSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
     comment_notif = db.BooleanField(default=True)
@@ -205,6 +212,112 @@ class Comment(db.EmbeddedDocument):
     def md_body(self):
         return markdown2.markdown(self.body)
 
+
+class Solution(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
+
+    id = db.ObjectIdField()
+    # key pair, unique identifier
+    url_key = db.StringField(unique=True)
+    issue = db.ReferenceField('Issue')
+
+    title = db.StringField(max_length=128, min_length=10)
+    desc = db.StringField()
+    creator = db.ReferenceField('User')
+    created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
+
+    # voting
+    vote_list = db.ListField(db.ReferenceField('User'))
+    votes = db.IntField(default=0)
+
+    # event dist
+    events = db.ListField(db.GenericEmbeddedDocumentField())
+    subscribers = db.ListField(db.EmbeddedDocumentField('SolutionSubscriber'))
+
+    meta = {'indexes': [{'fields': ['url_key', 'issue'], 'unique': True}]}
+    acl = solution_acl
+    standard_join = ['get_abs_url',
+                     'title',
+                     'subscribed',
+                     'user_acl',
+                     'created_at',
+                     '-vote_list',
+                     'id'
+                     ]
+    page_join = inherit_lst(standard_join,
+                             [{'obj': 'issue',
+                               'join_prof': 'solution_page_join'}
+                             ]
+                           )
+
+    # used for displaying the project in noifications, etc
+    brief_join = ['__dont_mongo',
+                 'title',
+                 'get_abs_url']
+
+    def roles(self, user=None):
+        """ Logic to determin what roles a person gets """
+        if not user:
+            user = g.user
+
+        roles = []
+
+        if self.project.maintainer == user:
+            roles.append('maintainer')
+
+        if self.creator == user or 'maintainer' in roles:
+            roles.append('creator')
+
+        if user.is_anonymous:
+            roles.append('anonymous')
+        else:
+            roles.append('user')
+
+        return roles
+
+    # Closevalue masking for render
+    def get_abs_url(self):
+        return "/{username}/{purl_key}/{url_key}".format(
+            purl_key=self.project.url_key,
+            username=self.project.maintainer.username,
+            url_key=self.url_key)
+
+    @property
+    def status(self):
+        return self.statuses[self._status]
+
+    def set_status(self, value):
+        """ Let the caller know if it was already set """
+        if self._status == int(value):
+            return False
+        else:
+            self._status = True
+            return True
+
+    def create_key(self):
+        if self.title:
+            self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.title[:100]).lower()
+
+    def add_comment(self, user, body):
+        # Send the actual comment to the Issue event queue
+        c = Comment(user=user.id, body=body)
+        c.distribute(self)
+
+
+    # Github Synchronization Logic
+    # ========================================================================
+    def gh_desync(self, flatten=False):
+        """ Used to disconnect an Issue from github. Really just a
+        trickle down call from de-syncing the project, but nicer to keep the
+        logic in here"""
+        self.gh_synced = False
+        # Remove indexes if we're flattening
+        if flatten:
+            self.gh_issue_num = None
+            self.gh_labels = []
+        try:
+            self.save()
+        except Exception:
+            catch_error_graceful()
 
 class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
 
