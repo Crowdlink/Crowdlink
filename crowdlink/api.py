@@ -3,7 +3,8 @@ from flask.ext.login import login_required, logout_user, current_user, login_use
 from flask.ext.restful import Resource
 
 from . import root, lm, app, api_restful
-from .models import User, Project, Issue, UserSubscriber, ProjectSubscriber, IssueSubscriber, Transaction
+from .models import (User, Project, Issue, UserSubscriber, ProjectSubscriber,
+                     IssueSubscriber, Transaction, Solution, SolutionSubscriber)
 from .lib import get_json_joined, get_joined, redirect_angular
 from .util import convert_args
 
@@ -203,6 +204,77 @@ class ProjectAPI(BaseResource):
 
         return {'success': True}
 
+
+# Solution getter/setter
+# =============================================================================
+class SolutionAPI(BaseResource):
+    model = Solution
+
+    @classmethod
+    def get_solution(cls, data):
+        return Issue.objects.get(id=data['id'])
+
+    @catch_create
+    def post(self):
+        data = request.json
+        issue = IssueAPI.get_issue(data)
+        # ensure that the user was allowed to insert that issue
+        assert issue.can('action_add_solution')
+
+        sol = Solution()
+        sol.title = data.get('title')
+        sol.create_key()
+        sol.desc = data.get('description')
+        sol.issue = issue
+        sol.creator = g.user.get()
+
+        sol.save()
+
+        return {'success': True, 'url_key': sol.url_key}
+
+    @catch_common
+    def get(self):
+        data = request.dict_args()
+        join_prof = data.get('join_prof', 'standard_join')
+
+        sol = SolutionAPI.get_solution(data)
+        return get_joined(sol, join_prof=join_prof)
+
+
+    @catch_common
+    def put(self):
+        data = request.json
+        return_val = {}
+
+        sol = IssueAPI.get_issue(data)
+
+        # updating of regular attributes
+        self.update_model(data, sol)
+
+        sub_status = data.pop('subscribed', None)
+        if sub_status:
+            assert sol.can('action_watch')
+        if sub_status == True:
+            # Subscription logic, will need to be expanded to allow granular selection
+            subscribe = SolutionSubscriber(user=g.user.id)
+            sol.subscribe(subscribe)
+        elif sub_status == False:
+            sol.unsubscribe(g.user)
+
+        vote_status = data.pop('vote_status', None)
+        if vote_status:
+            assert sol.can('action_vote')
+        if vote_status is not None:
+            sol.set_vote(vote_status)
+
+        try:
+            sol.save()
+        except mongoengine.errors.ValidationError as e:
+            return jsonify(success=False, validation_errors=e.to_dict())
+
+        # return a true value to the user
+        return_val.update({'success': True})
+        return jsonify(return_val)
 
 # Issue getter/setter
 # =============================================================================
