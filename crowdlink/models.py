@@ -10,7 +10,6 @@ from enum import Enum
 import cryptacular.bcrypt
 import mongoengine
 import re
-import markdown2
 import werkzeug
 import json
 import bson
