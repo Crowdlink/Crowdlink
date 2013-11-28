@@ -1,0 +1,51 @@
+.col.header-col-light-gray.row{"ng-init" => "init()"}
+  %br/
+  %br/
+  %br/
+  .col-lg-10
+    %h3.col-lg-offset-4
+      Create a new Solution
+    %br
+    %form.form-horizontal{name: "form", novalidate: ""}
+      .alert-danger.alert.fade{"ng-show" => "errors", "ng-cloak" => ""}
+        %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+        %ul{"ng-show" => "errors.length > 1"}
+          %li{"ng-repeat" => "error in errors"} {[{error}]}
+      .form-group{"valid-class" => "form.title"}
+        %label.col-lg-3.control-label
+          Title
+        .col-lg-8
+          %input.form-control{name: "title", type: "text", "ng-model" => "title",
+            required: "", "ng-change" => "mod_title()", "ng-minlength" => "10",
+            "ng-maxlength" => "64"}
+          .help-block{"ng-show" => "form.title.$error.required"}
+            Please enter a title description for your solution
+          .help-block{"ng-show" => "form.title.$error.maxlength"}
+            Cannot be longer than 128 characters
+          .help-block{"ng-show" => "form.title.$error.minlength"}
+            Must be longer than 10 characters
+          %span{"ng-show" => "form.title.$valid"}
+            %br
+            %b Solutions with similar titles
+            %table.table.table-hover
+              %tbody
+                %tr.fade{"ng-repeat" => "sol in solutions | fuseImpFilter:title"}
+                  %td
+                    %a{:href => "\#{[{ sol.get_abs_url }]}"}
+                      %i.fa.fa-circle &nbsp;
+                      %span{"ng-bind-html" => "sol.title | searchFilter:title"}
+      .form-group{"valid-class" => "form.description"}
+        %label.col-lg-3.control-label
+          Description
+        .col-lg-8
+          %textarea.form-control{name: "description", type: "text",
+            "ng-model" => "description"}
+      .form-group
+        .col-lg-3
+        .col-lg-8
+          %button.btn.btn-primary{name: "create", "ng-click" => "submit()", type: "submit",
+            "ng-disabled" => "!form.$valid", type: "submit"}
+            Create
+    %br/
+    %br/
+    %br/

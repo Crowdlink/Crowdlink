@@ -3,7 +3,7 @@ from flask import url_for, session, g, current_app, flash
 from . import db, github
 from .exc import AccessDenied
 from .util import flatten_dict, inherit_lst
-from .acl import issue_acl, project_acl
+from .acl import issue_acl, project_acl, solution_acl
 
 from enum import Enum
 
@@ -374,6 +374,9 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
                  'get_abs_url',
                  {'obj': 'project',
                   'join_prof': 'disp_join'}]
+
+    def solutions(self):
+        return Solution.objects(issue=self)
 
     def roles(self, user=None):
         """ Logic to determin what roles a person gets """

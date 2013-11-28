@@ -470,6 +470,57 @@ mainControllers.controller('newissueController', ($scope, $rootScope, $routePara
     )
 )
 
+# newSolutionController =======================================================
+mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeParams, $location, IssueService)->
+  $scope.init = () ->
+    $rootScope.title = "New Issue"
+    IssueService.query(
+      username: $routeParams.username
+      purl_key: $routeParams.purl_key
+      url_key: $routeParams.url_key
+      join_prof: 'solution_join'
+      issue_join_prof: 'disp_join'
+    , (value) ->
+      if 'success' not of value
+        $scope.sols = value.solutions
+      else
+        if 'message' of value
+          text = " #{value.message}"
+        else
+          text = "There was an unknown error committing your action. #{value.code}"
+          noty
+              text: text
+              type: 'error'
+              timout: 2000
+    )
+  $scope.submit = ->
+    $scope.error_header = ""
+    $scope.errors = []
+    SolutionService.create(
+      username: $routeParams.username
+      purl_key: $routeParams.url_key
+      description: $scope.description
+      title: $scope.title
+    ,(value) ->
+      if 'success' of value and value.success
+        $location.path("/" + $routeParams.username + "/" + $routeParams.url_key + "/" + value.url_key).replace()
+      else
+        if 'message' of value
+          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+          $scope.errors = [value.message, ]
+        else if 'validation_errors' of value
+          $scope.errors = []
+          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+          for idx of value.validation_errors
+            capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
+            $scope.errors.push(capped + value.validation_errors[idx])
+        else
+          $scope.errors = [$rootScope.strings.err_comm, ]
+    , (error) ->
+      debugger
+    )
+)
+
 # projectSettingsController ====================================================
 mainControllers.controller('projectSettingsController', ($scope, $rootScope, $routeParams, ProjectService)->
   $scope.init = () ->

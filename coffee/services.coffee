@@ -13,6 +13,20 @@ mainServices.factory("IssueService", ($resource) ->
       isArray: false
 )
 
+mainServices.factory("SolutionService", ($resource) ->
+  $resource window.api_path + "solution", {},
+    update:
+      method: "PUT"
+      timeout: 10000
+    create:
+      method: "POST"
+      timeout: 10000
+    query:
+      method: "GET"
+      timeout: 10000
+      isArray: false
+)
+
 mainServices.factory("UserService", ($resource) ->
   $resource window.api_path + "user", {},
     login:

@@ -22,6 +22,7 @@ module.exports = (grunt) ->
           "templates/403.html": "haml/403.haml"
           "templates/new_issue.html": "haml/new_issue.haml"
           "templates/new_project.html": "haml/new_project.haml"
+          "templates/new_solution.html": "haml/new_solution.haml"
           "templates/user_home.html": "haml/user_home.haml"
           "templates/base.html": "haml/base.haml"
           "templates/psettings.html": "haml/psettings.haml"

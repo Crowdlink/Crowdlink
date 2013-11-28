@@ -326,6 +326,15 @@ class IssueAPI(BaseResource):
         join_prof = data.get('join_prof', 'standard_join')
 
         issue = IssueAPI.get_issue(data)
+
+        # not currently handled elegantly, here's a manual workaround
+        if join_prof == 'solution_join':
+            solutions = issue.solutions()
+            solution_join_prof = data.pop('solution_join_prof', 'standard_join')
+            for sol in solutions:
+                assert sol.can('view_brief_join')
+            return {'solutions': get_joined(solutions, solution_join_prof)}
+
         return get_joined(issue, join_prof=join_prof)
 
 
@@ -370,6 +379,7 @@ class IssueAPI(BaseResource):
 
 api_restful.add_resource(ProjectAPI, '/api/project')
 api_restful.add_resource(IssueAPI, '/api/issue')
+api_restful.add_resource(SolutionAPI, '/api/solution')
 
 # User getter/setter
 # =============================================================================
