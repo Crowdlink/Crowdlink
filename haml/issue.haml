@@ -55,6 +55,9 @@
               %i.fa.fa-plus-circle{"ng-hide" => "saving.open"}
               %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.open"}
               \ Open
+          %a.btn.btn-info.fill-link{:href => "\#{[{issue.get_abs_url}]}/new_solution"}
+            %i.fa.fa-large.fa-plus
+            Add a Solution
           .btn-group-vertical{"ng-show" => "issue.open"}
             %label.btn{"ng-class" => "{true: 'active btn-info', false: 'btn-default'}[issue.close_reason==reason]", "ng-repeat" => "reason in issue.close_reason"}
               %input.hide{"ng-model" => "issue.close_reason", "ng-value" => "reason", type: "radio"}/

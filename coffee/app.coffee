@@ -36,6 +36,9 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/:username/:url_key/new_issue",
     templateUrl: "templates/new_issue.html"
     controller: "newissueController"
+  ).when("/:username/:purl_key/:url_key/new_solution",
+    templateUrl: "templates/new_solution.html"
+    controller: "newSolutionController"
   ).when("/:username/:url_key/psettings",
     templateUrl: "templates/psettings.html"
     controller: "projectSettingsController"

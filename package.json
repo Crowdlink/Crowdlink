@@ -5,6 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:whoknows118/featurelet.git"
+  },
   "author": "Isaac Cook",
   "devDependencies": {
     "grunt": "~0.4.1",

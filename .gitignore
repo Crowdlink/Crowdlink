@@ -53,6 +53,5 @@ nosetests.xml
 .sass-cache
 tags
 
-reload
 uwsgi.pid
 uwsgi.log

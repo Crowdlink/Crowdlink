@@ -323,10 +323,24 @@ class IssueAPI(BaseResource):
     @catch_common
     def get(self):
         data = request.dict_args()
-        join_prof = data.get('join_prof', 'standard_join')
 
+        reval = {}
         issue = IssueAPI.get_issue(data)
-        return get_joined(issue, join_prof=join_prof)
+
+        # not currently handled elegantly, here's a manual workaround
+        sol_join_prof = data.pop('solution_join_prof', 'standard_join')
+        if sol_join_prof:
+            solutions = issue.solutions()
+            for sol in solutions:
+                assert sol.can('view_brief_join')
+            retval['solutions'] = get_joined(solutions, sol_join_prof)
+
+
+        join_prof = data.get('join_prof', None)
+        if join_prof:
+            reval.update(get_joined(issue, join_prof=join_prof))
+
+        return retval
 
 
     @catch_common
@@ -370,6 +384,7 @@ class IssueAPI(BaseResource):
 
 api_restful.add_resource(ProjectAPI, '/api/project')
 api_restful.add_resource(IssueAPI, '/api/issue')
+api_restful.add_resource(SolutionAPI, '/api/solution')
 
 # User getter/setter
 # =============================================================================

@@ -1,0 +1,4 @@
+MONGODB_SETTINGS = {'DB': "crowdlink"}
+
+GITHUB_CONSUMER_KEY = "fakekey"
+GITHUB_CONSUMER_SECRET = "fakesecret"
