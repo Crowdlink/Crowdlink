@@ -323,19 +323,24 @@ class IssueAPI(BaseResource):
     @catch_common
     def get(self):
         data = request.dict_args()
-        join_prof = data.get('join_prof', 'standard_join')
 
+        reval = {}
         issue = IssueAPI.get_issue(data)
 
         # not currently handled elegantly, here's a manual workaround
-        if join_prof == 'solution_join':
+        sol_join_prof = data.pop('solution_join_prof', 'standard_join')
+        if sol_join_prof:
             solutions = issue.solutions()
-            solution_join_prof = data.pop('solution_join_prof', 'standard_join')
             for sol in solutions:
                 assert sol.can('view_brief_join')
-            return {'solutions': get_joined(solutions, solution_join_prof)}
+            retval['solutions'] = get_joined(solutions, sol_join_prof)
 
-        return get_joined(issue, join_prof=join_prof)
+
+        join_prof = data.get('join_prof', None)
+        if join_prof:
+            reval.update(get_joined(issue, join_prof=join_prof))
+
+        return retval
 
 
     @catch_common
