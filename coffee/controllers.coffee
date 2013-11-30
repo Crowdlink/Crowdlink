@@ -1,5 +1,71 @@
 mainControllers = angular.module("mainControllers", [])
 
+# EditController ==============================================================
+parentEditController = ($scope, $timeout, IssueService, ProjectService, SolutionService) ->
+  $scope.toggle = (s) ->
+      $scope.$eval("prev.#{s} = #{s}; editing.#{s} = !editing.#{s}")
+
+  $scope.swap_save = (s) ->
+      val = $scope.$eval(s)  # pull out the value
+      frag = s.split('.').pop()  # get the attribute name
+      extra_data = {}
+      extra_data[frag] = !val  # build a data dictionary for save
+      $scope.save(s, extra_data, ->
+        # only swap the value after save complete
+        $scope.issue[frag] = !$scope.issue[frag]
+      )
+
+  $scope.save = (s, extra_data={}, callback) ->
+      object = s.split('.')
+      frag = object.pop()  # get the attribute being saved on the object
+      object = $scope.$eval(object.join('.'))  # get the actual object
+      set('saving', s, true)
+
+      # abstract out constructing the payload to the controller level
+      data = $scope.build_data(frag)
+
+      # determine the service to use to save
+      cls = object._cls
+      if cls == 'Issue'
+        service = IssueService
+      else if cls == 'Project'
+        service = ProjectService
+      else if cls == 'Solution'
+        service = SolutionService
+
+      service.update(
+        $.extend(data, extra_data)
+      ,(value) -> # Function to be run when function returns
+          if 'success' of value and value.success
+              $timeout ->
+                if callback
+                    callback()
+                set('saving', s, false)
+                set('editing', s, false)
+              , 400
+          else
+              if 'message' of value
+                  text = "Error communicating with server. #{value.message}"
+              else
+                  text = "There was an unknown error committing your action. #{value.code}"
+              noty
+                  text: text
+                  type: 'error'
+                  timout: 2000
+              $scope.saving[s] = false
+              $scope.editing[s] = false
+      )
+
+    get = (prefix, dotted) ->
+      $scope.$eval(prefix + '.' + dotted)
+    set = (prefix, dotted, val) ->
+      tmp = $scope.$eval(prefix + '.' + dotted + '=' + val)
+
+    $scope.revert = (s) ->
+      $scope.$eval("#{s} = prev.#{s}")
+      $scope.toggle(s)
+
+
 # RootController ==============================================================
 mainControllers.controller('rootController', ($scope, $location, $rootScope, $http, UserService)->
     $scope.init = (logged_in, user_id) ->
@@ -130,7 +196,8 @@ mainControllers.controller('solutionController',
 
 # IssueController ============================================================
 mainControllers.controller('issueController',
-  ($scope, $routeParams, $rootScope, IssueService, $timeout)->
+  ($scope, $routeParams, $rootScope, IssueService, $injector, $timeout)->
+    $injector.invoke(parentEditController, this, {$scope: $scope})
     $scope.init = () ->
         IssueService.query(
             username: $routeParams.username
@@ -168,62 +235,18 @@ mainControllers.controller('issueController',
         $rootScope.title = "Issue"
     )
 
-    $scope.revert = (s) ->
-        $scope.issue[s] = $scope.prev.issue[s]
-        $scope.toggle(s)
+    $scope.build_data = (frag) ->
+      data =
+        id: $scope.issue.id
+      if frag == 'title'
+        data.title = $scope.issue.title
+      if frag == 'desc'
+        data.desc = $scope.issue.desc
+      if frag == 'open'
+        data.open = $scope.issue.open
 
-    get = (prefix, dotted) ->
-      $scope.$eval(prefix + '.' + dotted)
-    set = (prefix, dotted, val) ->
-      tmp = $scope.$eval(prefix + '.' + dotted + '=' + val)
+      return data
 
-    $scope.save = (s, extra_data={}, callback) ->
-        frag = s.split('.').pop()
-        set('saving', s, true)
-        data =
-          id: $scope.issue.id
-        if frag == 'title'
-          data.title = $scope.issue.title
-        if frag == 'desc'
-          data.desc = $scope.issue.desc
-        if frag == 'open'
-          data.open = $scope.issue.open
-
-        IssueService.update(
-          $.extend(data, extra_data)
-        ,(value) -> # Function to be run when function returns
-            if 'success' of value and value.success
-                $timeout ->
-                  if callback
-                      callback()
-                  set('saving', s, false)
-                  set('editing', s, false)
-                , 400
-            else
-                if 'message' of value
-                    text = "Error communicating with server. #{value.message}"
-                else
-                    text = "There was an unknown error committing your action. #{value.code}"
-                noty
-                    text: text
-                    type: 'error'
-                    timout: 2000
-                $scope.saving[s] = false
-                $scope.editing[s] = false
-        )
-
-    $scope.swap_save = (s) ->
-      val = $scope.$eval(s)
-      frag = s.split('.').pop()
-      extra_data = {}
-      extra_data[frag] = !val
-      $scope.save(s, extra_data, ->
-        $scope.issue[frag] = !$scope.issue[frag]
-      )
-
-    $scope.toggle = (s) ->
-      $scope.prev.issue[s] = $scope.issue[s]
-      $scope.editing[s] = !$scope.editing[s]
 )
 
 # AccountController ===========================================================

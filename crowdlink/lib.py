@@ -95,17 +95,23 @@ def get_joined(obj, join_prof="standard_join"):
         else:
             sub_obj.append(key)
 
+    include_base = False
+    try:
+        join_keys.remove('__dont_mongo')
+    except ValueError:
+        include_base = True
     # run the primary object join
     join_vals = obj.jsonize(join_keys, raw=True)
     # catch our special config key
-    if '__dont_mongo' in join_keys:
-        dct = join_vals
-    else:
+    if include_base:
         dct = _json_convert(obj.to_mongo())
         # Remove keys from the bson that the join prefixes with a -
         for key in remove:
             dct.pop(key, None)
         dct.update(join_vals)
+    else:
+        dct = join_vals
+    dct['_cls'] = obj.__class__.__name__
 
     # run all the subobject joins
     for conf in sub_obj:

@@ -358,7 +358,6 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
                      '-vote_list',
                      '-subscribers',
                      'id',
-                     'project',
                      ]
     page_join = inherit_lst(standard_join,
                              [{'obj': 'project',
