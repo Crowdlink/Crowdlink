@@ -150,13 +150,16 @@ mainControllers.controller('issueController',
         )
         $rootScope.loading = true
         $scope.editing =
-          title: false
-          desc: false
+          issue:
+            title: false
+            desc: false
         $scope.saving =
-          title: false
-          desc: false
-          close_reason: false
-          status: false
+          issue:
+            title: false
+            desc: false
+            close_reason: false
+            status: false
+            subscribed: false
 
     $scope.$watch('issue.title',(val) ->
       if val
@@ -169,25 +172,33 @@ mainControllers.controller('issueController',
         $scope.issue[s] = $scope.prev.issue[s]
         $scope.toggle(s)
 
+    get = (prefix, dotted) ->
+      $scope.$eval(prefix + '.' + dotted)
+    set = (prefix, dotted, val) ->
+      tmp = $scope.$eval(prefix + '.' + dotted + '=' + val)
+
     $scope.save = (s, extra_data={}, callback) ->
-        $scope.saving[s] = true
+        frag = s.split('.').pop()
+        set('saving', s, true)
         data =
           id: $scope.issue.id
-        if s == 'title'
+        if frag == 'title'
           data.title = $scope.issue.title
-        if s == 'desc'
+        if frag == 'desc'
           data.desc = $scope.issue.desc
-        if s == 'open'
+        if frag == 'open'
           data.open = $scope.issue.open
 
         IssueService.update(
           $.extend(data, extra_data)
         ,(value) -> # Function to be run when function returns
             if 'success' of value and value.success
-                if callback
-                    callback()
-                $scope.saving[s] = false
-                $scope.editing[s] = false
+                $timeout ->
+                  if callback
+                      callback()
+                  set('saving', s, false)
+                  set('editing', s, false)
+                , 400
             else
                 if 'message' of value
                     text = "Error communicating with server. #{value.message}"
@@ -202,11 +213,12 @@ mainControllers.controller('issueController',
         )
 
     $scope.swap_save = (s) ->
-      s.send_val = !s.val
+      val = $scope.$eval(s)
+      frag = s.split('.').pop()
       extra_data = {}
-      extra_data[s] = !$scope.issue[s]
+      extra_data[frag] = !val
       $scope.save(s, extra_data, ->
-        $scope.issue[s] = !$scope.issue[s]
+        $scope.issue[frag] = !$scope.issue[frag]
       )
 
     $scope.toggle = (s) ->

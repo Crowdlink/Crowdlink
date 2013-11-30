@@ -252,3 +252,29 @@ mainApp.directive "uniqueServerside", ["$http", "$timeout", ($http, $timeout) ->
       ).error (data) ->
         scope.busy = false
 ]
+
+mainApp.directive "toggleButton", ["$http", "$timeout", ($http, $compile) ->
+  restrict: "A"
+  link: (scope, elem, attrs, ctrl) ->
+    attr = attrs.toggleButton
+    icon = elem.find('i')
+    text = elem.find('.in-button')
+    scope.$watch('saving.' + attr, (val) ->
+      if val
+        icon.removeClass()
+        icon.addClass('fa fa-spin fa-spinner')
+    )
+
+    scope.$watch(attr, (val) ->
+      if val
+        icon.removeClass()
+        icon.addClass('fa ' + icon.attr('on'))
+        elem.removeClass('active')
+        text.html(text.attr('on'))
+      else
+        icon.removeClass()
+        icon.addClass('fa ' + icon.attr('off'))
+        elem.addClass('active')
+        text.html(text.attr('off'))
+    )
+]

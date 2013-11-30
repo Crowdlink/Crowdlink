@@ -26,42 +26,23 @@
               %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('title')"}
           %span{"ng-hide" => "issue.user_acl.edit_title"}
             {[{ issue.title }]}
-      .col-md-4.no-gutter
-        .pull-right{style: "width:50%;"}
-          %a.btn.btn-default.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[issue.subscribed]", "ng-click" => "swap_save('subscribed')"}
-            %span{"ng-hide" => "issue.subscribed"}
-              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
-              %i.fa.fa-eye{"ng-hide" => "saving.subscribed"}
-              \ Watch
-            %span{"ng-show" => "issue.subscribed"}
-              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.subscribed"}
-              %i.fa.fa-eye-slash{"ng-hide" => "saving.subscribed"}
-              \ Unwatch
-          %a.btn.btn-info.fill-link{"ng-class" => "{true: 'btn-info active', false: 'btn-info'}[issue.vote_status]", "ng-click" => "swap_save('vote_status')"}
-            %span{"ng-hide" => "issue.vote_status"}
-              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.vote_status"}
-              %i.fa.fa-plus-circle{"ng-hide" => "saving.vote_status"}
-              \ Vote
-            %span{"ng-show" => "issue.vote_status"}
-              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.vote_status"}
-              %i.fa.fa-minus-circle{"ng-hide" => "saving.vote_status"}
-              \ Unvote
-          %a.btn.fill-link{"ng-class" => "{false: 'btn-info active', true: 'btn-info'}[issue.open]", "ng-click" => "swap_save('open')", "ng-show" => "issue.user_acl.edit__close_reason"}
-            %span{"ng-show" => "issue.open"}
-              %i.fa.fa-minus-circle{"ng-hide" => "saving.open"}
-              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.open"}
-              \ Close
-            %span{"ng-hide" => "issue.open"}
-              %i.fa.fa-plus-circle{"ng-hide" => "saving.open"}
-              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.open"}
-              \ Open
-          %a.btn.btn-info.fill-link{:href => "\#{[{issue.get_abs_url}]}/new_solution"}
+          %br
+          %a.button{"toggle-button" => "issue.subscribed",
+          "ng-click" => "swap_save('issue.subscribed')"}
+            %i{on: "fa-eye", off: "fa-eye-slash"}
+            .in-button{on: "Watch", off: "Unwatch"}
+          %a.button{"toggle-button" => "issue.vote_status",
+          "ng-click" => "swap_save('issue.vote_status')"}
+            %i{on: "fa-minus-circle", off: "fa-plus-circle"}
+            .in-button{on: "Vote", off: "Unvote"}
+          %a.button.active{:href => "\#{[{issue.get_abs_url}]}/new_solution"}
             %i.fa.fa-large.fa-plus
-            Add a Solution
+            \ Add a Solution
           .btn-group-vertical{"ng-show" => "issue.open"}
             %label.btn{"ng-class" => "{true: 'active btn-info', false: 'btn-default'}[issue.close_reason==reason]", "ng-repeat" => "reason in issue.close_reason"}
               %input.hide{"ng-model" => "issue.close_reason", "ng-value" => "reason", type: "radio"}/
               {[{ val }]}
+      .col-md-4.no-gutter
     %br/
     .row
       %h4

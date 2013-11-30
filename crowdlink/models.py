@@ -356,6 +356,7 @@ class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
                      'user_acl',
                      'created_at',
                      '-vote_list',
+                     '-subscribers',
                      'id',
                      'project',
                      ]

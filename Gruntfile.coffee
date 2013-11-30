@@ -64,6 +64,8 @@ module.exports = (grunt) ->
         command: 'uwsgi --stop uwsgi.pid; sleep 1.5; uwsgi --ini uwsgi.ini'
 
     watch:
+      options:
+        livereload: true
       bootstrap:
         files: ['**/*.less']
         tasks: ['less:development']
