@@ -83,10 +83,13 @@ def catch_common(func):
         try:
             return func(self, *args, **kwargs)
         except KeyError:
+            current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
             return {'error': 'Incorrect syntax'}, 400
-        except self.model.DoesNotExist:
+        except mongoengine.queryset.DoesNotExist:
+            current_app.logger.debug("Does not exist", exc_info=True)
             return {'error': 'Could not be found'}, 404
         except AssertionError:  # all permissions should be done via assertions
+            current_app.logger.debug("Permission error", exc_info=True)
             return {'error': 'You don\'t have permission to do that'}, 403
 
     return decorated
@@ -98,12 +101,16 @@ def catch_create(func):
         try:
             return func(self, *args, **kwargs)
         except KeyError:
+            current_app.logger.debug("400: Incorrect syntax", exc_info=True)
             return {'error': 'Incorrect syntax'}, 400
         except mongoengine.errors.ValidationError as e:
+            current_app.logger.debug("Validation Error", exc_info=True)
             return {'success': False, 'validation_errors': e.to_dict()}
         except AssertionError:  # all permissions should be done via assertions
+            current_app.logger.debug("Permission error", exc_info=True)
             return {'error': 'You don\'t have permission to do that'}, 403
         except mongoengine.errors.NotUniqueError as e:
+            current_app.logger.debug("Attempted to insert duplicate", exc_info=True)
             return {'success': False, 'message': e.message}
 
     return decorated
@@ -212,7 +219,8 @@ class SolutionAPI(BaseResource):
 
     @classmethod
     def get_solution(cls, data):
-        return Issue.objects.get(id=data['id'])
+        id = data.pop('id')
+        return Solution.objects.get(id=id)
 
     @catch_create
     def post(self):
@@ -226,11 +234,12 @@ class SolutionAPI(BaseResource):
         sol.create_key()
         sol.desc = data.get('description')
         sol.issue = issue
+        sol.project = issue.project
         sol.creator = g.user.get()
 
         sol.save()
 
-        return {'success': True, 'url_key': sol.url_key}
+        return {'success': True, 'url_key': sol.url_key, 'id': str(sol.id)}
 
     @catch_common
     def get(self):
@@ -246,7 +255,7 @@ class SolutionAPI(BaseResource):
         data = request.json
         return_val = {}
 
-        sol = IssueAPI.get_issue(data)
+        sol = SolutionAPI.get_solution(data)
 
         # updating of regular attributes
         self.update_model(data, sol)
@@ -318,27 +327,27 @@ class IssueAPI(BaseResource):
 
         issue.save()
 
-        return {'success': True, 'url_key': issue.url_key}
+        return {'success': True, 'url_key': issue.url_key, 'id': str(issue.id)}
 
     @catch_common
     def get(self):
         data = request.dict_args()
 
-        reval = {}
+        retval = {}
         issue = IssueAPI.get_issue(data)
 
         # not currently handled elegantly, here's a manual workaround
-        sol_join_prof = data.pop('solution_join_prof', 'standard_join')
+        sol_join_prof = data.pop('solution_join_prof', None)
         if sol_join_prof:
             solutions = issue.solutions()
             for sol in solutions:
-                assert sol.can('view_brief_join')
+                assert sol.can('view_' + sol_join_prof)
             retval['solutions'] = get_joined(solutions, sol_join_prof)
 
 
         join_prof = data.get('join_prof', None)
         if join_prof:
-            reval.update(get_joined(issue, join_prof=join_prof))
+            retval.update(get_joined(issue, join_prof=join_prof))
 
         return retval
 

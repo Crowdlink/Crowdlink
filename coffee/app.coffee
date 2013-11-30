@@ -30,6 +30,9 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/account/:subsection",
     templateUrl: "templates/account.html"
     controller: "accountController"
+  ).when("/s/:id/:url_key/",
+    templateUrl: "templates/solution.html"
+    controller: "solutionController"
   ).when("/:username/:url_key",
     templateUrl: "templates/project.html"
     controller: "projectController"

@@ -48,6 +48,86 @@ mainControllers.controller('rootController', ($scope, $location, $rootScope, $ht
     $rootScope.strings =
       err_comm: "Error communicating with server."
 )
+
+# SolutionController ============================================================
+mainControllers.controller('solutionController',
+  ($scope, $routeParams, $rootScope, SolutionService, $timeout)->
+    $scope.init = () ->
+        SolutionService.query(
+            id: $routeParams.id
+            join_prof: "page_join"
+        ,(value) ->
+            $timeout ->
+                $scope.sol = value
+                $scope.prev =
+                    sol: $.extend({}, value)
+                $timeout ->
+                    $rootScope.loading = false
+                , 200
+            , 500
+        )
+        $rootScope.loading = true
+        $scope.editing =
+          title: false
+          desc: false
+        $scope.saving =
+          title: false
+          desc: false
+
+    $scope.$watch('sol.title',(val) ->
+      if val
+        $rootScope.title = "Solution #{$scope.issue.title} for Issues #{$scope.sol.issue.title}"
+      else
+        $rootScope.title = "Solution"
+    )
+
+    $scope.revert = (s) ->
+        $scope.sol[s] = $scope.prev.sol[s]
+        $scope.toggle(s)
+
+    $scope.save = (s, extra_data={}, callback) ->
+        $scope.saving[s] = true
+        data =
+          id: $scope.sol.id
+        if s == 'title'
+          data.title = $scope.sol.title
+        if s == 'desc'
+          data.desc = $scope.sol.desc
+
+        SolutionService.update(
+          $.extend(data, extra_data)
+        ,(value) -> # Function to be run when function returns
+            if 'success' of value and value.success
+                if callback
+                    callback()
+                $scope.saving[s] = false
+                $scope.editing[s] = false
+            else
+                if 'message' of value
+                    text = "Error communicating with server. #{value.message}"
+                else
+                    text = "There was an unknown error committing your action. #{value.code}"
+                noty
+                    text: text
+                    type: 'error'
+                    timout: 2000
+                $scope.saving[s] = false
+                $scope.editing[s] = false
+        )
+
+    $scope.swap_save = (s) ->
+      s.send_val = !s.val
+      extra_data = {}
+      extra_data[s] = !$scope.sol[s]
+      $scope.save(s, extra_data, ->
+        $scope.sol[s] = !$scope.sol[s]
+      )
+
+    $scope.toggle = (s) ->
+      $scope.prev.sol[s] = $scope.sol[s]
+      $scope.editing[s] = !$scope.editing[s]
+)
+
 # IssueController ============================================================
 mainControllers.controller('issueController',
   ($scope, $routeParams, $rootScope, IssueService, $timeout)->
@@ -57,6 +137,7 @@ mainControllers.controller('issueController',
             purl_key: $routeParams.purl_key
             url_key: $routeParams.url_key
             join_prof: "page_join"
+            solution_join_prof: "page_join"
         ,(value) ->
             $timeout ->
                 $scope.issue = value
@@ -471,15 +552,14 @@ mainControllers.controller('newissueController', ($scope, $rootScope, $routePara
 )
 
 # newSolutionController =======================================================
-mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeParams, $location, IssueService)->
+mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeParams, $location, IssueService, SolutionService)->
   $scope.init = () ->
     $rootScope.title = "New Issue"
     IssueService.query(
       username: $routeParams.username
       purl_key: $routeParams.purl_key
       url_key: $routeParams.url_key
-      join_prof: 'solution_join'
-      issue_join_prof: 'disp_join'
+      solution_join_prof: 'disp_join'
     , (value) ->
       if 'success' not of value
         $scope.sols = value.solutions
@@ -498,12 +578,13 @@ mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeP
     $scope.errors = []
     SolutionService.create(
       username: $routeParams.username
-      purl_key: $routeParams.url_key
+      purl_key: $routeParams.purl_key
+      url_key: $routeParams.url_key
       description: $scope.description
       title: $scope.title
     ,(value) ->
       if 'success' of value and value.success
-        $location.path("/" + $routeParams.username + "/" + $routeParams.url_key + "/" + value.url_key).replace()
+        $location.path("/s/" + value.id + "/" + value.url_key).replace()
       else
         if 'message' of value
           $scope.error_header = "A server side validation error occured, this should not be a common occurance"

@@ -218,6 +218,7 @@ class Solution(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
     # key pair, unique identifier
     url_key = db.StringField(unique=True)
     issue = db.ReferenceField('Issue')
+    project = db.ReferenceField('Project')
 
     title = db.StringField(max_length=128, min_length=10)
     desc = db.StringField()
@@ -244,7 +245,7 @@ class Solution(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
                      ]
     page_join = inherit_lst(standard_join,
                              [{'obj': 'issue',
-                               'join_prof': 'solution_page_join'}
+                               'join_prof': 'page_join'}
                              ]
                            )
 
@@ -275,9 +276,8 @@ class Solution(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
 
     # Closevalue masking for render
     def get_abs_url(self):
-        return "/{username}/{purl_key}/{url_key}".format(
-            purl_key=self.project.url_key,
-            username=self.project.maintainer.username,
+        return "/{id}/{url_key}".format(
+            id=self.id,
             url_key=self.url_key)
 
     @property
