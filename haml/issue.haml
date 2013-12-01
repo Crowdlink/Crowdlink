@@ -29,12 +29,12 @@
           %br
           %a.button{"toggle-button" => "issue.subscribed",
           "ng-click" => "swap_save('issue.subscribed')"}
-            %i{on: "fa-eye", off: "fa-eye-slash"}
-            .in-button{on: "Watch", off: "Unwatch"}
+            %i{off: "fa-eye", on: "fa-eye-slash"}
+            .in-button{off: "Watch", on: "Unwatch"}
           %a.button{"toggle-button" => "issue.vote_status",
           "ng-click" => "swap_save('issue.vote_status')"}
             %i{on: "fa-minus-circle", off: "fa-plus-circle"}
-            .in-button{on: "Vote", off: "Unvote"}
+            .in-button{off: "Vote", on: "Unvote"}
           %a.button.active{:href => "\#{[{issue.get_abs_url}]}/new_solution"}
             %i.fa.fa-large.fa-plus
             \ Add a Solution

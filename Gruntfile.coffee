@@ -38,6 +38,8 @@ module.exports = (grunt) ->
           "static/js/controllers.js": "coffee/controllers.coffee"
           "static/js/services.js": "coffee/services.coffee"
           "static/js/lib.js": "coffee/lib.coffee"
+          "static/js/noty_theme.js": "coffee/noty_theme.coffee"
+          "static/js/noty_topcenter.js": "coffee/noty_topcenter.coffee"
 
     compass:
       development:

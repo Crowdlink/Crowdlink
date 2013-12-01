@@ -149,19 +149,24 @@ class ProjectAPI(BaseResource):
     @catch_common
     def get(self):
         data = request.dict_args()
-        join_prof = data.pop('join_prof', 'standard_join')
+        join_prof = data.pop('join_prof', None)
         project = self.get_project(data)
+        retval = {}
 
         # not currently handled elegantly, here's a manual workaround
-        if join_prof == 'issue_join':
+        issue_join_prof = data.pop('issue_join_prof', None)
+        if issue_join_prof:
             issues = project.issues()
-            issue_join_prof = data.pop('issue_join_prof', 'standard_join')
             for issue in issues:
-                assert issue.can('view_brief_join')
-            return {'issues': get_joined(issues, issue_join_prof)}
+                assert issue.can('view_' + issue_join_prof)
+            retval['issues'] = get_joined(issues, issue_join_prof)
 
-        assert project.can('view_' + join_prof)
-        return get_joined(project, join_prof=join_prof)
+        if join_prof:
+            assert project.can('view_' + join_prof)
+            retval.update(get_joined(project, join_prof=join_prof))
+
+        retval['success'] = True
+        return retval
 
     @catch_common
     def put(self):
@@ -414,7 +419,9 @@ def get_user():
             user = User.objects.get(id=userid)
         else:
             return incorrect_syntax()
-        return get_json_joined(user, join_prof=join_prof)
+        ret = {'success': True}
+        ret.update(get_joined(user, join_prof=join_prof))
+        return jsonify(ret)
     except User.DoesNotExist:
         pass
     return resource_not_found()

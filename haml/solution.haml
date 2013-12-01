@@ -29,12 +29,12 @@
           %br
           %a.button{"toggle-button" => "sol.subscribed",
           "ng-click" => "swap_save('sol.subscribed')"}
-            %i{on: "fa-eye", off: "fa-eye-slash"}
-            .in-button{on: "Watch", off: "Unwatch"}
+            %i{off: "fa-eye", on: "fa-eye-slash"}
+            .in-button{off: "Watch", on: "Unwatch"}
           %a.button{"toggle-button" => "sol.vote_status",
           "ng-click" => "swap_save('sol.vote_status')"}
             %i{on: "fa-minus-circle", off: "fa-plus-circle"}
-            .in-button{on: "Vote", off: "Unvote"}
+            .in-button{off: "Vote", on: "Unvote"}
     %br/
     .row
       %h4

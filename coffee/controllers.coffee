@@ -1,7 +1,21 @@
 mainControllers = angular.module("mainControllers", [])
 
 # EditController ==============================================================
-parentEditController = ($scope, $timeout, IssueService, ProjectService, SolutionService) ->
+parentFormController = ($scope) ->
+  $scope.error_report = (value) ->
+      if 'message' of value
+        $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+        $scope.errors = [value.message, ]
+      else if 'validation_errors' of value
+        $scope.errors = []
+        $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+        for idx of value.validation_errors
+          capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
+          $scope.errors.push(capped + value.validation_errors[idx])
+      else
+        $scope.errors = [$rootScope.strings.err_comm, ]
+
+parentEditController = ($scope, $rootScope, $timeout, IssueService, ProjectService, SolutionService) ->
   $scope.toggle = (s) ->
       $scope.$eval("prev.#{s} = #{s}; editing.#{s} = !editing.#{s}")
 
@@ -35,7 +49,7 @@ parentEditController = ($scope, $timeout, IssueService, ProjectService, Solution
 
       service.update(
         $.extend(data, extra_data)
-      ,(value) -> # Function to be run when function returns
+      ,(value, headers) -> # Function to be run when function returns
           if 'success' of value and value.success
               $timeout ->
                 if callback
@@ -44,16 +58,13 @@ parentEditController = ($scope, $timeout, IssueService, ProjectService, Solution
                 set('editing', s, false)
               , 400
           else
-              if 'message' of value
-                  text = "Error communicating with server. #{value.message}"
-              else
-                  text = "There was an unknown error committing your action. #{value.code}"
-              noty
-                  text: text
-                  type: 'error'
-                  timout: 2000
-              $scope.saving[s] = false
-              $scope.editing[s] = false
+            $rootScope.noty_error(response)
+            set('saving', s, false)
+            set('editing', s, false)
+        , (response) ->
+          set('saving', s, false)
+          set('editing', s, false)
+          $rootScope.noty_error(response)
       )
 
     get = (prefix, dotted) ->
@@ -76,8 +87,52 @@ mainControllers.controller('rootController', ($scope, $location, $rootScope, $ht
         UserService.query(
           id: user_id
         ,(value) ->
-          $rootScope.user = value
-        )
+          if 'success' of value and value.success
+            $rootScope.user = value
+          else
+            $rootScope.noty_error value
+        , $rootScope.noty_error)
+
+    $rootScope.noty_error = (response) ->
+      options =
+        animation:
+          open:
+            height: 'toggle'
+          close:
+            height: 'toggle'
+          easing: 'swing'
+          speed: 200
+        layout: "topCenter"
+        type: 'error'
+        timeout: 4000
+      if 'status' of response
+        st = response.status
+        if st == 400
+          noty $.extend(options,
+            text: "Unexpected 400 from the server."
+          )
+        else if st == 403
+          noty $.extend(options,
+            text: "Unexpected 403 from the server."
+          )
+        else if st == 404
+          noty $.extend(options,
+            text: "Unexpected 404 from the server, object may have been deleted."
+          )
+        else if st == 0
+          noty $.extend(options,
+            text: "Could not connect to server. Check your internet connection."
+          )
+      else
+        if 'message' of response
+          noty $.extend(options,
+            text: response.message
+          )
+        else
+          noty $.extend(options,
+            text: "An unknown server side error occured"
+          )
+
 
     $scope.logout = ->
       $http(
@@ -132,7 +187,7 @@ mainControllers.controller('solutionController',
                     $rootScope.loading = false
                 , 200
             , 500
-        )
+        , $rootScope.noty_error)
         $rootScope.loading = true
         $scope.editing =
           sol:
@@ -182,7 +237,7 @@ mainControllers.controller('issueController',
                     $rootScope.loading = false
                 , 200
             , 500
-        )
+        , $rootScope.noty_error)
         $rootScope.loading = true
         $scope.editing =
           issue:
@@ -244,16 +299,16 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
         username: $scope.username
         password: $scope.password
     ,(value) ->
-        if 'success' of value and value.success
-          $rootScope.user = value.user
-          $rootScope.logged_in = true
-          $location.path("/home")
+      if 'success' of value and value.success
+        $rootScope.user = value.user
+        $rootScope.logged_in = true
+        $location.path("/home")
+      else
+        if 'message' of value
+          $scope.errors = [value.message, ]
         else
-          if 'message' of value
-            $scope.errors = [value.message, ]
-          else
-            $scope.errors = [value.message, ]
-      )
+          $scope.errors = [value.message, ]
+    , $rootScope.noty_error)
 )
 
 # ProjectController============================================================
@@ -262,34 +317,19 @@ mainControllers.controller('projectController', ($scope, $rootScope, ProjectServ
     ProjectService.query(
       username: $routeParams.username
       url_key: $routeParams.url_key
-      join_prof: 'issue_join'
-    , (value) -> # Function to be run when function returns
-      if 'success' not of value
-        $scope.issues = value.issues
-      else
-        if 'message' of value
-          text = " #{value.message}"
-        else
-          text = "There was an unknown error committing your action. #{value.code}"
-          noty
-              text: text
-              type: 'error'
-              timout: 2000
-    )
-    ProjectService.query(
-        username: $routeParams.username
-        url_key: $routeParams.url_key
-        join_prof: 'page_join'
-    ,(value) ->
+      issue_join_prof: 'brief_join'
+      join_prof: 'page_join'
+    , (value, headers) -> # Function to be run when function returns
+      if 'success' of value and value.success
+        $scope.project = value
+        $scope.prev =
+          project: $.extend({}, value)
         $timeout ->
-            $scope.project = value
-            $scope.prev =
-                project: $.extend({}, value)
-            $timeout ->
-                $rootScope.loading = false
-            , 200
-        , 500
-    )
+          $rootScope.loading = false
+        , 200
+      else
+        $rootScope.noty_error value
+    , $rootScope.noty_error)
     $scope.init = () ->
       $rootScope.loading = true
       $scope.filter = ""
@@ -357,15 +397,15 @@ mainControllers.controller('chargeController', ['$scope', 'StripeService', ($sco
 
     $scope.recv_token = (token, args) ->
       StripeService.update(
-          token: token
-          amount: $scope.actual_amt
-          userid: $scope.user.id
+        token: token
+        amount: $scope.actual_amt
+        userid: $scope.user.id
       ,(value) -> # Function to be run when function returns
-          $scope.result =
-            text: "You're card has been successfully charged"
-            type: "success"
-            show: true
-      )
+        $scope.result =
+          text: "You're card has been successfully charged"
+          type: "success"
+          show: true
+      , $rootScope.noty_error)
 
     $scope.pay = () ->
       # Open Checkout with further options
@@ -386,7 +426,7 @@ mainControllers.controller('transController', ($scope, $rootScope, TransService)
       if trans
         for trans in $scope.transactions
           trans.details = false
-    )
+    , $rootScope.noty_error)
 )
 
 # ProfileController =======================================================
@@ -399,7 +439,7 @@ mainControllers.controller('profileController', ($scope, $rootScope, $routeParam
         username: $routeParams.username
       ,(value) ->
         $scope.prof_user = value
-      )
+      , $rootScope.noty_error)
 )
 
 # SignupController =======================================================
@@ -420,7 +460,7 @@ mainControllers.controller('signupController', ($scope, $rootScope, $routeParams
           $scope.errors = [value.message, ]
         else
           $scope.errors = [$rootScope.strings.err_comm, ]
-    )
+    , $rootScope.noty_error)
 )
 
 # NewProjController =======================================================
@@ -458,9 +498,7 @@ mainControllers.controller('newProjController', ($scope, $rootScope, $routeParam
             $scope.errors.push(capped + value.validation_errors[idx])
         else
           $scope.errors = [$rootScope.strings.err_comm, ]
-    , (error) ->
-      debugger
-    )
+    , $rootScope.noty_error)
 )
 
 # frontpageController =======================================================
@@ -470,27 +508,20 @@ mainControllers.controller('frontpageController', ($scope, $rootScope, $routePar
 )
 
 # newIssueController =======================================================
-mainControllers.controller('newissueController', ($scope, $rootScope, $routeParams, $location, ProjectService, IssueService)->
+mainControllers.controller('newissueController', ($scope, $rootScope, $routeParams, $location, $injector, ProjectService, IssueService)->
+  $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.init = () ->
     $rootScope.title = "New Issue"
     ProjectService.query(
       username: $routeParams.username
       url_key: $routeParams.url_key
-      join_prof: 'issue_join'
       issue_join_prof: 'brief_join'
     , (value) -> # Function to be run when function returns
-      if 'success' not of value
+      if 'success' of value and value.success
         $scope.issues = value.issues
       else
-        if 'message' of value
-          text = " #{value.message}"
-        else
-          text = "There was an unknown error committing your action. #{value.code}"
-          noty
-              text: text
-              type: 'error'
-              timout: 2000
-    )
+        $rootScope.noty_error value
+    , $rootScope.noty_error)
   $scope.submit = ->
     $scope.error_header = ""
     $scope.errors = []
@@ -503,24 +534,13 @@ mainControllers.controller('newissueController', ($scope, $rootScope, $routePara
       if 'success' of value and value.success
         $location.path("/" + $routeParams.username + "/" + $routeParams.url_key + "/" + value.url_key).replace()
       else
-        if 'message' of value
-          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
-          $scope.errors = [value.message, ]
-        else if 'validation_errors' of value
-          $scope.errors = []
-          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
-          for idx of value.validation_errors
-            capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
-            $scope.errors.push(capped + value.validation_errors[idx])
-        else
-          $scope.errors = [$rootScope.strings.err_comm, ]
-    , (error) ->
-      debugger
-    )
+        $scope.error_report(value)
+    , $rootScope.noty_error)
 )
 
 # newSolutionController =======================================================
-mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeParams, $location, IssueService, SolutionService)->
+mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeParams, $location, $injector, IssueService, SolutionService)->
+  $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.init = () ->
     $rootScope.title = "New Issue"
     IssueService.query(
@@ -535,12 +555,8 @@ mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeP
         if 'message' of value
           text = " #{value.message}"
         else
-          text = "There was an unknown error committing your action. #{value.code}"
-          noty
-              text: text
-              type: 'error'
-              timout: 2000
-    )
+          $rootScope.noty_error value
+    , $rootScope.noty_error)
   $scope.submit = ->
     $scope.error_header = ""
     $scope.errors = []
@@ -554,20 +570,8 @@ mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeP
       if 'success' of value and value.success
         $location.path("/s/" + value.id + "/" + value.url_key).replace()
       else
-        if 'message' of value
-          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
-          $scope.errors = [value.message, ]
-        else if 'validation_errors' of value
-          $scope.errors = []
-          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
-          for idx of value.validation_errors
-            capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
-            $scope.errors.push(capped + value.validation_errors[idx])
-        else
-          $scope.errors = [$rootScope.strings.err_comm, ]
-    , (error) ->
-      debugger
-    )
+        $scope.error_report(value)
+    , $rootScope.noty_error)
 )
 
 # projectSettingsController ====================================================
@@ -580,7 +584,7 @@ mainControllers.controller('projectSettingsController', ($scope, $rootScope, $ro
       join_prof: 'page_join'
     ,(value) ->
       $scope.project = value[0]
-    )
+    , $rootScope.noty_error)
 )
 
 # homeController =======================================================
@@ -592,5 +596,5 @@ mainControllers.controller('homeController', ($scope, $rootScope, $routeParams, 
       join_prof: "home_join"
     ,(value) ->
       $scope.huser = value
-    )
+    , $rootScope.noty_error)
 )

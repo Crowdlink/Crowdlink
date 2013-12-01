@@ -6,7 +6,7 @@
   %h3.center Login
   %br/
   %form.form-horizontal{method: "post", "ng-submit" => "submit()"}
-    .alert-danger.alert{"ng-show" => "errors"}
+    .alert-danger.alert.fade{"ng-show" => "errors"}
       %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
       %span{"ng-show" => "error_header"} {[{ error_header }]}
       %ul{"ng-show" => "errors.length > 1"}

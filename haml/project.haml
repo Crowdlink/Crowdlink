@@ -27,11 +27,11 @@
       %a.button{"toggle-button" => "project.subscribed",
         "ng-click" => "swap_save('project.subscribed')"}
         %i{on: "fa-eye", off: "fa-eye-slash"}
-        .in-button{on: "Watch", off: "Unwatch"}
+        .in-button{on: "Unwatch", off: "Watch"}
       %a.button{"toggle-button" => "project.vote_status",
         "ng-click" => "swap_save('project.vote_status')"}
         %i{on: "fa-minus-circle", off: "fa-plus-circle"}
-        .in-button{on: "Vote", off: "Unvote"}
+        .in-button{off: "Vote", on: "Unvote"}
       %a.button.active{:href => "\#{[{project.get_abs_url}]}new_issue"}
         %i.fa.fa-large.fa-plus
         Add an Issue
@@ -47,7 +47,7 @@
     / /input-group
     %table.table.table-hover
       %tbody
-        %tr{"ng-repeat" => "issue in issues | filter:filter"}
+        %tr{"ng-repeat" => "issue in project.issues | filter:filter"}
           %td.fit-width
             %a.btn.btn-xs{"ng-class" => "{'btn-success': issue.vote_status, 'btn-info': !issue.vote_status}",
               "ng-click" => "vote(issue)"}

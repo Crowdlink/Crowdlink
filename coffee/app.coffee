@@ -263,18 +263,21 @@ mainApp.directive "toggleButton", ["$http", "$timeout", ($http, $compile) ->
       if val
         icon.removeClass()
         icon.addClass('fa fa-spin fa-spinner')
+      else
+        update(scope.$eval(attr))
     )
-
-    scope.$watch(attr, (val) ->
+    update = (val) ->
       if val
         icon.removeClass()
         icon.addClass('fa ' + icon.attr('on'))
-        elem.removeClass('active')
+        elem.addClass('active')
         text.html(text.attr('on'))
       else
         icon.removeClass()
         icon.addClass('fa ' + icon.attr('off'))
-        elem.addClass('active')
+        elem.removeClass('active')
         text.html(text.attr('off'))
-    )
+
+
+    scope.$watch(attr,update)
 ]
