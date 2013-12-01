@@ -5,6 +5,18 @@ mainApp.config ($interpolateProvider) ->
   $interpolateProvider.startSymbol "{[{"
   $interpolateProvider.endSymbol "}]}"
 
+resolver = (auth_level) ->
+  load: ($q, $rootScope) ->
+    if auth_level == 'user' and not $rootScope.logged_in
+      return $q.reject "login"
+
+    if auth_level == 'not_user' and $rootScope.logged_in
+      return $q.reject "not_login"
+
+    deferred = $q.defer()
+    deferred.resolve()
+    deferred.promise
+
 mainApp.config ["$routeProvider", ($routeProvider) ->
   $routeProvider.when("/login",
     templateUrl: "templates/login.html"
@@ -18,18 +30,23 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/home",
     templateUrl: "templates/user_home.html"
     controller: "homeController"
+    resolve: resolver('user')
   ).when("/new_project",
     templateUrl: "templates/new_project.html"
     controller: "newProjController"
+    resolve: resolver('user')
   ).when("/signup",
     templateUrl: "templates/signup.html"
     controller: "signupController"
+    resolve: resolver('not_user')
   ).when("/account",
     templateUrl: "templates/account.html"
     controller: "accountController"
+    resolve: resolver('user')
   ).when("/account/:subsection",
     templateUrl: "templates/account.html"
     controller: "accountController"
+    resolve: resolver('user')
   # Error Pages
   ).when("/403", {templateUrl: "templates/error.html", controller: "errorController"}
   ).when("/404", {templateUrl: "templates/error.html", controller: "errorController"}
@@ -47,18 +64,21 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/:username/:url_key/new_issue",
     templateUrl: "templates/new_issue.html"
     controller: "newissueController"
+    resolve: resolver('user')
   ).when("/:username/:purl_key/:url_key/new_solution",
     templateUrl: "templates/new_solution.html"
     controller: "newSolutionController"
+    resolve: resolver('user')
   ).when("/:username/:url_key/psettings",
     templateUrl: "templates/psettings.html"
     controller: "projectSettingsController"
+    resolve: resolver('user')
   # user profile
   ).when("/:username",
     templateUrl: "templates/profile.html"
     controller: "profileController"
   ).otherwise(
-    templateUrl: "templates/404.html"
+    redirectTo: "/404"
   )
 ]
 

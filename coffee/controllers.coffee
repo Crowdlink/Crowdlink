@@ -1,6 +1,6 @@
 mainControllers = angular.module("mainControllers", [])
 
-# EditController ==============================================================
+# parentFormController ==============================================================
 parentFormController = ($scope) ->
   $scope.error_report = (value) ->
       if 'status' of value
@@ -10,17 +10,18 @@ parentFormController = ($scope) ->
           $scope.errors = ["Unknown server side error.", ]
 
       if 'message' of value
-        $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+        $scope.error_header = "A server side validation error occured, this should not occur."
         $scope.errors = [value.message, ]
       else if 'validation_errors' of value
         $scope.errors = []
-        $scope.error_header = "A server side validation error occured, this should not be a common occurance"
+        $scope.error_header = "A server side validation error occured, this should not occur."
         for idx of value.validation_errors
           capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
           $scope.errors.push(capped + value.validation_errors[idx])
       else
         $scope.errors = [$rootScope.strings.err_comm, ]
 
+# parentEditController ==============================================================
 parentEditController = ($scope, $rootScope, $timeout, IssueService, ProjectService, SolutionService) ->
   $scope.toggle = (s) ->
       $scope.$eval("prev.#{s} = #{s}; editing.#{s} = !editing.#{s}")
@@ -174,6 +175,16 @@ mainControllers.controller('rootController', ($scope, $location, $rootScope, $ht
     $rootScope.location = $location
     $rootScope.strings =
       err_comm: "Error communicating with server."
+
+    $rootScope.$on('$locationChangeStart', (event, next, current) ->
+    )
+    $rootScope.$on('$routeChangeError', (event, current, previous, rejection) ->
+      curr_path = $location.path()
+      if rejection == "login"
+        $location.path("/login").search("redirect=" + curr_path).replace()
+      if rejection == "not_login"
+        $location.path("/home").replace()
+    )
 )
 
 # SolutionController ============================================================
@@ -425,12 +436,13 @@ mainControllers.controller('profileController', ($scope, $rootScope, $routeParam
 )
 
 # LoginController ============================================================
-mainControllers.controller('loginController', ($scope, $rootScope, $injector, UserService, $location)->
+mainControllers.controller('loginController', ($scope, $rootScope, $injector, $routeParams, UserService, $location)->
   $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.init = ->
     if $rootScope.logged_in
       $location.path("/home").replace()
     $rootScope.title = "Login"
+
   $scope.submit = () ->
     $scope.errors = []
     UserService.login(
@@ -440,7 +452,10 @@ mainControllers.controller('loginController', ($scope, $rootScope, $injector, Us
       if 'success' of value and value.success
         $rootScope.user = value.user
         $rootScope.logged_in = true
-        $location.path("/home")
+        if 'redirect' of $routeParams
+          $location.path($routeParams.redirect)
+        else
+          $location.path("/home")
       else
         $scope.error_report(value)
     , $scope.error_report)
