@@ -3,6 +3,12 @@ mainControllers = angular.module("mainControllers", [])
 # EditController ==============================================================
 parentFormController = ($scope) ->
   $scope.error_report = (value) ->
+      if 'status' of value
+        if value.status == 0
+          $scope.errors = ["Unable to communicate with server", ]
+        else
+          $scope.errors = ["Unknown server side error.", ]
+
       if 'message' of value
         $scope.error_header = "A server side validation error occured, this should not be a common occurance"
         $scope.errors = [value.message, ]
@@ -287,30 +293,6 @@ mainControllers.controller('accountController', ($scope, $location, $rootScope, 
     )
 )
 
-# LoginController ============================================================
-mainControllers.controller('loginController', ($scope, $rootScope, UserService, $location)->
-  $scope.init = ->
-    if $rootScope.logged_in
-      $location.path("/home").replace()
-    $rootScope.title = "Login"
-  $scope.submit = () ->
-    $scope.errors = []
-    UserService.login(
-        username: $scope.username
-        password: $scope.password
-    ,(value) ->
-      if 'success' of value and value.success
-        $rootScope.user = value.user
-        $rootScope.logged_in = true
-        $location.path("/home")
-      else
-        if 'message' of value
-          $scope.errors = [value.message, ]
-        else
-          $scope.errors = [value.message, ]
-    , $rootScope.noty_error)
-)
-
 # ProjectController============================================================
 mainControllers.controller('projectController', ($scope, $rootScope, ProjectService, $injector, $routeParams, $timeout)->
     $injector.invoke(parentEditController, this, {$scope: $scope})
@@ -442,8 +424,31 @@ mainControllers.controller('profileController', ($scope, $rootScope, $routeParam
       , $rootScope.noty_error)
 )
 
+# LoginController ============================================================
+mainControllers.controller('loginController', ($scope, $rootScope, $injector, UserService, $location)->
+  $injector.invoke(parentFormController, this, {$scope: $scope})
+  $scope.init = ->
+    if $rootScope.logged_in
+      $location.path("/home").replace()
+    $rootScope.title = "Login"
+  $scope.submit = () ->
+    $scope.errors = []
+    UserService.login(
+        username: $scope.username
+        password: $scope.password
+    ,(value) ->
+      if 'success' of value and value.success
+        $rootScope.user = value.user
+        $rootScope.logged_in = true
+        $location.path("/home")
+      else
+        $scope.error_report(value)
+    , $scope.error_report)
+)
+
 # SignupController =======================================================
-mainControllers.controller('signupController', ($scope, $rootScope, $routeParams, UserService)->
+mainControllers.controller('signupController', ($scope, $rootScope, $routeParams, $injector, UserService)->
+  $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.init = () ->
     $rootScope.title = "Sign Up"
 
@@ -456,15 +461,13 @@ mainControllers.controller('signupController', ($scope, $rootScope, $routeParams
       if 'success' of value and value.success
         $location.path("/home").replace()
       else
-        if 'message' of value
-          $scope.errors = [value.message, ]
-        else
-          $scope.errors = [$rootScope.strings.err_comm, ]
-    , $rootScope.noty_error)
+        $scope.error_report(value)
+    , $scope.error_report)
 )
 
 # NewProjController =======================================================
-mainControllers.controller('newProjController', ($scope, $rootScope, $routeParams, $location, ProjectService)->
+mainControllers.controller('newProjController', ($scope, $rootScope, $routeParams, $location, $injector, ProjectService)->
+  $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.init = () ->
     $rootScope.title = "New Project"
     $scope.auto_key = true
@@ -487,24 +490,8 @@ mainControllers.controller('newProjController', ($scope, $rootScope, $routeParam
       if 'success' of value and value.success
         $location.path("/" + $rootScope.user.username + "/" + $scope.url_key).replace()
       else
-        if 'message' of value
-          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
-          $scope.errors = [value.message, ]
-        else if 'validation_errors' of value
-          $scope.errors = []
-          $scope.error_header = "A server side validation error occured, this should not be a common occurance"
-          for idx of value.validation_errors
-            capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
-            $scope.errors.push(capped + value.validation_errors[idx])
-        else
-          $scope.errors = [$rootScope.strings.err_comm, ]
-    , $rootScope.noty_error)
-)
-
-# frontpageController =======================================================
-mainControllers.controller('frontpageController', ($scope, $rootScope, $routeParams)->
-  $scope.init = () ->
-    $rootScope.title = ""
+        $scope.error_report(value)
+    , $scope.error_report)
 )
 
 # newIssueController =======================================================
@@ -535,7 +522,7 @@ mainControllers.controller('newissueController', ($scope, $rootScope, $routePara
         $location.path("/" + $routeParams.username + "/" + $routeParams.url_key + "/" + value.url_key).replace()
       else
         $scope.error_report(value)
-    , $rootScope.noty_error)
+    , $scope.error_report)
 )
 
 # newSolutionController =======================================================
@@ -557,6 +544,7 @@ mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeP
         else
           $rootScope.noty_error value
     , $rootScope.noty_error)
+
   $scope.submit = ->
     $scope.error_header = ""
     $scope.errors = []
@@ -571,7 +559,7 @@ mainControllers.controller('newSolutionController', ($scope, $rootScope, $routeP
         $location.path("/s/" + value.id + "/" + value.url_key).replace()
       else
         $scope.error_report(value)
-    , $rootScope.noty_error)
+    , $scope.error_report)
 )
 
 # projectSettingsController ====================================================
@@ -597,4 +585,33 @@ mainControllers.controller('homeController', ($scope, $rootScope, $routeParams, 
     ,(value) ->
       $scope.huser = value
     , $rootScope.noty_error)
+)
+
+# frontpageController =======================================================
+mainControllers.controller('frontpageController', ($scope, $rootScope, $routeParams)->
+  $scope.init = () ->
+    $rootScope.title = ""
+)
+
+# errorController =======================================================
+mainControllers.controller('errorController', ($scope, $rootScope, $location)->
+  $scope.init = () ->
+    $rootScope.title = ""
+    err = $location.path().replace('/', '')
+    if err == "403"
+      $scope.vals =
+        txt: "Access Denied"
+        long: "You do not have the proper permissions to access the resource you requested. This could be an error on our part and if so, sorry about that."
+        err: "403"
+    else if err == "404"
+      $scope.vals =
+        txt: "Resource not found"
+        long: "The resource that you attempted to access could not be found. This could be an error on our part and if so, sorry about that."
+        err: "404"
+    else
+      $scope.vals =
+        txt: "Internal Server Error"
+        long: "Our apologies, we seem to have goofed. This error has been logged on the server side."
+        err: "500"
+
 )

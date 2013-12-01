@@ -20,7 +20,7 @@ module.exports = (grunt) ->
           "templates/solution.html": "haml/solution.haml"
           "templates/profile.html": "haml/profile.haml"
           "templates/account.html": "haml/account.haml"
-          "templates/403.html": "haml/403.haml"
+          "templates/error.html": "haml/error.haml"
           "templates/new_issue.html": "haml/new_issue.haml"
           "templates/new_project.html": "haml/new_project.haml"
           "templates/new_solution.html": "haml/new_solution.haml"

@@ -30,12 +30,20 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/account/:subsection",
     templateUrl: "templates/account.html"
     controller: "accountController"
+  # Error Pages
+  ).when("/403", {templateUrl: "templates/error.html", controller: "errorController"}
+  ).when("/404", {templateUrl: "templates/error.html", controller: "errorController"}
+  ).when("/500", {templateUrl: "templates/error.html", controller: "errorController"}
+  # Primary object views
   ).when("/s/:id/:url_key/",
     templateUrl: "templates/solution.html"
     controller: "solutionController"
   ).when("/:username/:url_key",
     templateUrl: "templates/project.html"
     controller: "projectController"
+  ).when("/:username/:purl_key/:url_key",
+    templateUrl: "templates/issue.html"
+    controller: "issueController"
   ).when("/:username/:url_key/new_issue",
     templateUrl: "templates/new_issue.html"
     controller: "newissueController"
@@ -45,9 +53,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/:username/:url_key/psettings",
     templateUrl: "templates/psettings.html"
     controller: "projectSettingsController"
-  ).when("/:username/:purl_key/:url_key",
-    templateUrl: "templates/issue.html"
-    controller: "issueController"
+  # user profile
   ).when("/:username",
     templateUrl: "templates/profile.html"
     controller: "profileController"
