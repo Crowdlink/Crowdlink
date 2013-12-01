@@ -245,7 +245,8 @@ class Solution(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
                      ]
     page_join = inherit_lst(standard_join,
                              [{'obj': 'issue',
-                               'join_prof': 'page_join'}
+                               'join_prof': 'page_join'},
+                              'vote_status'
                              ]
                            )
 

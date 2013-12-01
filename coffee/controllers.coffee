@@ -12,7 +12,7 @@ parentEditController = ($scope, $timeout, IssueService, ProjectService, Solution
       extra_data[frag] = !val  # build a data dictionary for save
       $scope.save(s, extra_data, ->
         # only swap the value after save complete
-        $scope.issue[frag] = !$scope.issue[frag]
+        $scope.$eval("#{s} = !#{s}")
       )
 
   $scope.save = (s, extra_data={}, callback) ->
@@ -117,7 +117,8 @@ mainControllers.controller('rootController', ($scope, $location, $rootScope, $ht
 
 # SolutionController ============================================================
 mainControllers.controller('solutionController',
-  ($scope, $routeParams, $rootScope, SolutionService, $timeout)->
+  ($scope, $routeParams, $rootScope, $injector, SolutionService, $timeout)->
+    $injector.invoke(parentEditController, this, {$scope: $scope})
     $scope.init = () ->
         SolutionService.query(
             id: $routeParams.id
@@ -134,64 +135,31 @@ mainControllers.controller('solutionController',
         )
         $rootScope.loading = true
         $scope.editing =
-          title: false
-          desc: false
+          sol:
+            title: false
+            desc: false
         $scope.saving =
-          title: false
-          desc: false
+          sol:
+            title: false
+            desc: false
+
+    $scope.build_data = (frag) ->
+      data =
+        id: $scope.sol.id
+      if frag == 'title'
+        data.title = $scope.sol.title
+      if frag == 'desc'
+        data.desc = $scope.sol.desc
+
+      return data
 
     $scope.$watch('sol.title',(val) ->
       if val
-        $rootScope.title = "Solution #{$scope.issue.title} for Issues #{$scope.sol.issue.title}"
+        $rootScope.title = "Solution #{$scope.sol.title} for Issues #{$scope.sol.issue.title}"
       else
         $rootScope.title = "Solution"
     )
 
-    $scope.revert = (s) ->
-        $scope.sol[s] = $scope.prev.sol[s]
-        $scope.toggle(s)
-
-    $scope.save = (s, extra_data={}, callback) ->
-        $scope.saving[s] = true
-        data =
-          id: $scope.sol.id
-        if s == 'title'
-          data.title = $scope.sol.title
-        if s == 'desc'
-          data.desc = $scope.sol.desc
-
-        SolutionService.update(
-          $.extend(data, extra_data)
-        ,(value) -> # Function to be run when function returns
-            if 'success' of value and value.success
-                if callback
-                    callback()
-                $scope.saving[s] = false
-                $scope.editing[s] = false
-            else
-                if 'message' of value
-                    text = "Error communicating with server. #{value.message}"
-                else
-                    text = "There was an unknown error committing your action. #{value.code}"
-                noty
-                    text: text
-                    type: 'error'
-                    timout: 2000
-                $scope.saving[s] = false
-                $scope.editing[s] = false
-        )
-
-    $scope.swap_save = (s) ->
-      s.send_val = !s.val
-      extra_data = {}
-      extra_data[s] = !$scope.sol[s]
-      $scope.save(s, extra_data, ->
-        $scope.sol[s] = !$scope.sol[s]
-      )
-
-    $scope.toggle = (s) ->
-      $scope.prev.sol[s] = $scope.sol[s]
-      $scope.editing[s] = !$scope.editing[s]
 )
 
 # IssueController ============================================================
@@ -289,7 +257,8 @@ mainControllers.controller('loginController', ($scope, $rootScope, UserService, 
 )
 
 # ProjectController============================================================
-mainControllers.controller('projectController', ($scope, $rootScope, ProjectService, IssueService, $routeParams, $timeout)->
+mainControllers.controller('projectController', ($scope, $rootScope, ProjectService, $injector, $routeParams, $timeout)->
+    $injector.invoke(parentEditController, this, {$scope: $scope})
     ProjectService.query(
       username: $routeParams.username
       url_key: $routeParams.url_key
@@ -325,11 +294,13 @@ mainControllers.controller('projectController', ($scope, $rootScope, ProjectServ
       $rootScope.loading = true
       $scope.filter = ""
       $scope.editing =
-        name: false
+        project:
+          name: false
       $scope.saving =
-        subscribed: false
-        vote_status: false
-        name: false
+        project:
+          subscribed: false
+          vote_status: false
+          name: false
 
     $scope.vote = (issue) ->
       issue.vote_status = !issue.vote_status
@@ -338,51 +309,13 @@ mainControllers.controller('projectController', ($scope, $rootScope, ProjectServ
       else
         issue.votes -= 1
 
-    $scope.revert = (s) ->  # For canceling an edit
-        $scope.project[s] = $scope.prev.project[s]
-        $scope.toggle(s)
+    $scope.build_data = (frag) ->
+      data =
+        id: $scope.project.id
+      if frag == 'name'
+        data.name = $scope.project.name
 
-    # Saving the project to the database
-    $scope.save = (s, extra_data={}, callback) ->
-        $scope.saving[s] = true
-        data =
-          id: $scope.project.id
-        if s == 'name'
-          data.name = $scope.project.name
-
-        ProjectService.update(
-          $.extend(data, extra_data)
-        ,(value) -> # Function to be run when function returns
-            if 'success' of value and value.success
-                if callback
-                    callback()
-                $scope.saving[s] = false
-                $scope.editing[s] = false
-            else
-                if 'message' of value
-                    text = "Error communicating with server. #{value.message}"
-                else
-                    text = "There was an unknown error committing your action. #{value.code}"
-                noty
-                    text: text
-                    type: 'error'
-                    timout: 2000
-                $scope.saving[s] = false
-                $scope.editing[s] = false
-        )
-
-    # used for changing boolean values and saving in one step
-    $scope.swap_save = (s) ->
-      extra_data = {}
-      extra_data[s] = !$scope.project[s]
-      $scope.save(s, extra_data, ->
-        $scope.project[s] = !$scope.project[s]
-      )
-
-    # switch editing and back
-    $scope.toggle = (s) ->
-      $scope.prev.project[s] = $scope.project[s]
-      $scope.editing[s] = !$scope.editing[s]
+      return data
 
     # Page title logic. watch the name of the project
     $scope.$watch('project.name',(val) ->
