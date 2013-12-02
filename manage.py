@@ -5,6 +5,7 @@ manager = Manager(app)
 
 import logging
 from crowdlink.lib import send_email
+from crowdlink import db
 from crowdlink.models import User, Project, Issue
 
 # setup logging to go to stdout
@@ -25,6 +26,9 @@ def send_confirm(userid=None, username=None):
         recipient = User.objects.get(username=username).primary_email
     send_email(recipient, 'test')
 
+@manager.command
+def init_db():
+    db.create_all()
 
 @manager.command
 def provision():

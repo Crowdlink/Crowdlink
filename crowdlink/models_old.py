@@ -5,13 +5,10 @@ from .exc import AccessDenied
 from .util import flatten_dict, inherit_lst
 from .acl import issue_acl, project_acl, solution_acl
 
-from sqlalchemy.types import TypeDecorator, VARCHAR
-from sqlalchemy.dialects.postgresql import HSTORE
-from sqlalchemy.ext.declarative import declared_attr
-
 from enum import Enum
 
 import cryptacular.bcrypt
+import mongoengine
 import re
 import werkzeug
 import json
@@ -22,28 +19,6 @@ import datetime
 import calendar
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
-
-class JSONEncodedDict(TypeDecorator):
-    """Represents an immutable structure as a json-encoded string.
-
-    Usage::
-
-        JSONEncodedDict(255)
-
-    """
-
-    impl = VARCHAR
-
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            value = json.dumps(value)
-
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            value = json.loads(value)
-        return value
 
 class VotableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
@@ -106,7 +81,7 @@ class SubscribableMixin(object):
                 return True
         return False
 
-"""
+
 class IssueSubscriber(db.EmbeddedDocument):
     user = db.ReferenceField('User')
     comment_notif = db.BooleanField(default=True)
@@ -134,7 +109,6 @@ class UserSubscriber(db.EmbeddedDocument):
     vote = db.BooleanField(default=False)
     issue = db.BooleanField(default=True)
     project = db.BooleanField(default=True)
-"""
 
 
 class CommonMixin(object):
@@ -204,7 +178,7 @@ class CommonMixin(object):
         dct = {}
         for key in args:
             attr = getattr(self, key, 1)
-            if isinstance(attr, db.Model):
+            if isinstance(attr, db.Document):
                 attr = str(attr.id)
             if isinstance(attr, Enum):
                 attr = dict({str(x): x.index for x in attr})
@@ -228,7 +202,6 @@ class CommonMixin(object):
 
     meta = {'allow_inheritance': True}
 
-"""
 class Comment(db.EmbeddedDocument):
     body = db.StringField(min_length=10)
     user = db.ReferenceField('User', required=True)
@@ -237,27 +210,28 @@ class Comment(db.EmbeddedDocument):
     @property
     def md_body(self):
         return markdown2.markdown(self.body)
-"""
 
 
-class Solution(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
+class Solution(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.ObjectIdField()
     # key pair, unique identifier
-    url_key = db.Column(db.String, unique=True)
-    issue = db.relationship('Issue')
-    project = db.relationship('Project')
+    url_key = db.StringField(unique=True)
+    issue = db.ReferenceField('Issue')
+    project = db.ReferenceField('Project')
 
-    title = db.Column(db.String(128))
-    desc = db.Column(db.Text)
-    creator = db.relationship('User')
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+    title = db.StringField(max_length=128, min_length=10)
+    desc = db.StringField()
+    creator = db.ReferenceField('User')
+    created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
 
     # voting
-    votes = db.Column(db.Integer, default=0)
+    vote_list = db.ListField(db.ReferenceField('User'))
+    votes = db.IntField(default=0)
 
-    # Event log
-    events = db.Column(JSONEncodedDict)
+    # event dist
+    events = db.ListField(db.GenericEmbeddedDocumentField())
+    subscribers = db.ListField(db.EmbeddedDocumentField('SolutionSubscriber'))
 
     meta = {'indexes': [{'fields': ['url_key', 'issue'], 'unique': True}]}
     acl = solution_acl
@@ -325,9 +299,9 @@ class Solution(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
 
     def add_comment(self, user, body):
         # Send the actual comment to the Issue event queue
-        #c = Comment(user=user.id, body=body)
-        #c.distribute(self)
-        pass
+        c = Comment(user=user.id, body=body)
+        c.distribute(self)
+
 
     # Github Synchronization Logic
     # ========================================================================
@@ -345,26 +319,33 @@ class Solution(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
         except Exception:
             catch_error_graceful()
 
-class Issue(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
+class Issue(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
 
     statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.ObjectIdField()
     # key pair, unique identifier
-    url_key = db.Column(db.String, unique=True)
-    project = db.relationship('Project')
+    url_key = db.StringField(unique=True)
+    project = db.ReferenceField('Project')
 
-    _status = db.Column(db.Integer, default=statuses.Discussion.index)
-    title = db.Column(db.String(128))
-    desc = db.Column(db.Text)
-    creator = db.relationship('User')
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+    _status = db.IntField(default=statuses.Discussion.index)
+    title = db.StringField(max_length=128, min_length=10)
+    desc = db.StringField()
+    creator = db.ReferenceField('User')
+    created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
 
     # voting
-    votes = db.Column(db.Integer, default=0)
+    vote_list = db.ListField(db.ReferenceField('User'))
+    votes = db.IntField(default=0)
 
-    # Event log
-    events = db.Column(JSONEncodedDict)
+    # github synchronization
+    gh_synced = db.BooleanField(default=False)
+    gh_issue_num = db.IntField()
+    gh_labels = db.ListField(db.StringField())
+
+    # event dist
+    events = db.ListField(db.GenericEmbeddedDocumentField())
+    subscribers = db.ListField(db.EmbeddedDocumentField('IssueSubscriber'))
 
     meta = {'indexes': [{'fields': ['url_key', 'project'], 'unique': True}]}
     acl = issue_acl
@@ -443,9 +424,8 @@ class Issue(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
 
     def add_comment(self, user, body):
         # Send the actual comment to the Issue event queue
-        #c = Comment(user=user.id, body=body)
-        #c.distribute(self)
-        pass
+        c = Comment(user=user.id, body=body)
+        c.distribute(self)
 
 
     # Github Synchronization Logic
@@ -465,30 +445,32 @@ class Issue(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
             catch_error_graceful()
 
 
-class Project(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    maintainer = db.relationship('User')
-    username = db.Column(db.String)
-    url_key = db.Column(db.String)
+class Project(db.Document, SubscribableMixin, VotableMixin, CommonMixin):
+    id = db.ObjectIdField()
+    created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
+    maintainer = db.ReferenceField('User', required=True)
+    username = db.StringField(required=True)
+    url_key = db.StringField(max_length=64, required=True)
 
     # description info
-    name = db.Column(db.String)
-    website = db.Column(db.String)
-    desc = db.Column(db.String)
-    issue_count = db.Column(db.Integer)  # XXX: Currently not implemented
+    name = db.StringField(max_length=64, required=True)
+    website = db.StringField(max_length=256)
+    desc = db.StringField(min_length=1)
+    issue_count = db.IntField(default=0)  # XXX: Currently not implemented
 
     # voting
-    votes = db.Column(db.Integer, default=0)
+    vote_list = db.ListField(db.ReferenceField('User'))
+    votes = db.IntField(default=0)
 
     # Event log
-    events = db.Column(JSONEncodedDict)
+    subscribers = db.ListField(db.EmbeddedDocumentField('ProjectSubscriber'))
+    events = db.ListField(db.GenericEmbeddedDocumentField())
 
     # Github Syncronization information
-    gh_repo_id = db.Column(db.Integer, default=-1)
-    gh_repo_path = db.Column(db.String)
-    gh_synced_at = db.Column(db.DateTime)
-    gh_synced = db.Column(db.Boolean, default=False)
+    gh_repo_id = db.IntField(default=-1)
+    gh_repo_path = db.StringField()
+    gh_synced_at = db.DateTimeField()
+    gh_synced = db.BooleanField(default=False)
 
     # Join profiles
     standard_join = ['get_abs_url',
@@ -551,14 +533,13 @@ class Project(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
             return False
 
         # send a notification to all subscribers
-        #inotif = IssueNotif(user=user.id, issue=issue)
-        #inotif.distribute()
+        inotif = IssueNotif(user=user.id, issue=issue)
+        inotif.distribute()
 
     def add_comment(self, body, user):
         # Send the actual comment to the issue event queue
-        #c = Comment(user=user, body=body)
-        #distribute_event(self, c, "comment", self_send=True)
-        pass
+        c = Comment(user=user, body=body)
+        distribute_event(self, c, "comment", self_send=True)
 
     # Github Synchronization Logic
     # ========================================================================
@@ -587,17 +568,17 @@ class Project(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
         current_app.logger.debug("Desynchronized repository")
 
 
-class Transaction(db.Model, CommonMixin):
+class Transaction(db.Document, CommonMixin):
     StatusVals = Enum('Pending', 'Cleared')
-    _status = db.Column(db.Integer, default=StatusVals.Pending.index)
+    _status = db.IntField(default=StatusVals.Pending.index)
 
-    id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Numeric(precision=2))
-    livemode = db.Column(db.Boolean)
-    stripe_id = db.Column(db.String)
-    created = db.Column(db.DateTime)
-    last_four = db.Column(db.Integer)
-    user = db.relationship('User')
+    id = db.ObjectIdField()
+    amount = db.DecimalField(min_value=0.00, precision=2)
+    livemode = db.BooleanField()
+    stripe_id = db.StringField()
+    created = db.DateTimeField()
+    last_four = db.IntField()
+    user = db.ReferenceField('User')
 
     standard_join = ['status']
     meta = {
@@ -609,54 +590,31 @@ class Transaction(db.Model, CommonMixin):
         return self.StatusVals[self._status]
 
 
-"""
 class Email(db.EmbeddedDocument, CommonMixin):
     standard_join = []
 
     address = db.StringField(max_length=1023, required=True, unique=True)
     verified = db.BooleanField(default=False)
     primary = db.BooleanField(default=True)
-"""
 
-class SubscriptionBase(object):
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
 
-    @declared_attr
-    def subscriber(cls):
-        return db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    # the distribution rules for this subscription
-    rules = db.Column(HSTORE)
-
-class IssueSubscription(db.Model, SubscriptionBase):
-    subscribee = db.Column(db.Integer, db.ForeignKey("issue.id"), primary_key=True)
-
-class SolutionSubscription(db.Model, SubscriptionBase):
-    subscribee = db.Column(db.Integer, db.ForeignKey("solution.id"), primary_key=True)
-
-class UserSubscription(db.Model, SubscriptionBase):
-    subscribee = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
-
-class ProjectSubscription(db.Model, SubscriptionBase):
-    subscribee = db.Column(db.Integer, db.ForeignKey("project.id"), primary_key=True)
-
-class User(db.Model, SubscribableMixin, CommonMixin):
+class User(db.Document, SubscribableMixin, CommonMixin):
     # _id
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(32), unique=True)
+    id = db.ObjectIdField()
+    username = db.StringField(max_length=32, min_length=3, unique=True)
 
     # User information
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    _password = db.Column(db.String)
-    #emails = db.Column(db.EmbeddedDocumentField('Email'))
+    created_at = db.DateTimeField(default=datetime.datetime.now, required=True)
+    _password = db.StringField(max_length=128, min_length=5, required=True)
+    emails = db.ListField(db.EmbeddedDocumentField('Email'))
 
     # Event information
-    public_events = db.Column(JSONEncodedDict)
-    events = db.Column(JSONEncodedDict)
+    subscribers = db.ListField(db.EmbeddedDocumentField(UserSubscriber))
+    public_events = db.ListField(db.GenericEmbeddedDocumentField())
+    events = db.ListField(db.GenericEmbeddedDocumentField())
 
     # Github sync
-    gh_token = db.Column(db.String)
+    gh_token = db.StringField()
 
     meta = {'indexes': [{'fields': ['gh_token'], 'unique': True, 'sparse': True}]}
     standard_join = ['gh_linked',
@@ -808,5 +766,5 @@ class User(db.Model, SubscribableMixin, CommonMixin):
         return self
 
 
-#from .events import (IssueNotif, CommentNotif, Comment)
+from .events import (IssueNotif, CommentNotif, Comment)
 from .lib import (catch_error_graceful, get_json_joined)

@@ -1,5 +1,5 @@
 from flask import Flask, g, current_app, abort, jsonify, request
-from flask.ext.mongoengine import MongoEngine
+from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager, current_user, user_unauthorized
 from flask.ext.restful import Api
 from flask_oauthlib.client import OAuth
@@ -11,7 +11,6 @@ from . import util
 import babel.dates as dates
 import os
 import datetime
-import mongoengine
 
 root = os.path.abspath(os.path.dirname(__file__) + '/../')
 
@@ -37,6 +36,9 @@ lm.init_app(app)
 
 # api extension
 api_restful = Api(app)
+
+# sqlalchemy connection
+db = SQLAlchemy(app)
 
 # Monkey patch the login managers error function
 def unauthorized(self):
@@ -74,17 +76,6 @@ github = oauth.remote_app(
         authorize_url='https://github.com/login/oauth/authorize'
 )
 
-
-# Try to force a server reload if we can't connect to mongodb. Inelegant, really
-# should be changed before release! XXX
-error_occured = False
-try:
-    db = MongoEngine(app)
-except mongoengine.connection.ConnectionError:
-    app.logger.warn("Couldn't load database, using mock object")
-    import mock
-    db = mock.Mock()
-    error_occured = True
 
 @app.before_first_request
 def first_req():

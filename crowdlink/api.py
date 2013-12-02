@@ -3,8 +3,7 @@ from flask.ext.login import login_required, logout_user, current_user, login_use
 from flask.ext.restful import Resource
 
 from . import root, lm, app, api_restful
-from .models import (User, Project, Issue, UserSubscriber, ProjectSubscriber,
-                     IssueSubscriber, Transaction, Solution, SolutionSubscriber)
+from .models import (User, Project, Issue, Transaction, Solution)
 from .lib import get_json_joined, get_joined, redirect_angular
 from .util import convert_args
 
@@ -181,7 +180,7 @@ class ProjectAPI(BaseResource):
             assert project.can('action_watch')
         if sub_status == True:
             # Subscription logic, will need to be expanded to allow granular selection
-            subscribe = ProjectSubscriber(user=g.user.id)
+            #subscribe = ProjectSubscriber(user=g.user.id)
             project.subscribe(subscribe)
         elif sub_status == False:
             project.unsubscribe(g.user)
@@ -270,7 +269,7 @@ class SolutionAPI(BaseResource):
             assert sol.can('action_watch')
         if sub_status == True:
             # Subscription logic, will need to be expanded to allow granular selection
-            subscribe = SolutionSubscriber(user=g.user.id)
+            #subscribe = SolutionSubscriber(user=g.user.id)
             sol.subscribe(subscribe)
         elif sub_status == False:
             sol.unsubscribe(g.user)
@@ -371,7 +370,7 @@ class IssueAPI(BaseResource):
             assert issue.can('action_watch')
         if sub_status == True:
             # Subscription logic, will need to be expanded to allow granular selection
-            subscribe = IssueSubscriber(user=g.user.id)
+            #subscribe = IssueSubscriber(user=g.user.id)
             issue.subscribe(subscribe)
         elif sub_status == False:
             issue.unsubscribe(g.user)
@@ -444,7 +443,7 @@ def update_user():
     status = js.pop('subscribed', None)
     if status == True:
         # Subscription logic, will need to be expanded to allow granular selection
-        subscribe = UserSubscriber(user=g.user.id)
+        #subscribe = UserSubscriber(user=g.user.id)
         user.subscribe(subscribe)
     elif status == False:
         user.unsubscribe(g.user)
