@@ -22,11 +22,11 @@
         ({[{ project.created_at| date_ago }]})
       %h4
         %b Maintainer
-        %a{:href => "#/{[{ project.username }]}"} {[{ project.username }]}
+        %a{:href => "#/{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
       %br
       %a.button{"toggle-button" => "project.subscribed",
         "ng-click" => "swap_save('project.subscribed')"}
-        %i{on: "fa-eye", off: "fa-eye-slash"}
+        %i{on: "fa-eye-slash", off: "fa-eye"}
         .in-button{on: "Unwatch", off: "Watch"}
       %a.button{"toggle-button" => "project.vote_status",
         "ng-click" => "swap_save('project.vote_status')"}

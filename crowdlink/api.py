@@ -9,7 +9,7 @@ from .util import convert_args
 
 import json
 import bson
-import mongoengine
+import sqlalchemy
 import datetime
 import os
 import sys
@@ -28,10 +28,10 @@ def check_user():
     # try to access the issue with identifying information
     try:
         username = js.pop('value')
-        user = User.objects.get(username=username)
+        user = User.query.filter_by(username=username).one()
     except KeyError:
         return incorrect_syntax()
-    except User.DoesNotExist:
+    except sqlalchemy.orm.exc.NoResultFound:
         return jsonify(taken=False)
     else:
         return jsonify(taken=True)
@@ -46,10 +46,10 @@ def check_ptitle():
     # try to access the issue with identifying information
     try:
         url_key = js.pop('value')
-        project = Project.objects.get(username=g.user.username, url_key=url_key)
+        project = Project.query.filter_by(username=g.user.username, url_key=url_key).one()
     except KeyError:
         return incorrect_syntax()
-    except Project.DoesNotExist:
+    except sqlalchemy.orm.exc.NoResultFound:
         return jsonify(taken=False)
     else:
         return jsonify(taken=True)
@@ -63,10 +63,10 @@ def check_email():
     # try to access the issue with identifying information
     try:
         email = js.pop('value')
-        user = User.objects.get(emails__address=email)
+        user = User.query.filter_by(emails__address=email).one()
     except KeyError:
         return incorrect_syntax()
-    except User.DoesNotExist:
+    except sqlalchemy.orm.exc.NoResultFound:
         return jsonify(taken=False)
     else:
         return jsonify(taken=True)
@@ -84,7 +84,7 @@ def catch_common(func):
         except KeyError:
             current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
             return {'error': 'Incorrect syntax'}, 400
-        except mongoengine.queryset.DoesNotExist:
+        except sqlalchemy.orm.exc.NoResultFound:
             current_app.logger.debug("Does not exist", exc_info=True)
             return {'error': 'Could not be found'}, 404
         except AssertionError:  # all permissions should be done via assertions
@@ -117,11 +117,13 @@ def catch_create(func):
 class BaseResource(Resource):
     def update_model(self, data, model):
         # updates all fields if data is provided, checks acl
-        for field in self.model._fields:
+        for field in sqlalchemy.orm.class_mapper(model.__class__).columns:
+            field = str(field).split('.')[1]
             new_val = data.pop(field, None)
             if new_val:
+                current_app.logger.debug("Updating value {} to {}".format(field, new_val))
                 assert model.can('edit_' + field)
-                model[field] = new_val
+                setattr(model, field, new_val)
 
 
 class ProjectAPI(BaseResource):
@@ -133,17 +135,19 @@ class ProjectAPI(BaseResource):
 
         # Mild optimization for objects that need to get the project from
         # url_key and username
+        """
         if minimal:
-            base = Project.objects.only('id', 'url_key')
+            base = Project.query.only('id', 'url_key')
         else:
             base = Project.objects
+        """
 
         if proj_id:
-            return base.get(id=proj_id)
+            return Project.query.filter_by(id=proj_id).one()
 
 
-        return base.get(url_key=data['url_key'],
-                        username=data['username'])
+        return Project.query.filter_by(url_key=data['url_key'],
+                                       maintainer_username=data['username']).one()
 
     @catch_common
     def get(self):
@@ -179,11 +183,9 @@ class ProjectAPI(BaseResource):
         if sub_status:
             assert project.can('action_watch')
         if sub_status == True:
-            # Subscription logic, will need to be expanded to allow granular selection
-            #subscribe = ProjectSubscriber(user=g.user.id)
-            project.subscribe(subscribe)
+            project.subscribe()
         elif sub_status == False:
-            project.unsubscribe(g.user)
+            project.unsubscribe()
 
         vote_status = data.pop('vote_status', None)
         if vote_status:
@@ -191,10 +193,7 @@ class ProjectAPI(BaseResource):
         if vote_status is not None:
             project.set_vote(vote_status)
 
-        try:
-            project.save()
-        except mongoengine.errors.ValidationError as e:
-            return {'success': False, 'validation_errors': e.to_dict()}
+        project.safe_save()
 
         # return a true value to the user
         return_val['success'] = True
@@ -224,7 +223,7 @@ class SolutionAPI(BaseResource):
     @classmethod
     def get_solution(cls, data):
         id = data.pop('id')
-        return Solution.objects.get(id=id)
+        return Solution.query.filter_by(id=id).one()
 
     @catch_create
     def post(self):
@@ -268,11 +267,9 @@ class SolutionAPI(BaseResource):
         if sub_status:
             assert sol.can('action_watch')
         if sub_status == True:
-            # Subscription logic, will need to be expanded to allow granular selection
-            #subscribe = SolutionSubscriber(user=g.user.id)
-            sol.subscribe(subscribe)
+            sol.subscribe()
         elif sub_status == False:
-            sol.unsubscribe(g.user)
+            sol.unsubscribe()
 
         vote_status = data.pop('vote_status', None)
         if vote_status:
@@ -298,22 +295,17 @@ class IssueAPI(BaseResource):
     def get_issue(cls, data):
         idval = data.pop('id', None)
         if idval:
-            return Issue.objects.get(id=idval)
+            return Issue.query.filter_by(id=idval).one()
         else:
             project = IssueAPI.get_parent_project(data, minimal=True)
-            return Issue.objects.get(url_key=data['url_key'], project=project)
+            return Issue.query.filter_by(url_key=data['url_key'], project=project).one()
 
     @classmethod
     def get_parent_project(cls, data, **kwargs):
         proj_data = {'url_key': data.pop('purl_key', None),
                     'id': data.pop('pid', None),
                     'username': data.pop('username', None)}
-        try:
-            return ProjectAPI.get_project(proj_data, **kwargs)
-        except Project.DoesNotExist:
-            # re-raise the error in a manner that will get caught and returned
-            # as a 404 error
-            raise cls.model.DoesNotExist
+        return ProjectAPI.get_project(proj_data, **kwargs)
 
     @catch_create
     def post(self):
@@ -371,9 +363,9 @@ class IssueAPI(BaseResource):
         if sub_status == True:
             # Subscription logic, will need to be expanded to allow granular selection
             #subscribe = IssueSubscriber(user=g.user.id)
-            issue.subscribe(subscribe)
+            issue.subscribe()
         elif sub_status == False:
-            issue.unsubscribe(g.user)
+            issue.unsubscribe()
 
         vote_status = data.pop('vote_status', None)
         if vote_status:
@@ -385,10 +377,7 @@ class IssueAPI(BaseResource):
         if status:
             issue.set_status(status)
 
-        try:
-            issue.save()
-        except mongoengine.errors.ValidationError as e:
-            return jsonify(success=False, validation_errors=e.to_dict())
+        issue.safe_save()
 
         # return a true value to the user
         return_val.update({'success': True})
@@ -413,15 +402,16 @@ def get_user():
         userid = js.get('id', None)
 
         if username:
-            user = User.objects.get(username=username)
+            user = User.query.filter_by(username=username).one()
         elif userid:
-            user = User.objects.get(id=userid)
+            user = User.query.filter_by(id=userid).one()
         else:
             return incorrect_syntax()
         ret = {'success': True}
+        print type(user)
         ret.update(get_joined(user, join_prof=join_prof))
         return jsonify(ret)
-    except User.DoesNotExist:
+    except sqlalchemy.orm.exc.NoResultFound:
         pass
     return resource_not_found()
 
@@ -434,10 +424,10 @@ def update_user():
     # try to access the issue with identifying information
     try:
         username = js.pop('username')
-        user = User.objects.get(username=username)
+        user = User.query.filter_by(username=username).one()
     except KeyError:
         return incorrect_syntax()
-    except User.DoesNotExist:
+    except sqlalchemy.orm.exc.NoResultFound:
         return resource_not_found()
 
     status = js.pop('subscribed', None)
@@ -467,14 +457,14 @@ def login():
     js = request.json
 
     try:
-        user = User.objects.get(username=js['username'])
+        user = User.query.filter_by(username=js['username']).one()
         if user.check_password(js['password']):
             login_user(user)
         else:
             return jsonify(success=False, message="Invalid credentials")
     except KeyError:
         return jsonify(success=False, message="Invalid credentials")
-    except User.DoesNotExist:
+    except sqlalchemy.orm.exc.NoResultFound:
         return jsonify(success=False, message="Invalid credentials")
 
     return jsonify(success=True, user=get_joined(user))
@@ -490,11 +480,11 @@ def transaction():
 
     # try to access the issue with identifying information
     try:
-        trans = Transaction.objects(user=userid)
+        trans = Transaction.query.filter_by(user=userid)
         return get_json_joined(trans)
     except KeyError as e:
         return incorrect_syntax()
-    except Transaction.DoesNotExist, mongoengine.errors.ValidationError:
+    except sqlalchemy.orm.exc.NoResultFound:
         return resource_not_found()
 
 
@@ -509,7 +499,7 @@ def run_charge():
         livemode = js['token']['livemode']
         if amount > 100000 or amount < 500:
             return incorrect_syntax()
-        user = User.objects.get(id=js['userid'])
+        user = User.query.filter_by(id=js['userid']).one()
 
         stripe.api_key = app.config['STRIPE_SECRET_KEY']
         try:
@@ -562,7 +552,7 @@ def run_charge():
 
     except KeyError:
         return incorrect_syntax()
-    except User.DoesNotExist:
+    except sqlalchemy.orm.exc.NoResultFound:
         return resource_not_found()
 
     return jsonify(success=True)

@@ -77,13 +77,6 @@ github = oauth.remote_app(
 )
 
 
-@app.before_first_request
-def first_req():
-    if error_occured:
-        # If there was a database failure, raise an exception to trigger the
-        # reload of the application when the first request comes in
-        raise AttributeError
-
 # General configuration
 # ======================
 

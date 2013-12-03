@@ -28,23 +28,21 @@ def send_confirm(userid=None, username=None):
 
 @manager.command
 def init_db():
+    db.drop_all()
     db.create_all()
 
 @manager.command
 def provision():
     usr = User.create_user("crowdlink", "testing", "support@crowdlink.com")
-    usr.active = True
-    usr.save()
 
     # Create the project for crowdlink
     proj = Project(
-        maintainer=usr.id,
-        username=usr.username,
+        maintainer=usr,
         name='crowdlink',
         website="http://crowdlink.com",
         url_key='crowdlink',
-        description="A platform for user feedback")
-    proj.save()
+        desc="A platform for user feedback").init()
+    proj.safe_save()
 
     issues = [('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.'),
             ('Change log for Improvements', 'Like gists on Github, show a historical revision log for an Improvements descriptions'),
@@ -56,7 +54,7 @@ def provision():
         ]
     for title, desc in issues:
         issue = Issue(
-            creator=usr.id,
+            creator=usr,
             title=title,
             desc=desc)
         proj.add_issue(issue, usr)

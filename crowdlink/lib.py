@@ -7,11 +7,13 @@ import sys
 import mongoengine
 import json
 import smtplib
-from mongoengine.base import BaseList
 
 from bson.json_util import _json_convert
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+import sqlalchemy
+import flask_sqlalchemy
 
 email_cfg = {
             'confirm': {'subject': 'Confirm your email address on Featurelet',
@@ -68,10 +70,19 @@ def get_json_joined(*args, **kwargs):
     return json.dumps(get_joined(*args, **kwargs))
 
 
+def obj_to_dict(model):
+    """ converts a sqlalchemy model to a dictionary """
+    # first we get the names of all the columns on your model
+    columns = [c.key for c in sqlalchemy.orm.class_mapper(model.__class__).columns]
+    # then we return their values in a dict
+    return dict((c, getattr(model, c)) for c in columns)
+
+
 def get_joined(obj, join_prof="standard_join"):
     # If it's a list, join each of the items in the list and return modified
     # list
-    if isinstance(obj, mongoengine.QuerySet) or isinstance(obj, BaseList):
+    current_app.logger.debug("Attempting to join in " + str(type(obj)))
+    if isinstance(obj, flask_sqlalchemy.BaseQuery) or isinstance(obj, list):
         lst = []
         for item in obj:
             lst.append(get_joined(item, join_prof=join_prof))
@@ -83,6 +94,7 @@ def get_joined(obj, join_prof="standard_join"):
         join = getattr(obj, join_prof)
     else:
         join = join_prof
+    current_app.logger.debug("Join list " + str(join))
     remove = []
     sub_obj = []
     join_keys = []
@@ -104,7 +116,7 @@ def get_joined(obj, join_prof="standard_join"):
     join_vals = obj.jsonize(join_keys, raw=True)
     # catch our special config key
     if include_base:
-        dct = _json_convert(obj.to_mongo())
+        dct = obj_to_dict(obj)
         # Remove keys from the bson that the join prefixes with a -
         for key in remove:
             dct.pop(key, None)
@@ -119,7 +131,13 @@ def get_joined(obj, join_prof="standard_join"):
         # allow the conf dictionary to specify a join profiel
         prof = conf.get('join_prof', "standard_join")
         subobj = getattr(obj, key)
-        dct[key] = get_joined(subobj, join_prof=prof)
+        current_app.logger.info(
+            "Attempting to access attribute {} from {} resulted in {} "
+            "type".format(key, type(obj), subobj))
+        if subobj is not None:
+            dct[key] = get_joined(subobj, join_prof=prof)
+        else:
+            dct[key] = subobj
     return dct
 
 def catch_error_graceful(form=None, out_flash=False):
@@ -143,24 +161,9 @@ def catch_error_graceful(form=None, out_flash=False):
 
     # default to danger....
     cat = "danger"
-    if exc is mongoengine.errors.ValidationError:
-        msg = ('A database schema validation error has occurred. This has been'
-               ' logged with a high priority.')
-        log("A validation occurred.")
-    elif exc is mongoengine.errors.InvalidQueryError:
-        msg = ('A database schema validation error has occurred. This has been '
-               'logged with a high priority.')
-        log("An inconsistency in the models was detected")
-    elif exc is mongoengine.errors.NotUniqueError:
-        msg = ('A duplication error happended on the datastore side, one of '
-               'your values is not unique. This has been logged.')
-        log("A duplicate check on the database side was not caught")
-    elif exc in (mongoengine.errors.OperationError, mongoengine.errors.DoesNotExist):
-        msg = 'An unknown database error. This has been logged.'
-        log("An unknown operation error occurred")
-    else:
-        msg = 'An unknown error has occurred'
-        log("")
+    if exc is sqlalchemy.exc:
+        msg = ('An unknown database replated exception occured')
+        log("Unknown error")
 
     if form:
         form.start.add_msg(message=msg, type=cat)
@@ -181,7 +184,7 @@ def distribute_event(sender, event, type, subscriber_send=False, self_send=False
                 # This could be optimized by loading all users at once, instead of
                 # resolving one at a time
                 sub.user.events.append(event)
-                sub.user.save()
+                sender.safe_save()
                 current_app.logger.debug(
                     "{0} was distributed event '{1}' for object {2}".format(sub.user.username, type, sender))
             else:
@@ -192,7 +195,7 @@ def distribute_event(sender, event, type, subscriber_send=False, self_send=False
     if self_send:
         if isinstance(sender, User):
             sender.public_events.append(event)
-            sender.save()
+            sender.safe_save()
         else:
-            sender.events.append(event)
-            sender.save()
+            sender.events = sender.events + [event]
+            sender.safe_save()

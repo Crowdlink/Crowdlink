@@ -6,7 +6,7 @@ from .models import User, Project, Issue, Transaction
 from .lib import jsonify
 
 import json
-import mongoengine
+import sqlalchemy
 import os
 import sys
 import base64
@@ -25,8 +25,8 @@ def before_request():
 @lm.user_loader
 def user_loader(id):
     try:
-        return User.objects.get(id=id)
-    except User.DoesNotExist:
+        return User.query.filter_by(id=id).one()
+    except sqlalchemy.orm.exc.NoResultFound:
         return None
 
 
