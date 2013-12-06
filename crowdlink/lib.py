@@ -70,18 +70,9 @@ def get_json_joined(*args, **kwargs):
     return json.dumps(get_joined(*args, **kwargs))
 
 
-def obj_to_dict(model):
-    """ converts a sqlalchemy model to a dictionary """
-    # first we get the names of all the columns on your model
-    columns = [c.key for c in sqlalchemy.orm.class_mapper(model.__class__).columns]
-    # then we return their values in a dict
-    return dict((c, getattr(model, c)) for c in columns)
-
-
 def get_joined(obj, join_prof="standard_join"):
     # If it's a list, join each of the items in the list and return modified
     # list
-    current_app.logger.debug("Attempting to join in " + str(type(obj)))
     if isinstance(obj, flask_sqlalchemy.BaseQuery) or isinstance(obj, list):
         lst = []
         for item in obj:
@@ -94,7 +85,7 @@ def get_joined(obj, join_prof="standard_join"):
         join = getattr(obj, join_prof)
     else:
         join = join_prof
-    current_app.logger.debug("Join list " + str(join))
+
     remove = []
     sub_obj = []
     join_keys = []
@@ -116,7 +107,7 @@ def get_joined(obj, join_prof="standard_join"):
     join_vals = obj.jsonize(join_keys, raw=True)
     # catch our special config key
     if include_base:
-        dct = obj_to_dict(obj)
+        dct = obj.to_dict()
         # Remove keys from the bson that the join prefixes with a -
         for key in remove:
             dct.pop(key, None)
@@ -131,12 +122,12 @@ def get_joined(obj, join_prof="standard_join"):
         # allow the conf dictionary to specify a join profiel
         prof = conf.get('join_prof', "standard_join")
         subobj = getattr(obj, key)
-        current_app.logger.info(
-            "Attempting to access attribute {} from {} resulted in {} "
-            "type".format(key, type(obj), subobj))
         if subobj is not None:
             dct[key] = get_joined(subobj, join_prof=prof)
         else:
+            current_app.logger.info(
+                "Attempting to access attribute {} from {} resulted in {} "
+                "type".format(key, type(obj), subobj))
             dct[key] = subobj
     return dct
 

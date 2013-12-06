@@ -8,12 +8,14 @@ from .lib import get_json_joined, get_joined, redirect_angular
 from .util import convert_args
 
 import json
+import valideer
 import bson
 import sqlalchemy
 import datetime
 import os
 import sys
 import stripe
+import valideer as V
 
 api = Blueprint('api_bp', __name__)
 
@@ -81,38 +83,35 @@ def catch_common(func):
         # get the auth dictionary
         try:
             return func(self, *args, **kwargs)
+
+        # Missing required data error
         except KeyError:
             current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
-            return {'error': 'Incorrect syntax'}, 400
+            return {'success': False, 'message': 'Incorrect syntax'}, 400
+
+        # Permission error
+        except AssertionError:
+            current_app.logger.debug("Permission error", exc_info=True)
+            return {'success': False, 'message': 'You don\'t have permission to do that'}, 403
+
+        # validation errors
+        except valideer.base.ValidationError as e:
+            current_app.logger.debug("Validation Error", exc_info=True)
+            return {'success': False, 'validation_errors': e.to_dict()}
+
+        # SQLA errors
         except sqlalchemy.orm.exc.NoResultFound:
             current_app.logger.debug("Does not exist", exc_info=True)
             return {'error': 'Could not be found'}, 404
-        except AssertionError:  # all permissions should be done via assertions
-            current_app.logger.debug("Permission error", exc_info=True)
-            return {'error': 'You don\'t have permission to do that'}, 403
-
-    return decorated
-
-def catch_create(func):
-    # catch errors that are common to creation actions
-    def decorated(self, *args, **kwargs):
-        # get the auth dictionary
-        try:
-            return func(self, *args, **kwargs)
-        except KeyError:
-            current_app.logger.debug("400: Incorrect syntax", exc_info=True)
-            return {'error': 'Incorrect syntax'}, 400
-        except mongoengine.errors.ValidationError as e:
-            current_app.logger.debug("Validation Error", exc_info=True)
-            return {'success': False, 'validation_errors': e.to_dict()}
-        except AssertionError:  # all permissions should be done via assertions
-            current_app.logger.debug("Permission error", exc_info=True)
-            return {'error': 'You don\'t have permission to do that'}, 403
-        except mongoengine.errors.NotUniqueError as e:
+        except sqlalchemy.exc.IntegrityError as e:
             current_app.logger.debug("Attempted to insert duplicate", exc_info=True)
-            return {'success': False, 'message': e.message}
+            return {'success': False, 'message': "A duplicate value already exists in the database", 'detail': e.message}
+        except sqlalchemy.exc:
+            current_app.logger.debug("Unkown SQLAlchemy Error", exc_info=True)
+            return {'success': False, 'message': "An unknown database operations error has occurred"}
 
     return decorated
+
 
 class BaseResource(Resource):
     def update_model(self, data, model):
@@ -199,7 +198,7 @@ class ProjectAPI(BaseResource):
         return_val['success'] = True
         return return_val
 
-    @catch_create
+    @catch_common
     def post(self):
         data = request.json
         project = Project()
@@ -210,7 +209,7 @@ class ProjectAPI(BaseResource):
         project.website = data.get('website')
         project.description = data.get('website')
 
-        project.save()
+        project.safe_save()
 
         return {'success': True}
 
@@ -225,7 +224,7 @@ class SolutionAPI(BaseResource):
         id = data.pop('id')
         return Solution.query.filter_by(id=id).one()
 
-    @catch_create
+    @catch_common
     def post(self):
         data = request.json
         issue = IssueAPI.get_issue(data)
@@ -240,7 +239,7 @@ class SolutionAPI(BaseResource):
         sol.project = issue.project
         sol.creator = g.user.get()
 
-        sol.save()
+        sol.safe_save()
 
         return {'success': True, 'url_key': sol.url_key, 'id': str(sol.id)}
 
@@ -277,10 +276,7 @@ class SolutionAPI(BaseResource):
         if vote_status is not None:
             sol.set_vote(vote_status)
 
-        try:
-            sol.save()
-        except mongoengine.errors.ValidationError as e:
-            return jsonify(success=False, validation_errors=e.to_dict())
+        sol.safe_save()
 
         # return a true value to the user
         return_val.update({'success': True})
@@ -307,7 +303,7 @@ class IssueAPI(BaseResource):
                     'username': data.pop('username', None)}
         return ProjectAPI.get_project(proj_data, **kwargs)
 
-    @catch_create
+    @catch_common
     def post(self):
         data = request.json
         project = IssueAPI.get_parent_project(data, minimal=True)
@@ -321,7 +317,7 @@ class IssueAPI(BaseResource):
         issue.project = project
         issue.creator = g.user.get()
 
-        issue.save()
+        issue.safe_save()
 
         return {'success': True, 'url_key': issue.url_key, 'id': str(issue.id)}
 
@@ -439,7 +435,7 @@ def update_user():
         user.unsubscribe(g.user)
 
     try:
-        user.save()
+        user.safe_save()
     except mongoengine.errors.ValidationError as e:
         return jsonify(success=False, validation_errors=e.to_dict())
 
@@ -548,7 +544,7 @@ def run_charge():
                 _status=status,
                 last_four=retval['card']['last4']
             )
-            trans.save()
+            trans.safe_save()
 
     except KeyError:
         return incorrect_syntax()

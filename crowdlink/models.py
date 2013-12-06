@@ -5,13 +5,17 @@ from .exc import AccessDenied
 from .util import flatten_dict, inherit_lst
 from .acl import issue_acl, project_acl, solution_acl
 
-from sqlalchemy.ext.declarative import declared_attr
+from flask.ext.sqlalchemy import _BoundDeclarativeMeta, BaseQuery, _QueryProperty
+from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from sqlalchemy.dialects.postgresql import HSTORE
 from sqlalchemy.types import TypeDecorator, TEXT
-from sqlalchemy import exc
+from sqlalchemy import exc, event
 
 from enum import Enum
 
+import valideer as V
+
+import sqlalchemy
 import cryptacular.bcrypt
 import re
 import sys
@@ -22,22 +26,161 @@ import urllib
 import hashlib
 import datetime
 import calendar
+import operator
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
-class JSONEncodedDict(TypeDecorator):
-    """Represents an immutable structure as a json-encoded string.
 
-    Usage::
+def validate_attr(self, attr, value):
+    """ Allows calling a single validator by passing in a dotted notation for the object.
+    """
+    parts = attr.split('.', 1)
+    validator = [v for i, v in enumerate(self._named_validators) if v[0] == parts[0]][0][1]
+    if len(parts) > 1:
+        return validator.validate_attr(parts[1])
 
-        JSONEncodedDict(255)
+    return validator.validate(value)
+V.Object.validate_attr = validate_attr
 
+
+class BaseMapper(object):
+    """ Lots of boiler plate/replication here because @declared_attr didn't want
+    to work correctly for model inheritence. Not pretty, but it will work for now """
+
+    #: the query class used.  The :attr:`query` attribute is an instance
+    #: of this class.  By default a :class:`BaseQuery` is used.
+    query_class = BaseQuery
+
+    #: an instance of :attr:`query_class`.  Can be used to query the
+    #: database for instances of this model.
+    query = None
+
+    standard_join = []
+    acl = {}
+
+    def __new__(cls, *args, **kwargs):
+        def valid_closure(obj, prefix=""):
+            # if there's validation on this object
+            valid = getattr(cls, 'valid_profile', None)
+            if valid:
+                for name, validator in valid._named_validators:
+                    if isinstance(validator, V.Object):
+                        valid_closure(validator, prefix=prefix + name + ".")
+                    else:  # base case
+                        current_app.logger.debug("Setting listener for change on attr " + prefix + name)
+                        event.listen(getattr(obj, name),
+                                    'set',
+                                    lambda target, value, oldvalue, initiator: valid.validate_attr(prefix + name, value),
+                                    prefix + name)
+
+        valid_closure(cls)
+
+        return super(BaseMapper, cls).__new__(cls, *args, **kwargs)
+
+
+    def get_acl(self, user=None):
+        """ Generates an acl list for a specific user which defaults to the
+        authed user """
+        if not user:
+            user = g.user
+        roles = self.roles(user=user)
+        allowed = set()
+        for role in roles:
+            allowed |= set(self.acl.get(role, []))
+
+        return allowed
+
+    def roles(user=None):
+        """ This should be overriden to use logic for determining roles """
+        if not user:
+            user = g.user
+        return []
+
+    def can(self, action):
+        """ Can the user perform the action needed? """
+        current_app.logger.debug((action, self.user_acl))
+        return action in self.user_acl
+
+    @property
+    def user_acl(self):
+        """ a lazy loaded acl list for the current user """
+        # Run an extra check to ensure we don't hand out an acl list for the
+        # wrong user. Possibly un-neccesary, I'm paranoid
+        if not hasattr(self, '_user_acl') or self._user_acl[0] != g.user:
+            self._user_acl = (g.user, self.get_acl())
+        return self._user_acl[1]
+
+    def safe_save(self, **kwargs):
+        """ Catches a bunch of common mongodb errors when saving and handles
+        them appropriately. A convenient wrapper around catch_error_graceful.
+        """
+        if hasattr(self, 'valid_profile'):
+            self.valid_profile.validate(self.to_dict())
+        form = kwargs.pop('form', None)
+        flash = kwargs.pop('flash', False)
+        try:
+            db.session.commit(**kwargs)
+        except Exception:
+            catch_error_graceful(
+                form=form,
+                out_flash=flash
+            )
+            return False
+        else:
+            return True
+        return True
+
+    def init(self):
+        db.session.add(self)
+        return self
+
+    def to_dict(model):
+        """ converts a sqlalchemy model to a dictionary """
+        # first we get the names of all the columns on your model
+        columns = [c.key for c in sqlalchemy.orm.class_mapper(model.__class__).columns]
+        # then we return their values in a dict
+        return dict((c, getattr(model, c)) for c in columns)
+
+    def jsonize(self, args, raw=False):
+        """ Used to join attributes or functions to an objects json representation.
+        For passing back object state via the api
+        """
+        dct = {}
+        for key in args:
+            attr = getattr(self, key, 1)
+            if isinstance(attr, BaseMapper):
+                attr = str(attr.id)
+            if isinstance(attr, Enum):
+                attr = dict({str(x): x.index for x in attr})
+            elif isinstance(attr, datetime.datetime):
+                attr = calendar.timegm(attr.utctimetuple()) * 1000
+            elif isinstance(attr, bool): # don't convert bool to str
+                pass
+            elif isinstance(attr, set): # don't convert bool to str
+                attr = {x: True for x in attr}
+            elif callable(attr):
+                attr = attr()
+            else:
+                attr = str(attr)
+            dct[key] = attr
+
+        if raw:
+            return dct
+        else:
+            return json.dumps(dct)
+
+
+base = declarative_base(cls=BaseMapper, metaclass=_BoundDeclarativeMeta, name='BaseMapper')
+base.query = _QueryProperty(db)
+
+
+class EventJSON(TypeDecorator):
+    """ Wraps a list of Event objects into a JSON encoded list
     """
 
     impl = TEXT
 
     def process_bind_param(self, value, dialect):
-        print "Outgoing " + str(value)
         if value is not None:
             lst = []
             for obj in value:
@@ -46,15 +189,12 @@ class JSONEncodedDict(TypeDecorator):
         return "[]"
 
     def process_result_value(self, value, dialect):
-        print "Incoming " + str(value)
         if value is not None:
             lst = []
             for dct in json.loads(value):
                 cls = getattr(events, dct.get("_cls"))
                 if cls:
                     lst.append(cls(**dct))
-                else:
-                    import pprint; pprint.pprint( sys.modules)
             return lst
         return []
 
@@ -106,7 +246,6 @@ class SubscribableMixin(object):
                               subscribee=self).init().safe_save()
         return True
 
-
     @property
     def subscribed(self):
         return bool(
@@ -118,97 +257,6 @@ class SubscribableMixin(object):
         return self.subscription_cls.query.filter_by(subscribee=self)
 
 
-class CommonMixin(object):
-    """ mixin for all documents in database. provides some nice utils"""
-    safe_set = True
-    standard_join = []
-    acl = {}
-
-    def get_acl(self, user=None):
-        """ Generates an acl list for a specific user which defaults to the
-        authed user """
-        if not user:
-            user = g.user
-        roles = self.roles(user=user)
-        allowed = set()
-        for role in roles:
-            allowed |= set(self.acl.get(role, []))
-
-        return allowed
-
-    def roles(user=None):
-        """ This should be overriden to use logic for determining roles """
-        if not user:
-            user = g.user
-        return []
-
-    def can(self, action):
-        """ Can the user perform the action needed? """
-        current_app.logger.debug((action, self.user_acl))
-        return action in self.user_acl
-
-    @property
-    def user_acl(self):
-        """ a lazy loaded acl list for the current user """
-        # Run an extra check to ensure we don't hand out an acl list for the
-        # wrong user. Possibly un-neccesary, I'm paranoid
-        if not hasattr(self, '_user_acl') or self._user_acl[0] != g.user:
-            self._user_acl = (g.user, self.get_acl())
-        return self._user_acl[1]
-
-    def safe_save(self, **kwargs):
-        """ Catches a bunch of common mongodb errors when saving and handles
-        them appropriately. A convenient wrapper around catch_error_graceful.
-        """
-        form = kwargs.pop('form', None)
-        flash = kwargs.pop('flash', False)
-        try:
-            db.session.commit(**kwargs)
-        except Exception:
-            catch_error_graceful(
-                form=form,
-                out_flash=flash
-            )
-            return False
-        else:
-            return True
-        return True
-
-    def init(self):
-        db.session.add(self)
-        return self
-
-    def jsonize(self, args, raw=False):
-        """ Used to join attributes or functions to an objects json representation.
-        For passing back object state via the api
-        """
-        dct = {}
-        for key in args:
-            attr = getattr(self, key, 1)
-            if isinstance(attr, db.Model):
-                attr = str(attr.id)
-            if isinstance(attr, Enum):
-                attr = dict({str(x): x.index for x in attr})
-            elif isinstance(attr, datetime.datetime):
-                attr = calendar.timegm(attr.utctimetuple()) * 1000
-            elif isinstance(attr, bool): # don't convert bool to str
-                pass
-            elif isinstance(attr, set): # don't convert bool to str
-                attr = {x: True for x in attr}
-            elif callable(attr):
-                attr = attr()
-            else:
-                attr = str(attr)
-            dct[key] = attr
-
-        if raw:
-            return dct
-        else:
-            return json.dumps(dct)
-
-
-""" Lots of boiler plate/replication here because @declared_attr didn't want
-to work correctly for model inheritence. Not pretty, but it will work for now """
 class SubscriptionBase(object):
     @declared_attr
     def __tablename__(cls):
@@ -217,49 +265,49 @@ class SubscriptionBase(object):
     # the distribution rules for this subscription
     rules = db.Column(HSTORE)
 
-class IssueSubscription(db.Model, SubscriptionBase, CommonMixin):
+class IssueSubscription(base, SubscriptionBase):
     subscriber_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscriber = db.relationship('User', foreign_keys=[subscriber_id])
 
     subscribee_id = db.Column(db.Integer, db.ForeignKey("issue.id"), primary_key=True)
     subscribee = db.relationship('Issue', foreign_keys=[subscribee_id])
 
-class SolutionSubscription(db.Model, SubscriptionBase, CommonMixin):
+class SolutionSubscription(base, SubscriptionBase):
     subscriber_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscriber = db.relationship('User', foreign_keys=[subscriber_id])
 
     subscribee_id = db.Column(db.Integer, db.ForeignKey("solution.id"), primary_key=True)
     subscribee = db.relationship('Solution', foreign_keys=[subscribee_id])
 
-class UserSubscription(db.Model, SubscriptionBase, CommonMixin):
+class UserSubscription(base, SubscriptionBase):
     subscriber_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscriber = db.relationship('User', foreign_keys=[subscriber_id])
 
     subscribee_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscribee = db.relationship('User', foreign_keys=[subscribee_id])
 
-class ProjectSubscription(db.Model, SubscriptionBase, CommonMixin):
+class ProjectSubscription(base, SubscriptionBase):
     subscriber_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscriber = db.relationship('User', foreign_keys=[subscriber_id])
 
     subscribee_id = db.Column(db.Integer, db.ForeignKey("project.id"), primary_key=True)
     subscribee = db.relationship('Project', foreign_keys=[subscribee_id])
 
-class IssueVote(db.Model, CommonMixin):
+class IssueVote(base):
     voter_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     voter = db.relationship('User', foreign_keys=[voter_id])
 
     votee = db.relationship("Issue")
     votee_id = db.Column(db.Integer, db.ForeignKey("issue.id"), primary_key=True)
 
-class SolutionVote(db.Model, CommonMixin):
+class SolutionVote(base):
     voter_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     voter = db.relationship('User', foreign_keys=[voter_id])
 
     votee = db.relationship("Solution")
     votee_id = db.Column(db.Integer, db.ForeignKey("solution.id"), primary_key=True)
 
-class ProjectVote(db.Model, CommonMixin):
+class ProjectVote(base):
     voter_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
     voter = db.relationship('User', foreign_keys=[voter_id])
 
@@ -267,17 +315,7 @@ class ProjectVote(db.Model, CommonMixin):
     votee_id = db.Column(db.Integer, db.ForeignKey("project.id"), primary_key=True)
 
 
-"""
-class Comment(db.EmbeddedDocument):
-    body = db.StringField(min_length=10)
-    user = db.ReferenceField('User', required=True)
-    time = db.DateTimeField()
-
-    @property
-    def md_body(self):
-        return markdown2.markdown(self.body)
-"""
-class Project(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
+class Project(base, SubscribableMixin, VotableMixin):
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     maintainer_username = db.Column(db.String, db.ForeignKey('user.username'))
@@ -285,8 +323,8 @@ class Project(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
     url_key = db.Column(db.String)
 
     # description info
-    name = db.Column(db.String)
-    website = db.Column(db.String)
+    name = db.Column(db.String(128))
+    website = db.Column(db.String(256))
     desc = db.Column(db.String)
     issue_count = db.Column(db.Integer)  # XXX: Currently not implemented
 
@@ -294,7 +332,7 @@ class Project(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
     votes = db.Column(db.Integer, default=0)
 
     # Event log
-    events = db.Column(JSONEncodedDict)
+    events = db.Column(EventJSON)
 
     # Github Syncronization information
     gh_repo_id = db.Column(db.Integer, default=-1)
@@ -305,6 +343,18 @@ class Project(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
     __table_args__ = (
         db.UniqueConstraint("url_key", "maintainer_username"),
     )
+
+    # Validation Profile
+    # ======================================================================
+
+    valid_profile = V.parse({
+        "?created_at": "?datetime",
+        #"user": 'testing',
+        "url_key": V.String(max_length=64),
+        "name": V.String(max_length=128),
+        "?website": V.String(max_length=256),
+        "?desc": V.String(),
+    }, required_properties=True)
 
     # Join profiles
     # ======================================================================
@@ -406,7 +456,7 @@ class Project(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
         current_app.logger.debug("Desynchronized repository")
 
 
-class Issue(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
+class Issue(base, SubscribableMixin, VotableMixin):
 
     statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
 
@@ -425,7 +475,7 @@ class Issue(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
     votes = db.Column(db.Integer, default=0)
 
     # Event log
-    events = db.Column(JSONEncodedDict)
+    events = db.Column(EventJSON)
 
     # our project relationship
     project = db.relationship('Project')
@@ -543,7 +593,7 @@ class Issue(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
             catch_error_graceful()
 
 
-class Solution(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
+class Solution(base, SubscribableMixin, VotableMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     # key pair, unique identifier
@@ -559,7 +609,7 @@ class Solution(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
     votes = db.Column(db.Integer, default=0)
 
     # Event log
-    events = db.Column(JSONEncodedDict)
+    events = db.Column(EventJSON)
 
     # our project relationship
     project = db.relationship('Project')
@@ -664,7 +714,7 @@ class Solution(db.Model, SubscribableMixin, VotableMixin, CommonMixin):
             catch_error_graceful()
 
 
-class Transaction(db.Model, CommonMixin):
+class Transaction(base):
     StatusVals = Enum('Pending', 'Cleared')
     _status = db.Column(db.Integer, default=StatusVals.Pending.index)
 
@@ -687,7 +737,7 @@ class Transaction(db.Model, CommonMixin):
         return self.StatusVals[self._status]
 
 
-class Email(db.Model, CommonMixin):
+class Email(base):
     standard_join = []
 
     user = db.relationship('User', backref=db.backref('emails'))
@@ -696,7 +746,7 @@ class Email(db.Model, CommonMixin):
     verified = db.Column(db.Boolean, default=False)
     primary = db.Column(db.Boolean, default=True)
 
-class User(db.Model, SubscribableMixin, CommonMixin):
+class User(base, SubscribableMixin):
     # _id
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(32), unique=True)
@@ -706,8 +756,8 @@ class User(db.Model, SubscribableMixin, CommonMixin):
     _password = db.Column(db.String)
 
     # Event information
-    public_events = db.Column(JSONEncodedDict)
-    events = db.Column(JSONEncodedDict)
+    public_events = db.Column(EventJSON)
+    events = db.Column(EventJSON)
 
     # Github sync
     gh_token = db.Column(db.String)
@@ -865,6 +915,12 @@ class User(db.Model, SubscribableMixin, CommonMixin):
     def __get__(self, one, two):
         current_app.logger.debug("{} : {}".format(one, two))
         return self
+
+
+@event.listens_for(base, 'before_update', propagate=True)
+def validation_listener(mapper, connection, target):
+    current_app.logger.warn("Updater")
+    raise ValueError
 
 
 from . import events as events

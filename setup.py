@@ -15,6 +15,7 @@ requires = ['flask',
             'enum',
             'stripe',
             'psycopg2',
+            'valideer',
             'Babel']
 
 setup(name='crowdlink',
