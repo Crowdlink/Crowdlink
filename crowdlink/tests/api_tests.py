@@ -1,58 +1,11 @@
 import crowdlink
 import json
-import decorator
-import stripe
 
+from crowdlink.tests import BaseTest, login_required
 from pprint import pprint
-from crowdlink.util import provision
-from flask.ext.testing import TestCase
 
 
-class APITests(TestCase):
-
-    def create_app(self):
-        app = crowdlink.create_app()
-        app.config['TESTING'] = True
-        app.config.from_pyfile('../testing.cfg')
-        # Remove flasks stderr handler, replace with stdout so nose can
-        # capture properly
-        del app.logger.handlers[0]
-        with app.app_context():
-            self.db = crowdlink.db
-            self.db.drop_all()
-            self.db.create_all()
-            provision()
-        return app
-
-    @decorator.decorator
-    def login_required(func, self, username='crowdlink', password='testing'):
-        self.user = self.login(username, password)['user']
-        func(self)
-        self.logout()
-
-    def json_post(self, url, data):
-        return self.client.post(
-            url, data=json.dumps(data), content_type='application/json')
-
-    def json_get(self, url, data):
-        return self.client.get(
-            url, query_string=data, content_type='application/json')
-
-    def login(self, username, password):
-        data = {
-            'username': username,
-            'password': password
-        }
-        ret = self.json_post('/api/login', data=data).json
-        pprint(ret)
-        assert ret['success']
-        return ret
-
-    def logout(self):
-        ret = self.client.get('/api/logout', follow_redirects=True)
-        assert ret.json['access_denied']
-        return ret.json
-
+class APITests(BaseTest):
     def test_home(self):
         rv = self.client.get('/')
 
@@ -122,26 +75,6 @@ class APITests(TestCase):
 
     # Test all the form checks
     # =========================================================================
-    @login_required
-    def test_run_charge(self):
-        # create a new token via the api. this is usually done via the JS side
-        stripe.api_key = self.app.config['STRIPE_SECRET_KEY']
-        token = stripe.Token.create(
-            card={
-                "number": '4242424242424242',
-                "exp_month": 12,
-                "exp_year": 2014,
-                "cvc": '123'
-            },
-        )
-        dct_token = dict(token)
-        dct_token['card'] = dict(token.card)
-        data = {'amount': 1500,
-                'token': dct_token}
-        print self.user
-        res = self.json_post('/api/charge', data=data)
-        pprint(res.json)
-        assert res.json['success']
 
     def test_login(self):
         self.login('crowdlink', 'testing')

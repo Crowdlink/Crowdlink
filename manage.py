@@ -1,6 +1,7 @@
 from flask.ext.script import Manager
-from crowdlink import app
+from crowdlink import create_app
 
+app = create_app()
 manager = Manager(app)
 
 import logging
