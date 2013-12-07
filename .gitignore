@@ -52,6 +52,7 @@ nosetests.xml
 .pydevproject
 .ropeproject
 .sass-cache
+.noseids
 tags
 
 uwsgi.pid

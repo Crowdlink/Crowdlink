@@ -3,79 +3,26 @@ from flask.ext.login import login_required, logout_user, current_user, login_use
 from flask.ext.restful import Resource
 
 from . import root, lm
-from .models import (User, Project, Issue, Transaction, Solution)
+from .models import (User, Project, Issue, Transaction, Solution, Email)
 from .lib import get_json_joined, get_joined, redirect_angular
 
 import json
 import valideer
 import bson
 import sqlalchemy
+import decorator
 import datetime
 import os
 import sys
 import stripe
 import valideer as V
 
+
 api = Blueprint('api_bp', __name__)
 
 
-# Utility functions
+# Common Fixtures
 # =============================================================================
-@api.route("/user/check", methods=['POST'])
-def check_user():
-    """ Check if a specific username is taken """
-    js = request.json_dict
-
-    # try to access the issue with identifying information
-    try:
-        username = js.pop('value')
-        user = User.query.filter_by(username=username).one()
-    except KeyError:
-        return incorrect_syntax()
-    except sqlalchemy.orm.exc.NoResultFound:
-        return jsonify(taken=False)
-    else:
-        return jsonify(taken=True)
-
-
-@api.route("/purl_key/check", methods=['POST'])
-@login_required
-def check_ptitle():
-    """ Check if a specific username is taken """
-    js = request.json_dict
-
-    # try to access the issue with identifying information
-    try:
-        url_key = js.pop('value')
-        project = Project.query.filter_by(username=g.user.username, url_key=url_key).one()
-    except KeyError:
-        return incorrect_syntax()
-    except sqlalchemy.orm.exc.NoResultFound:
-        return jsonify(taken=False)
-    else:
-        return jsonify(taken=True)
-
-
-@api.route("/email/check", methods=['POST'])
-def check_email():
-    """ Check if a specific username is taken """
-    js = request.json_dict
-
-    # try to access the issue with identifying information
-    try:
-        email = js.pop('value')
-        user = User.query.filter_by(emails__address=email).one()
-    except KeyError:
-        return incorrect_syntax()
-    except sqlalchemy.orm.exc.NoResultFound:
-        return jsonify(taken=False)
-    else:
-        return jsonify(taken=True)
-
-
-# Project getter/setter
-# =============================================================================
-
 def catch_common(func):
     # tries to catch common exceptions and return properly
     def decorated(self, *args, **kwargs):
@@ -112,6 +59,37 @@ def catch_common(func):
     return decorated
 
 
+def catch_stripe(func):
+    # catches the more generic stripe errors and logs them
+    def decorated(self, *args, **kwargs):
+        js = request.json_dict
+        try:
+            return func(self, *args, **kwargs)
+
+        except stripe.InvalidRequestError as e:
+            current_app.logger.error(
+                "An InvalidRequestError was recieved from stripe."
+                "Original token information: {0}".format(js.get('token')), exc_info=True)
+            return jsonify(success=False)
+        except stripe.AuthenticationError as e:
+            current_app.logger.error(
+                "An AuthenticationError was recieved from stripe."
+                "Original token information: {0}".format(js.get('token')), exc_info=True)
+            return jsonify(success=False)
+        except stripe.APIConnectionError as e:
+            current_app.logger.warn(
+                "An APIConnectionError was recieved from stripe."
+                "Original token information: {0}".format(js.get('token')), exc_info=True)
+            return jsonify(success=False)
+        except stripe.StripeError as e:
+            current_app.logger.warn(
+                "An StripeError occurred in stripe API."
+                "Original token information: {0}".format(js.get('token')), exc_info=True)
+            return jsonify(success=False)
+
+    return decorated
+
+
 class BaseResource(Resource):
     def update_model(self, data, model):
         # updates all fields if data is provided, checks acl
@@ -124,6 +102,51 @@ class BaseResource(Resource):
                 setattr(model, field, new_val)
 
 
+# Check functions for forms
+# =============================================================================
+@decorator.decorator
+def check_catch(func, *args, **kwargs):
+    """ Catches exceptions and None return types """
+    try:
+        ret = func(*args, **kwargs)
+    except KeyError:
+        return incorrect_syntax()
+    except sqlalchemy.orm.exc.NoResultFound:
+        return jsonify(taken=False)
+    else:
+        if ret is None:
+            return jsonify(taken=True)
+
+    return jsonify(), 500
+
+@api.route("/user/check", methods=['POST'])
+@check_catch
+def check_user():
+    """ Check if a specific username is taken """
+    js = request.json_dict
+    user = User.query.filter_by(username=js['value']).one()
+
+
+@api.route("/purl_key/check", methods=['POST'])
+@login_required
+@check_catch
+def check_ptitle():
+    """ Check if a specific project url_key is taken """
+    js = request.json_dict
+    project = Project.query.filter_by(username=current_user.username,
+                                      url_key=js['value']).one()
+
+
+@api.route("/email/check", methods=['POST'])
+@check_catch
+def check_email():
+    """ Check if a specific email address is taken """
+    js = request.json_dict
+    user = Email.query.filter_by(address=js['value']).one()
+
+
+# Project getter/setter
+# =============================================================================
 class ProjectAPI(BaseResource):
     model = Project
 
@@ -476,77 +499,56 @@ def transaction():
         return resource_not_found()
 
 
+
 @api.route("/charge", methods=['POST'])
+@catch_stripe
+@catch_common
 def run_charge():
+    """ Runs a charge for a User and generates a new transaction in the process
+    """
     js = request.json_dict
 
-    # try to access the issue with identifying information
-    try:
-        amount = js['amount']
-        card = js['token']['id']
-        livemode = js['token']['livemode']
-        if amount > 100000 or amount < 500:
-            return incorrect_syntax()
-        user = User.query.filter_by(id=js['userid']).one()
-
-        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
-        try:
-            retval = stripe.Charge.create(
-                amount=amount,
-                currency="usd",
-                card=card)
-        except stripe.CardError as e:
-            body = e.json_body
-            err  = body['error']
-
-            current_app.logger.info(err)
-            return jsonify(success=False)
-        except stripe.InvalidRequestError, e:
-            current_app.logger.error(
-                "An InvalidRequestError was recieved from stripe."
-                "Original token information: {0}".format(js['token']))
-            return jsonify(success=False)
-        except stripe.AuthenticationError, e:
-            current_app.logger.error(
-                "An AuthenticationError was recieved from stripe."
-                "Original token information: {0}".format(js['token']))
-            return jsonify(success=False)
-        except stripe.APIConnectionError, e:
-            current_app.logger.warn(
-                "An APIConnectionError was recieved from stripe."
-                "Original token information: {0}".format(js['token']))
-            return jsonify(success=False)
-        except stripe.StripeError, e:
-            current_app.logger.warn(
-                "An StripeError occurred in stripe API."
-                "Original token information: {0}".format(js['token']))
-            return jsonify(success=False)
-        else:
-            if retval['paid']:
-                status = Transaction.StatusVals.Cleared.index
-            else:
-                status = Transaction.StatusVals.Pending.index
-
-            trans = Transaction(
-                amount=amount,
-                livemode=livemode,
-                stripe_id=retval['id'],
-                created=datetime.datetime.fromtimestamp(retval['created']),
-                user=user.id,
-                _status=status,
-                last_four=retval['card']['last4']
-            )
-            trans.safe_save()
-
-    except KeyError:
+    amount = js['amount']
+    card = js['token']['id']
+    livemode = js['token']['livemode']
+    if amount > 100000 or amount < 500:
         return incorrect_syntax()
-    except sqlalchemy.orm.exc.NoResultFound:
-        return resource_not_found()
+
+    user = User.query.filter_by(id=js['userid']).one()
+
+    stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+    try:
+        retval = stripe.Charge.create(
+            amount=amount,
+            currency="usd",
+            card=card)
+    except stripe.CardError as e:
+        body = e.json_body
+        err = body['error']
+
+        current_app.logger.info(err, exc_info=True)
+        return jsonify(success=False)
+    else:
+        if retval['paid']:
+            status = Transaction.StatusVals.Cleared.index
+        else:
+            status = Transaction.StatusVals.Pending.index
+
+        trans = Transaction(
+            amount=amount,
+            livemode=livemode,
+            stripe_id=retval['id'],
+            created=datetime.datetime.fromtimestamp(retval['created']),
+            user=user.id,
+            _status=status,
+            last_four=retval['card']['last4']
+        )
+        trans.safe_save()
 
     return jsonify(success=True)
 
 def incorrect_syntax(message='Incorrect syntax', **kwargs):
-    return jsonify(code=400, message=message, **kwargs)
+    return jsonify(message=message, **kwargs), 400
 
 def resource_not_found(message='Asset does not exist', **kwargs):
-    return jsonify(code=404, message=message, **kwargs)
+    return jsonify(message=message, **kwargs), 404

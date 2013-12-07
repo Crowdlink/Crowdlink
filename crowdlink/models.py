@@ -68,7 +68,7 @@ class BaseMapper(object):
                 if isinstance(validator, V.Object):
                     pass
                 else:  # base case
-                    current_app.logger.debug("Setting listener for change on attr {}, attr obj {}".format(getattr(cls, name), name))
+                    #current_app.logger.debug("Setting listener for change on attr {}, attr obj {}".format(getattr(cls, name), name))
                     func = lambda target, value, oldvalue, initiator: valid.validate_attr(initiator, value)
                     event.listen(getattr(cls, name),
                                 'set',

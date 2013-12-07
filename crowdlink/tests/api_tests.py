@@ -3,6 +3,7 @@ import crowdlink
 import unittest
 import json
 import tempfile
+import decorator
 import logging
 import sys
 
@@ -16,7 +17,6 @@ class APITests(TestCase):
         app = crowdlink.create_app()
         app.config['TESTING'] = True
         app.config.from_pyfile('../testing.cfg')
-        app.logger.addHandler(logging.StreamHandler(sys.stdout))
         # Remove flasks stderr handler, replace with stdout so nose can
         # capture properly
         del app.logger.handlers[0]
@@ -27,6 +27,14 @@ class APITests(TestCase):
             provision()
         return app
 
+    @decorator.decorator
+    def login_required(func, username='crowdlink', password='testing'):
+        def magic(self):
+            self.login(username, password)
+            self.func()
+            self.logout()
+        return magic
+
     def json_post(self, url, data):
         return self.client.post(url, data=json.dumps(data), content_type='application/json')
 
@@ -35,10 +43,10 @@ class APITests(TestCase):
             'username': username,
             'password': password
         }
-        ret = self.json_post('/api/login', data=data)
-        pprint(ret.json)
-        assert ret.json['success']
-        return ret.json
+        ret = self.json_post('/api/login', data=data).json
+        pprint(ret)
+        assert ret['success']
+        return ret
 
     def logout(self):
         ret = self.client.get('/api/logout', follow_redirects=True)
@@ -54,6 +62,8 @@ class APITests(TestCase):
         assert '_password' not in res
         assert 'password' not in res
 
+    # Project api views
+    # =========================================================================
     def test_project(self):
         qs = {'username': 'crowdlink',
               'url_key': 'crowdlink',
@@ -71,12 +81,36 @@ class APITests(TestCase):
         assert res['success']
 
     def test_project_page(self):
+        """ page_join project test """
         qs = {'username': 'crowdlink',
               'url_key': 'crowdlink',
               'join_prof': 'page_join'}
         res = self.client.get('/api/project',
                               query_string=qs).json
         assert type(res['events']) == list
+
+
+    # Test all the form checks
+    # =========================================================================
+    def test_check_user(self):
+        assert self.json_post('/api/user/check', {'value': 'crowdlink'}).json['taken']
+        assert self.json_post('/api/user/check', {'value': 'this_doens'}).json['taken'] == False
+        self.assert400(self.json_post('/api/user/check', {}))
+
+    def test_check_email(self):
+        assert self.json_post('/api/email/check',
+                              {'value': 'support@crowdlink.com'}).json['taken']
+        assert self.json_post('/api/email/check',
+                              {'value': 'dflgj@dsflkjg.com'}).json['taken'] == False
+        self.assert400(self.json_post('/api/email/check', {}))
+
+    @login_required
+    def test_check_purl_key(self):
+        assert self.json_post('/api/purl_key/check',
+                              {'value': 'crowdlink'}).json['taken']
+        assert self.json_post('/api/purl_key/check',
+                              {'value': 'dsflgjsdf;lgjksdfg;lk'}).json['taken'] == False
+        self.assert400(self.json_post('/api/purl_key/check', {}))
 
     def test_login(self):
         self.login('crowdlink', 'testing')
