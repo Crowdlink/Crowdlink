@@ -1,16 +1,16 @@
-from flask import url_for, session, g, current_app, flash
+from flask import session, current_app, flash
 from flask.ext.login import current_user
 
 from . import db, github
-from .exc import AccessDenied
-from .util import flatten_dict, inherit_lst
+from .util import inherit_lst
 from .acl import issue_acl, project_acl, solution_acl
 
-from flask.ext.sqlalchemy import _BoundDeclarativeMeta, BaseQuery, _QueryProperty
+from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
+                                  _QueryProperty)
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from sqlalchemy.dialects.postgresql import HSTORE
 from sqlalchemy.types import TypeDecorator, TEXT
-from sqlalchemy import exc, event
+from sqlalchemy import event
 
 from enum import Enum
 
@@ -19,23 +19,19 @@ import valideer as V
 import sqlalchemy
 import cryptacular.bcrypt
 import re
-import sys
 import werkzeug
 import json
-import bson
 import urllib
 import hashlib
 import datetime
 import calendar
-import operator
-import copy
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
 
 def validate_attr(self, attr, value):
-    """ Allows calling a single validator by passing in a dotted notation for the object.
-    """
+    """ Allows calling a single validator by passing in a dotted notation for
+    the object.  """
     attr = str(attr).split('.', 1)[1]
     validator = [v for i, v in enumerate(self._named_validators) if v[0] == attr][0][1]
     try:
@@ -46,8 +42,9 @@ V.Object.validate_attr = validate_attr
 
 
 class BaseMapper(object):
-    """ Lots of boiler plate/replication here because @declared_attr didn't want
-    to work correctly for model inheritence. Not pretty, but it will work for now """
+    """ Lots of boiler plate/replication here because @declared_attr didn't
+    want to work correctly for model inheritence. Not pretty, but it will work
+    for now """
 
     #: the query class used.  The :attr:`query` attribute is an instance
     #: of this class.  By default a :class:`BaseQuery` is used.
@@ -68,16 +65,14 @@ class BaseMapper(object):
                 if isinstance(validator, V.Object):
                     pass
                 else:  # base case
-                    #current_app.logger.debug("Setting listener for change on attr {}, attr obj {}".format(getattr(cls, name), name))
-                    func = lambda target, value, oldvalue, initiator: valid.validate_attr(initiator, value)
+                    func = lambda target, value, oldvalue, initiator: \
+                        valid.validate_attr(initiator, value)
                     event.listen(getattr(cls, name),
-                                'set',
-                                func,
-                                name)
-
+                                 'set',
+                                 func,
+                                 name)
 
         return super(BaseMapper, cls).__new__(cls, *args, **kwargs)
-
 
     def get_acl(self, user=None):
         """ Generates an acl list for a specific user which defaults to the
@@ -118,16 +113,13 @@ class BaseMapper(object):
         # add to the main session if not added
         if db.object_session(self) is None:
             db.session.add(self)
-        form = kwargs.pop('form', None)
-        flash = kwargs.pop('flash', False)
+
         try:
-            db.session.flush()
             db.session.commit(**kwargs)
         except Exception:
-            current_app.logger.warn("Unkown error commiting to db", exc_info=True)
+            current_app.logger.warn("Unkown error commiting to db",
+                                    exc_info=True)
             return False
-        else:
-            return True
         return True
 
     def init(self):
@@ -142,24 +134,39 @@ class BaseMapper(object):
         return dict((c, getattr(model, c)) for c in columns)
 
     def jsonize(self, args, raw=False):
-        """ Used to join attributes or functions to an objects json representation.
-        For passing back object state via the api
-        """
+        """ Used to join attributes or functions to an objects json
+        representation.  For passing back object state via the api """
         dct = {}
         for key in args:
             attr = getattr(self, key, 1)
+            # If it's being joined this way, just use the id
             if isinstance(attr, BaseMapper):
-                attr = str(attr.id)
+                try:
+                    attr = str(attr.id)
+                except AttributeError:
+                    current_app.logger.warn(
+                        ("{} object join doesn't have an id on obj "
+                         "{}").format(str(attr), self.__class__.__name__))
+            # convert an enum to a dict for easy parsing
             if isinstance(attr, Enum):
                 attr = dict({str(x): x.index for x in attr})
+            # convert datetime to seconds since epoch, much more universal
             elif isinstance(attr, datetime.datetime):
                 attr = calendar.timegm(attr.utctimetuple()) * 1000
-            elif isinstance(attr, bool) or isinstance(attr, int): # don't convert bool to str
+            # don't convert bool or int to str
+            elif isinstance(attr, bool) or isinstance(attr, int):
                 pass
-            elif isinstance(attr, set): # don't convert bool to str
+            # convert set (user_acl list) to a dictionary for easy conditionals
+            elif isinstance(attr, set):
                 attr = {x: True for x in attr}
+            # try to fetch callables properly
             elif callable(attr):
-                attr = attr()
+                try:
+                    attr = attr()
+                except TypeError:
+                    current_app.logger.warn(
+                        ("{} callable requires argument on obj "
+                         "{}").format(str(attr), self.__class__.__name__))
             else:
                 attr = str(attr)
             dct[key] = attr
@@ -170,14 +177,15 @@ class BaseMapper(object):
             return json.dumps(dct)
 
 
-base = declarative_base(cls=BaseMapper, metaclass=_BoundDeclarativeMeta, name='Model')
+base = declarative_base(cls=BaseMapper,
+                        metaclass=_BoundDeclarativeMeta,
+                        name='Model')
 base.query = _QueryProperty(db)
 db.Model = base
 
 
 class EventJSON(TypeDecorator):
-    """ Wraps a list of Event objects into a JSON encoded list
-    """
+    """ Wraps a list of Event objects into a JSON encoded list """
 
     impl = TEXT
 
@@ -199,10 +207,10 @@ class EventJSON(TypeDecorator):
             return lst
         return []
 
+
 class VotableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
-
 
     def set_vote(self, vote):
         """ save isn't needed, this operation must be atomic """
@@ -211,13 +219,14 @@ class VotableMixin(object):
             cls.query.filter_by(voter=current_user.get(),
                                 votee=self).delete()
             current_app.logger.debug(
-                "Unvoting on {} as user {}".format(self.__class__.__name__, current_user.username))
+                ("Unvoting on {} as user "
+                 "{}").format(self.__class__.__name__, current_user.username))
             return True
         else:  # vote
             current_app.logger.debug(
-                "Voting on {} as user {}".format(self.__class__.__name__, current_user.username))
-            cls(voter=current_user.get(),
-                votee=self).init().safe_save()
+                ("Voting on {} as user "
+                 "{}").format(self.__class__.__name__, current_user.username))
+            cls(voter=current_user.get(), votee=self).safe_save()
             return True
         return "already_set"
 
@@ -231,27 +240,29 @@ class SubscribableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
 
-
     def unsubscribe(self):
         self.subscription_cls.query.filter_by(
             subscriber=current_user.get(),
             subscribee=self).delete()
         current_app.logger.debug(
-            "Unsubscribing on {} as user {}".format(self.__class__.__name__, current_user.username))
+            ("Unsubscribing on {} as user "
+             "{}").format(self.__class__.__name__, current_user.username))
         return True
 
     def subscribe(self):
         current_app.logger.debug(
-            "Subscribing on {} as user {}".format(self.__class__.__name__, current_user.username))
+            ("Subscribing on {} as user "
+             "{}").format(self.__class__.__name__, current_user.username))
         self.subscription_cls(subscriber=current_user.get(),
-                              subscribee=self).init().safe_save()
+                              subscribee=self).safe_save()
         return True
 
     @property
     def subscribed(self):
         return bool(
-            self.subscription_cls.query.filter_by(subscriber=current_user.get(),
-                                                  subscribee=self).first())
+            self.subscription_cls.query.filter_by(
+                subscriber=current_user.get(),
+                subscribee=self).first())
 
     @property
     def subscribers(self):
@@ -266,54 +277,75 @@ class SubscriptionBase(object):
     # the distribution rules for this subscription
     rules = db.Column(HSTORE)
 
+
 class IssueSubscription(base, SubscriptionBase):
-    subscriber_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    subscriber_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscriber = db.relationship('User', foreign_keys=[subscriber_id])
 
-    subscribee_id = db.Column(db.Integer, db.ForeignKey("issue.id"), primary_key=True)
+    subscribee_id = db.Column(
+        db.Integer, db.ForeignKey("issue.id"), primary_key=True)
     subscribee = db.relationship('Issue', foreign_keys=[subscribee_id])
 
+
 class SolutionSubscription(base, SubscriptionBase):
-    subscriber_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    subscriber_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscriber = db.relationship('User', foreign_keys=[subscriber_id])
 
-    subscribee_id = db.Column(db.Integer, db.ForeignKey("solution.id"), primary_key=True)
+    subscribee_id = db.Column(
+        db.Integer, db.ForeignKey("solution.id"), primary_key=True)
     subscribee = db.relationship('Solution', foreign_keys=[subscribee_id])
 
+
 class UserSubscription(base, SubscriptionBase):
-    subscriber_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    subscriber_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscriber = db.relationship('User', foreign_keys=[subscriber_id])
 
-    subscribee_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    subscribee_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscribee = db.relationship('User', foreign_keys=[subscribee_id])
 
+
 class ProjectSubscription(base, SubscriptionBase):
-    subscriber_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    subscriber_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
     subscriber = db.relationship('User', foreign_keys=[subscriber_id])
 
-    subscribee_id = db.Column(db.Integer, db.ForeignKey("project.id"), primary_key=True)
+    subscribee_id = db.Column(
+        db.Integer, db.ForeignKey("project.id"), primary_key=True)
     subscribee = db.relationship('Project', foreign_keys=[subscribee_id])
 
+
 class IssueVote(base):
-    voter_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    voter_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
     voter = db.relationship('User', foreign_keys=[voter_id])
 
     votee = db.relationship("Issue")
-    votee_id = db.Column(db.Integer, db.ForeignKey("issue.id"), primary_key=True)
+    votee_id = db.Column(
+        db.Integer, db.ForeignKey("issue.id"), primary_key=True)
+
 
 class SolutionVote(base):
-    voter_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    voter_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
     voter = db.relationship('User', foreign_keys=[voter_id])
 
     votee = db.relationship("Solution")
-    votee_id = db.Column(db.Integer, db.ForeignKey("solution.id"), primary_key=True)
+    votee_id = db.Column(
+        db.Integer, db.ForeignKey("solution.id"), primary_key=True)
+
 
 class ProjectVote(base):
-    voter_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    voter_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
     voter = db.relationship('User', foreign_keys=[voter_id])
 
     votee = db.relationship("Project")
-    votee_id = db.Column(db.Integer, db.ForeignKey("project.id"), primary_key=True)
+    votee_id = db.Column(
+        db.Integer, db.ForeignKey("project.id"), primary_key=True)
 
 
 class Project(base, SubscribableMixin, VotableMixin):
@@ -367,20 +399,24 @@ class Project(base, SubscribableMixin, VotableMixin):
                      'id',
                      '-vote_list',
                      '-events'
-                    ]
+                     ]
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
                  'name',
                  'get_abs_url',
                  'maintainer_username']
-    issue_page_join = ['__dont_mongo', 'name', 'maintainer_username', 'get_abs_url']
+
+    issue_page_join = ['__dont_mongo',
+                       'name',
+                       'maintainer_username',
+                       'get_abs_url']
     page_join = inherit_lst(standard_join,
-                             ['__dont_mongo',
-                              'name',
-                              'subscribed',
-                              'vote_status',
-                              {'obj': 'events'},
-                              ]
+                            ['__dont_mongo',
+                             'name',
+                             'subscribed',
+                             'vote_status',
+                             {'obj': 'events'},
+                             ]
                             )
 
     # Import the acl from acl file
@@ -410,8 +446,8 @@ class Project(base, SubscribableMixin, VotableMixin):
     @property
     def get_abs_url(self):
         return "/{username}/{url_key}/".format(
-                       username=self.maintainer_username,
-                       url_key=self.url_key)
+            username=self.maintainer_username,
+            url_key=self.url_key)
 
     def add_issue(self, issue, user):
         """ Add a new issue to this project """
@@ -482,10 +518,16 @@ class Issue(base, SubscribableMixin, VotableMixin):
     project = db.relationship('Project')
     project_url_key = db.Column(db.String)
     project_maintainer_username = db.Column(db.String)
-    __table_args__ = (db.ForeignKeyConstraint([project_url_key, project_maintainer_username],
-                                              [Project.url_key, Project.maintainer_username]),
-                      db.UniqueConstraint("url_key", "project_maintainer_username", "project_url_key"),
-                      {})
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            [project_url_key, project_maintainer_username],
+            [Project.url_key, Project.maintainer_username]),
+        db.UniqueConstraint(
+            "url_key",
+            "project_maintainer_username",
+            "project_url_key"),
+        {})
+
     acl = issue_acl
     standard_join = ['get_abs_url',
                      'title',
@@ -497,16 +539,16 @@ class Issue(base, SubscribableMixin, VotableMixin):
                      'id',
                      ]
     page_join = inherit_lst(standard_join,
-                             ['get_project_abs_url',
-                              {'obj': 'project',
-                               'join_prof': 'issue_page_join'},
-                              'statuses']
-                             )
+                            ['get_project_abs_url',
+                             {'obj': 'project',
+                              'join_prof': 'issue_page_join'},
+                             'statuses']
+                            )
 
     # used for displaying the project in noifications, etc
     brief_join = ['__dont_mongo',
-                 'title',
-                 'get_abs_url']
+                  'title',
+                  'get_abs_url']
     disp_join = ['__dont_mongo',
                  'title',
                  'get_abs_url',
@@ -551,8 +593,8 @@ class Issue(base, SubscribableMixin, VotableMixin):
     @property
     def get_project_abs_url(self):
         return "/{username}/{url_key}/".format(
-                       username=self.maintainer_username,
-                       url_key=self.project_url_key)
+            username=self.maintainer_username,
+            url_key=self.project_url_key)
 
     @property
     def status(self):
@@ -568,7 +610,8 @@ class Issue(base, SubscribableMixin, VotableMixin):
 
     def create_key(self):
         if self.title:
-            self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.title[:100]).lower()
+            self.url_key = re.sub(
+                '[^0-9a-zA-Z]', '-', self.title[:100]).lower()
 
     def add_comment(self, user, body):
         # Send the actual comment to the Issue event queue
@@ -576,22 +619,16 @@ class Issue(base, SubscribableMixin, VotableMixin):
         #c.distribute(self)
         pass
 
-
-    # Github Synchronization Logic
-    # ========================================================================
     def gh_desync(self, flatten=False):
-        """ Used to disconnect an Issue from github. Really just a
-        trickle down call from de-syncing the project, but nicer to keep the
-        logic in here"""
+        """ Used to disconnect an Issue from github. Really just a trickle down
+        call from de-syncing the project, but nicer to keep the logic in
+        here"""
         self.gh_synced = False
         # Remove indexes if we're flattening
         if flatten:
             self.gh_issue_num = None
             self.gh_labels = []
-        try:
-            self.save()
-        except Exception:
-            catch_error_graceful()
+        self.safe_save()
 
 
 class Solution(base, SubscribableMixin, VotableMixin):
@@ -618,11 +655,14 @@ class Solution(base, SubscribableMixin, VotableMixin):
     project_maintainer_username = db.Column(db.String)
     issue = db.relationship('Issue')
     issue_url_key = db.Column(db.String)
-    __table_args__ = (db.ForeignKeyConstraint([project_url_key, project_maintainer_username],
-                                           [Project.url_key, Project.maintainer_username]),
-                      db.ForeignKeyConstraint([project_url_key, project_maintainer_username, issue_url_key],
-                                           [Issue.project_url_key, Issue.project_maintainer_username, Issue.url_key]),
-                      {})
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            [project_url_key, project_maintainer_username],
+            [Project.url_key, Project.maintainer_username]),
+        db.ForeignKeyConstraint(
+            [project_url_key, project_maintainer_username, issue_url_key],
+            [Issue.project_url_key, Issue.project_maintainer_username, Issue.url_key]),
+        {})
 
     acl = solution_acl
     standard_join = ['get_abs_url',
@@ -634,16 +674,16 @@ class Solution(base, SubscribableMixin, VotableMixin):
                      'id'
                      ]
     page_join = inherit_lst(standard_join,
-                             [{'obj': 'issue',
-                               'join_prof': 'page_join'},
-                              'vote_status'
+                            [{'obj': 'issue',
+                              'join_prof': 'page_join'},
+                             'vote_status'
                              ]
-                           )
+                            )
 
     # used for displaying the project in noifications, etc
     brief_join = ['__dont_mongo',
-                 'title',
-                 'get_abs_url']
+                  'title',
+                  'get_abs_url']
 
     # specify which table is used for votes, subscriptions, etc so mixins can
     # use it
@@ -690,7 +730,8 @@ class Solution(base, SubscribableMixin, VotableMixin):
 
     def create_key(self):
         if self.title:
-            self.url_key = re.sub('[^0-9a-zA-Z]', '-', self.title[:100]).lower()
+            self.url_key = re.sub(
+                '[^0-9a-zA-Z]', '-', self.title[:100]).lower()
 
     def add_comment(self, user, body):
         # Send the actual comment to the Issue event queue
@@ -709,10 +750,7 @@ class Solution(base, SubscribableMixin, VotableMixin):
         if flatten:
             self.gh_issue_num = None
             self.gh_labels = []
-        try:
-            self.save()
-        except Exception:
-            catch_error_graceful()
+        self.safe_save()
 
 
 class Transaction(base):
@@ -729,10 +767,7 @@ class Transaction(base):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     standard_join = ['status']
-    meta = {
-        'ordering': ['-created']
-    }
-    # Closevalue masking for render
+
     @property
     def status(self):
         return self.StatusVals[self._status]
@@ -746,6 +781,7 @@ class Email(base):
     address = db.Column(db.String, primary_key=True)
     verified = db.Column(db.Boolean, default=False)
     primary = db.Column(db.Boolean, default=True)
+
 
 class User(base, SubscribableMixin):
     # _id
@@ -763,12 +799,11 @@ class User(base, SubscribableMixin):
     # Github sync
     gh_token = db.Column(db.String)
 
-    meta = {'indexes': [{'fields': ['gh_token'], 'unique': True, 'sparse': True}]}
     standard_join = ['gh_linked',
                      'id',
                      'created_at',
                      '-_password',
-                    ]
+                     ]
     home_join = inherit_lst(standard_join,
                             [{'obj': 'events'},
                              {'obj': 'projects',
@@ -776,7 +811,6 @@ class User(base, SubscribableMixin):
 
     settings_join = inherit_lst(standard_join,
                                 {'obj': 'primary_email'})
-
 
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
@@ -790,9 +824,11 @@ class User(base, SubscribableMixin):
     @property
     def password(self):
         return self._password
+
     @password.setter
     def password(self, val):
         self._password = unicode(crypt.encode(val))
+
     def check_password(self, password):
         return crypt.check(self._password, password)
 
@@ -809,11 +845,13 @@ class User(base, SubscribableMixin):
         size = 180
 
         # construct the url
-        gravatar_url = "http://www.gravatar.com/avatar/" + hashlib.md5(self.primary_email.lower()).hexdigest() + "?"
-        gravatar_url += urllib.urlencode({'d':default, 's':str(size)})
+        gravatar_url = "http://www.gravatar.com/avatar/"
+        gravatar_url += hashlib.md5(self.primary_email.lower()).hexdigest()
+        gravatar_url += "?" + urllib.urlencode({'d': default, 's': str(size)})
 
     def get_abs_url(self):
-        return "/{username}".format(username=unicode(self.username).encode('utf-8'))
+        return "/{username}".format(
+            username=unicode(self.username).encode('utf-8'))
 
     @property
     def projects(self):
@@ -845,7 +883,8 @@ class User(base, SubscribableMixin):
     def gh_deauth(self, flatten=False):
         """ De-authenticates a user and redirects them to their account
         settings with a flash """
-        flash("Your GitHub Authentication token was missing when expected, please re-authenticate.")
+        flash("Your GitHub Authentication token was missing when expected, "
+              "please re-authenticate.")
         self.gh_token = ''
         for project in self.get_projects():
             project.gh_desync(flatten=flatten)
@@ -855,6 +894,7 @@ class User(base, SubscribableMixin):
         for repo in self.gh_repos():
             if repo['permissions']['admin']:
                 yield repo
+
     def gh_repo(self, path):
         """ Get a single repositories information from the gh_path """
         return github.get('repos/{0}'.format(path)).data
@@ -866,19 +906,16 @@ class User(base, SubscribableMixin):
         user = cls(username=username).init()
         user.password = password
         user.safe_save()
-        email = Email(address=email_address, user=user).init().safe_save()
+        Email(address=email_address, user=user).safe_save()
 
         return user
 
     @classmethod
     def create_user_github(cls, access_token):
-        user = cls(gh_token=access_token)
-        try:
-            email = Email(address=user.gh['email'])
-            user.save()
-        except mongoengine.errors.OperationError:
+        user = cls(gh_token=access_token).safe_save()
+        Email(address=user.gh['email'], user=user).safe_save()
+        if not user.safe_save():
             return False
-
         return user
 
     # Authentication callbacks
@@ -904,8 +941,8 @@ class User(base, SubscribableMixin):
         return '<User %r>' % (self.username)
 
     def __eq__(self, other):
-        """ This returns the actual user object compaison when it's a proxy object.
-        Very useful since we do this for auth checks all the time """
+        """ This returns the actual user object compaison when it's a proxy
+        object.  Very useful since we do this for auth checks all the time """
         if isinstance(other, werkzeug.local.LocalProxy):
             return self == other._get_current_object()
         else:
@@ -920,4 +957,3 @@ class User(base, SubscribableMixin):
 
 
 from . import events as events
-from .lib import (get_json_joined, distribute_event)

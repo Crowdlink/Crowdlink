@@ -66,6 +66,16 @@ module.exports = (grunt) ->
         command: 'uwsgi --stop uwsgi.pid; sleep 1.5; uwsgi --ini uwsgi.ini'
       clean:
         command: 'find . -name "*.pyc" -delete; find . -name "*.swo" -delete; find . -name "*.swp" -delete; echo "" > uwsgi.log'
+      flake8:
+        command: 'flake8 ./'
+        options:
+          stdout: true
+          stderr: true
+      new_flake8:
+        command: 'git diff HEAD~3 -U0 | flake8 --diff'
+        options:
+          stdout: true
+          stderr: true
 
     watch:
       options:
@@ -95,3 +105,5 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-shell')
 
   grunt.registerTask "default", ["less", "haml", "compass", "coffee"]
+  grunt.registerTask "flake8", ["shell:flake8"]
+  grunt.registerTask "new_flake8", ["shell:new_flake8"]

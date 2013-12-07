@@ -1,16 +1,12 @@
-import os
 import crowdlink
-import unittest
 import json
-import tempfile
 import decorator
-import logging
-import sys
 import stripe
 
 from pprint import pprint
 from crowdlink.util import provision
 from flask.ext.testing import TestCase
+
 
 class APITests(TestCase):
 
@@ -35,10 +31,12 @@ class APITests(TestCase):
         self.logout()
 
     def json_post(self, url, data):
-        return self.client.post(url, data=json.dumps(data), content_type='application/json')
+        return self.client.post(
+            url, data=json.dumps(data), content_type='application/json')
 
     def json_get(self, url, data):
-        return self.client.get(url, query_string=data, content_type='application/json')
+        return self.client.get(
+            url, query_string=data, content_type='application/json')
 
     def login(self, username, password):
         data = {
@@ -84,6 +82,7 @@ class APITests(TestCase):
 
     def test_project_400(self):
         self.assert400(self.json_get('/api/project', {}))
+
     def test_project_page(self):
         """ page_join project test """
         qs = {'username': 'crowdlink',
@@ -93,29 +92,33 @@ class APITests(TestCase):
                               query_string=qs).json
         assert type(res['events']) == list
 
-
     # Test all the form checks
     # =========================================================================
     def test_check_user(self):
-        assert self.json_post('/api/user/check', {'value': 'crowdlink'}).json['taken']
-        assert self.json_post('/api/user/check', {'value': 'this_doens'}).json['taken'] == False
+        assert self.json_post(
+            '/api/user/check', {'value': 'crowdlink'}).json['taken']
+        assert self.json_post(
+            '/api/user/check', {'value': 'this_doens'}).json['taken'] is False
         self.assert400(self.json_post('/api/user/check', {}))
 
     def test_check_email(self):
-        assert self.json_post('/api/email/check',
-                              {'value': 'support@crowdlink.com'}).json['taken']
-        assert self.json_post('/api/email/check',
-                              {'value': 'dflgj@dsflkjg.com'}).json['taken'] == False
+        assert self.json_post(
+            '/api/email/check',
+            {'value': 'support@crowdlink.com'}).json['taken']
+        assert self.json_post(
+            '/api/email/check',
+            {'value': 'dflgj@dsflkjg.com'}).json['taken'] is False
         self.assert400(self.json_post('/api/email/check', {}))
 
     @login_required
     def test_check_purl_key(self):
-        assert self.json_post('/api/purl_key/check',
-                              {'value': 'crowdlink'}).json['taken']
-        assert self.json_post('/api/purl_key/check',
-                              {'value': 'dsflgjsdf;lgjksdfg;lk'}).json['taken'] == False
+        assert self.json_post(
+            '/api/purl_key/check',
+            {'value': 'crowdlink'}).json['taken']
+        assert self.json_post(
+            '/api/purl_key/check',
+            {'value': 'dsflgjsdf;lgjksdfg;lk'}).json['taken'] is False
         self.assert400(self.json_post('/api/purl_key/check', {}))
-
 
     # Test all the form checks
     # =========================================================================
@@ -139,8 +142,6 @@ class APITests(TestCase):
         res = self.json_post('/api/charge', data=data)
         pprint(res.json)
         assert res.json['success']
-
-
 
     def test_login(self):
         self.login('crowdlink', 'testing')

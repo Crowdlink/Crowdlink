@@ -3,3 +3,4 @@ mock
 nose
 nose-progressive
 selenium
+flake8

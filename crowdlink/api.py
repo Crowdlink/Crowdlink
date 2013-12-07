@@ -1,21 +1,16 @@
-from flask import Blueprint, request, g, current_app, jsonify, abort, Response
-from flask.ext.login import login_required, logout_user, current_user, login_user
+from flask import Blueprint, request, g, current_app, jsonify
+from flask.ext.login import (login_required, logout_user, current_user,
+                             login_user)
 from flask.ext.restful import Resource
 
-from . import root, lm
-from .models import (User, Project, Issue, Transaction, Solution, Email)
-from .lib import get_json_joined, get_joined, redirect_angular
+from .models import User, Project, Issue, Transaction, Solution, Email
+from .lib import get_joined
 
-import json
 import valideer
-import bson
 import sqlalchemy
 import decorator
 import datetime
-import os
-import sys
 import stripe
-import valideer as V
 
 
 api = Blueprint('api_bp', __name__)
@@ -33,12 +28,14 @@ def catch_common(func):
         # Missing required data error
         except KeyError as e:
             current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
-            ret = {'success': False, 'message': 'Incorrect syntax on key ' + e.message}, 400
+            ret = {'success': False,
+                   'message': 'Incorrect syntax on key ' + e.message}, 400
 
         # Permission error
         except AssertionError:
             current_app.logger.debug("Permission error", exc_info=True)
-            ret = {'success': False, 'message': 'You don\'t have permission to do that'}, 403
+            ret = {'success': False,
+                   'message': 'You don\'t have permission to do that'}, 403
 
         # validation errors
         except valideer.base.ValidationError as e:
@@ -50,11 +47,19 @@ def catch_common(func):
             current_app.logger.debug("Does not exist", exc_info=True)
             ret = {'error': 'Could not be found'}, 404
         except sqlalchemy.exc.IntegrityError as e:
-            current_app.logger.debug("Attempted to insert duplicate", exc_info=True)
-            ret = {'success': False, 'message': "A duplicate value already exists in the database", 'detail': e.message}, 200
+            current_app.logger.debug("Attempted to insert duplicate",
+                                     exc_info=True)
+            ret = {
+                'success': False,
+                'message': "A duplicate value already exists in the database",
+                'detail': e.message},
+            200
         except sqlalchemy.exc:
             current_app.logger.debug("Unkown SQLAlchemy Error", exc_info=True)
-            ret = {'success': False, 'message': "An unknown database operations error has occurred"}, 200
+            ret = {
+                'success': False,
+                'message': "An unknown database operations error has occurred"},
+            200
 
         # a bit of a hack to make it work with flask-restful and regular views
         r = jsonify(ret[0])
@@ -71,25 +76,29 @@ def catch_stripe(func, *args, **kwargs):
     try:
         return func(*args, **kwargs)
 
-    except stripe.InvalidRequestError as e:
+    except stripe.InvalidRequestError:
         current_app.logger.error(
             "An InvalidRequestError was recieved from stripe."
-            "Original token information: {0}".format(js.get('token')), exc_info=True)
+            "Original token information: "
+            "{0}".format(js.get('token')), exc_info=True)
         return jsonify(success=False)
-    except stripe.AuthenticationError as e:
+    except stripe.AuthenticationError:
         current_app.logger.error(
             "An AuthenticationError was recieved from stripe."
-            "Original token information: {0}".format(js.get('token')), exc_info=True)
+            "Original token information: "
+            "{0}".format(js.get('token')), exc_info=True)
         return jsonify(success=False)
-    except stripe.APIConnectionError as e:
+    except stripe.APIConnectionError:
         current_app.logger.warn(
             "An APIConnectionError was recieved from stripe."
-            "Original token information: {0}".format(js.get('token')), exc_info=True)
+            "Original token information: "
+            "{0}".format(js.get('token')), exc_info=True)
         return jsonify(success=False)
-    except stripe.StripeError as e:
+    except stripe.StripeError:
         current_app.logger.warn(
             "An StripeError occurred in stripe API."
-            "Original token information: {0}".format(js.get('token')), exc_info=True)
+            "Original token information: "
+            "{0}".format(js.get('token')), exc_info=True)
         return jsonify(success=False)
 
     return jsonify(success=False)
@@ -102,7 +111,8 @@ class BaseResource(Resource):
             field = str(field).split('.')[1]
             new_val = data.pop(field, None)
             if new_val:
-                current_app.logger.debug("Updating value {} to {}".format(field, new_val))
+                current_app.logger.debug(
+                    "Updating value {} to {}".format(field, new_val))
                 assert model.can('edit_' + field)
                 setattr(model, field, new_val)
 
@@ -124,12 +134,13 @@ def check_catch(func, *args, **kwargs):
 
     return jsonify(), 500
 
+
 @api.route("/user/check", methods=['POST'])
 @check_catch
 def check_user():
     """ Check if a specific username is taken """
     js = request.json_dict
-    user = User.query.filter_by(username=js['value']).one()
+    User.query.filter_by(username=js['value']).one()
 
 
 @api.route("/purl_key/check", methods=['POST'])
@@ -138,8 +149,9 @@ def check_user():
 def check_ptitle():
     """ Check if a specific project url_key is taken """
     js = request.json_dict
-    project = Project.query.filter_by(maintainer_username=current_user.username,
-                                      url_key=js['value']).one()
+    Project.query.filter_by(
+        maintainer_username=current_user.username,
+        url_key=js['value']).one()
 
 
 @api.route("/email/check", methods=['POST'])
@@ -147,7 +159,7 @@ def check_ptitle():
 def check_email():
     """ Check if a specific email address is taken """
     js = request.json_dict
-    user = Email.query.filter_by(address=js['value']).one()
+    Email.query.filter_by(address=js['value']).one()
 
 
 # Project getter/setter
@@ -171,13 +183,13 @@ class ProjectAPI(BaseResource):
         if proj_id:
             return Project.query.filter_by(id=proj_id).one()
 
-
-        return Project.query.filter_by(url_key=data['url_key'],
-                                       maintainer_username=data['username']).one()
+        return Project.query.filter_by(
+            url_key=data['url_key'],
+            maintainer_username=data['username']).one()
 
     @catch_common
     def get(self):
-        data = request.dict_args()
+        data = request.dict_args
         join_prof = data.pop('join_prof', None)
         project = self.get_project(data)
         retval = {}
@@ -208,9 +220,9 @@ class ProjectAPI(BaseResource):
         sub_status = data.pop('subscribed', None)
         if sub_status:
             assert project.can('action_watch')
-        if sub_status == True:
+        if sub_status is True:
             project.subscribe()
-        elif sub_status == False:
+        elif sub_status is False:
             project.unsubscribe()
 
         vote_status = data.pop('vote_status', None)
@@ -272,12 +284,11 @@ class SolutionAPI(BaseResource):
 
     @catch_common
     def get(self):
-        data = request.dict_args()
+        data = request.dict_args
         join_prof = data.get('join_prof', 'standard_join')
 
         sol = SolutionAPI.get_solution(data)
         return get_joined(sol, join_prof=join_prof)
-
 
     @catch_common
     def put(self):
@@ -292,9 +303,9 @@ class SolutionAPI(BaseResource):
         sub_status = data.pop('subscribed', None)
         if sub_status:
             assert sol.can('action_watch')
-        if sub_status == True:
+        if sub_status is True:
             sol.subscribe()
-        elif sub_status == False:
+        elif sub_status is False:
             sol.unsubscribe()
 
         vote_status = data.pop('vote_status', None)
@@ -309,6 +320,7 @@ class SolutionAPI(BaseResource):
         return_val.update({'success': True})
         return jsonify(return_val)
 
+
 # Issue getter/setter
 # =============================================================================
 class IssueAPI(BaseResource):
@@ -321,13 +333,14 @@ class IssueAPI(BaseResource):
             return Issue.query.filter_by(id=idval).one()
         else:
             project = IssueAPI.get_parent_project(data, minimal=True)
-            return Issue.query.filter_by(url_key=data['url_key'], project=project).one()
+            return Issue.query.filter_by(url_key=data['url_key'],
+                                         project=project).one()
 
     @classmethod
     def get_parent_project(cls, data, **kwargs):
         proj_data = {'url_key': data.pop('purl_key', None),
-                    'id': data.pop('pid', None),
-                    'username': data.pop('username', None)}
+                     'id': data.pop('pid', None),
+                     'username': data.pop('username', None)}
         return ProjectAPI.get_project(proj_data, **kwargs)
 
     @catch_common
@@ -350,7 +363,7 @@ class IssueAPI(BaseResource):
 
     @catch_common
     def get(self):
-        data = request.dict_args()
+        data = request.dict_args
 
         retval = {}
         issue = IssueAPI.get_issue(data)
@@ -363,13 +376,11 @@ class IssueAPI(BaseResource):
                 assert sol.can('view_' + sol_join_prof)
             retval['solutions'] = get_joined(solutions, sol_join_prof)
 
-
         join_prof = data.get('join_prof', None)
         if join_prof:
             retval.update(get_joined(issue, join_prof=join_prof))
 
         return retval
-
 
     @catch_common
     def put(self):
@@ -383,11 +394,9 @@ class IssueAPI(BaseResource):
         sub_status = data.pop('subscribed', None)
         if sub_status:
             assert issue.can('action_watch')
-        if sub_status == True:
-            # Subscription logic, will need to be expanded to allow granular selection
-            #subscribe = IssueSubscriber(user=g.user.id)
+        if sub_status is True:
             issue.subscribe()
-        elif sub_status == False:
+        elif sub_status is False:
             issue.unsubscribe()
 
         vote_status = data.pop('vote_status', None)
@@ -411,7 +420,7 @@ class IssueAPI(BaseResource):
 # =============================================================================
 @api.route("/user", methods=['GET'])
 def get_user():
-    js = request.args
+    js = request.dict_args
     join_prof = request.args.get('join_prof', 'standard_join')
 
     # try to access the issue with identifying information
@@ -435,6 +444,7 @@ def get_user():
 
 @api.route("/user", methods=['POST'])
 @login_required
+@catch_common
 def update_user():
     js = request.json_dict
 
@@ -447,18 +457,13 @@ def update_user():
     except sqlalchemy.orm.exc.NoResultFound:
         return resource_not_found()
 
-    status = js.pop('subscribed', None)
-    if status == True:
-        # Subscription logic, will need to be expanded to allow granular selection
-        #subscribe = UserSubscriber(user=g.user.id)
-        user.subscribe(subscribe)
-    elif status == False:
-        user.unsubscribe(g.user)
+    subscribe = js.pop('subscribed', None)
+    if subscribe is True:
+        user.subscribe()
+    elif subscribe is False:
+        user.unsubscribe()
 
-    try:
-        user.safe_save()
-    except mongoengine.errors.ValidationError as e:
-        return jsonify(success=False, validation_errors=e.to_dict())
+    user.safe_save()
 
     return jsonify(success=True)
 
@@ -468,6 +473,7 @@ def update_user():
 def logout():
     logout_user()
     return jsonify(access_denied=True)
+
 
 @api.route("/login", methods=['POST'])
 def login():
@@ -485,23 +491,14 @@ def login():
     return jsonify(success=False, message="Invalid credentials")
 
 
-
 # Finance related function
 # =============================================================================
 @api.route("/transaction", methods=['GET'])
 @login_required
+@catch_common
 def transaction():
-    js = request.args
-
-    # try to access the issue with identifying information
-    try:
-        trans = Transaction.query.filter_by(user_id=current_user.id)
-        return get_json_joined(trans)
-    except KeyError as e:
-        return incorrect_syntax()
-    except sqlalchemy.orm.exc.NoResultFound:
-        return resource_not_found()
-
+    trans = Transaction.query.filter_by(user_id=current_user.id)
+    return jsonify(success=True, transactions=get_joined(trans))
 
 
 @api.route("/charge", methods=['POST'])
@@ -549,8 +546,10 @@ def run_charge():
 
         return jsonify(success=True, transaction=trans.to_dict())
 
+
 def incorrect_syntax(message='Incorrect syntax', **kwargs):
     return jsonify(message=message, **kwargs), 400
+
 
 def resource_not_found(message='Asset does not exist', **kwargs):
     return jsonify(message=message, **kwargs), 404

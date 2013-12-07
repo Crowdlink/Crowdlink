@@ -1,7 +1,9 @@
 from .util import flatten
 
+
 class P(object):
     keys = []
+
     def __init__(self, *args):
         self.keys = []
         for arg in args:
@@ -14,27 +16,26 @@ class P(object):
             else:
                 self.keys.append(arg)
 
+
 # Issues
 issue_anon = P(
     ('view', ['standard_join',
               'page_join',
               'brief_join',
               'disp_join']
-    )
+     )
 ).keys
 issue_user = P(issue_anon,
-    ('action', ['vote',
+               ('action', ['vote',
                 'add_solution',
                 'watch']
-    )
-).keys
+                )).keys
 issue_maintainer = P(issue_anon, issue_user,
-    ('edit', ['url_key',
-              '_status',
-              'title',
-              'desc']
-    )
-).keys
+                     ('edit', ['url_key',
+                               '_status',
+                               'title',
+                               'desc']
+                      )).keys
 issue_creator = issue_maintainer
 
 issue_acl = {'maintainer': issue_maintainer,
@@ -48,19 +49,17 @@ project_anon = P(
               'page_join',
               'issue_page_join',
               'disp_join']
-    )
+     )
 ).keys
 project_user = P(project_anon,
-    ('action', ['vote',
-                'add_issue',
-                'watch']
-    )
-).keys
+                 ('action', ['vote',
+                             'add_issue',
+                             'watch']
+                  )).keys
 project_maintainer = P(project_anon, project_user,
-    ('edit', ['name',
-              'website']
-    )
-).keys
+                       ('edit', ['name',
+                                 'website']
+                        )).keys
 
 project_acl = {'maintainer': project_maintainer,
                'anonymous': project_anon,
@@ -71,21 +70,17 @@ solution_anon = P(
     ('view', ['standard_join',
               'page_join',
               'disp_join']
-    )
-).keys
+     )).keys
 solution_user = P(solution_anon,
-    ('action', ['vote',
-                'watch']
-    )
-).keys
+                  ('action', ['vote',
+                              'watch']
+                   )).keys
 solution_maintainer = P(solution_anon, solution_user,
-    ('edit', ['url_key',
-              'title',
-              'desc']
-    )
-).keys
+                        ('edit', ['url_key',
+                                  'title',
+                                  'desc']
+                         )).keys
 
 solution_acl = {'maintainer': solution_maintainer,
-             'anonymous': solution_anon,
-             'user': solution_user}
-
+                'anonymous': solution_anon,
+                'user': solution_user}

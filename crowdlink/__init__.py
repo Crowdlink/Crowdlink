@@ -1,16 +1,12 @@
-from flask import Flask, g, current_app, abort, jsonify, request
+from flask import Flask, current_app, jsonify
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.login import LoginManager, current_user, user_unauthorized
+from flask.ext.login import LoginManager, user_unauthorized
 from flask.ext.restful import Api
 from flask_oauthlib.client import OAuth
 
 from jinja2 import FileSystemLoader
 
-from . import util
-
-import babel.dates as dates
 import os
-import datetime
 
 
 root = os.path.abspath(os.path.dirname(__file__) + '/../')
@@ -54,7 +50,7 @@ def create_app():
     # add the debug toolbar if we're in debug mode...
     if app.config['DEBUG']:
         from flask_debugtoolbar import DebugToolbarExtension
-        toolbar = DebugToolbarExtension(app)
+        DebugToolbarExtension(app)
 
     # register all our plugins
     db.init_app(app)
@@ -81,8 +77,11 @@ def create_app():
     # Monkey patch flasks request to inject a helper function
     # =========================================================================
     from flask import Request
+
+    @property
     def dict_args(self):
         return {one: two for one, two in self.args.iteritems()}
+
     @property
     def json_dict(self):
         js = self.json

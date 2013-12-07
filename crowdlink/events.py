@@ -1,17 +1,16 @@
-from . import db
 from .lib import distribute_event
-from .models import User, BaseMapper
+from .models import BaseMapper
 
-import datetime
 
 class Event(BaseMapper):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
     def to_dict(self):
-        ret = {str(key) : str(val) for key, val in self.__dict__.items()}
+        ret = {str(key): str(val) for key, val in self.__dict__.items()}
         ret["_cls"] = self.__class__.__name__
         return ret
+
 
 class IssueNotif(Event):
     template = "events/issue.html"
@@ -28,7 +27,7 @@ class IssueNotif(Event):
                          "issue",
                          self_send=True,
                          subscriber_send=True
-                    )
+                         )
 
         # sent to the user who created the issues's feed and their subscribers
         distribute_event(self.user,
@@ -36,4 +35,4 @@ class IssueNotif(Event):
                          "issue",
                          subscriber_send=True,
                          self_send=True
-                    )
+                         )

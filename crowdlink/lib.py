@@ -1,31 +1,28 @@
-from flask import url_for, session, g, current_app, request, flash, render_template, jsonify
+from flask import current_app, render_template, jsonify
 
-from . import db, github
 from .models import User
 
-import sys
-import mongoengine
 import json
 import smtplib
+import flask_sqlalchemy
 
-from bson.json_util import _json_convert
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-import sqlalchemy
-import flask_sqlalchemy
 
 email_cfg = {
-            'confirm': {'subject': 'Confirm your email address on Featurelet',
-                         'html_template': 'email/confirm.html',
-                         'plain_template': 'email/confirm_plain.html'},
-            'test': {'subject': 'Admin test email from Featurelet',
-                         'html_template': 'email/test.html',
-                         'plain_template': 'email/test_plain.html'}
-             }
+    'confirm': {'subject': 'Confirm your email address on Featurelet',
+                'html_template': 'email/confirm.html',
+                'plain_template': 'email/confirm_plain.html'},
+    'test': {'subject': 'Admin test email from Featurelet',
+             'html_template': 'email/test.html',
+             'plain_template': 'email/test_plain.html'}
+}
+
 
 def redirect_angular(url):
     return jsonify(redirect=url)
+
 
 def send_email(to_addr, typ, **kwargs):
     conf = email_cfg[typ]
@@ -36,9 +33,11 @@ def send_email(to_addr, typ, **kwargs):
     msg['From'] = "{0} <{1}>".format(send_name, send_addr)
     msg['To'] = to_addr
     if 'plain_template' in conf:
-        msg.attach(MIMEText(render_template(conf['plain_template'], **kwargs), 'plain'))
+        msg.attach(MIMEText(render_template(conf['plain_template'], **kwargs),
+                            'plain'))
     if 'html_template' in conf:
-        msg.attach(MIMEText(render_template(conf['html_template'], **kwargs), 'html'))
+        msg.attach(MIMEText(render_template(conf['html_template'], **kwargs),
+                            'html'))
 
     try:
         host = smtplib.SMTP(current_app.config['EMAIL_SERVER'],
@@ -49,13 +48,15 @@ def send_email(to_addr, typ, **kwargs):
         if current_app.config['EMAIL_USE_TLS']:
             host.starttls()
         host.ehlo()
-        host.login(current_app.config['EMAIL_USERNAME'], current_app.config['EMAIL_PASSWORD'])
+        host.login(current_app.config['EMAIL_USERNAME'],
+                   current_app.config['EMAIL_PASSWORD'])
         current_app.logger.info(host.sendmail(send_addr,
-                      to_addr,
-                      msg.as_string()))
+                                              to_addr,
+                                              msg.as_string()))
         return True
     except KeyError:
-        current_app.logger.exception("Missing required server configuration for Email config")
+        current_app.logger.exception(
+            "Missing required server configuration for Email config")
     except Exception:
         from traceback import format_exc
         current_app.logger.info(
@@ -132,25 +133,28 @@ def get_joined(obj, join_prof="standard_join"):
     return dct
 
 
-def distribute_event(sender, event, type, subscriber_send=False, self_send=False):
-    """ A function that will de-normalize an event by distributing it to requested
-    subscribing event lists. This only handles the logic and action of distribution,
-    and not the initial routing which is instead handled on notifications
-    distribute method """
+def distribute_event(sender, event, type, subscriber_send=False,
+                     self_send=False):
+    """ A function that will de-normalize an event by distributing it to
+    requested subscribing event lists. This only handles the logic and action
+    of distribution, and not the initial routing which is instead handled on
+    notifications distribute method """
     # Distribute to all subscribers who have the right options
     if subscriber_send:
         for sub in sender.subscribers:
             # If they wish to recieve this type of event
             if getattr(sub, type, False):
-                # This could be optimized by loading all users at once, instead of
-                # resolving one at a time
+                # This could be optimized by loading all users at once, instead
+                # of resolving one at a time
                 sub.user.events.append(event)
                 sender.safe_save()
                 current_app.logger.debug(
-                    "{0} was distributed event '{1}' for object {2}".format(sub.user.username, type, sender))
+                    ("{0} was distributed event '{1}' for object "
+                     "{2}").format(sub.user.username, type, sender))
             else:
                 current_app.logger.debug(
-                    "{0} was not distributed event '{1}' because of settings, even though subscribed".format(sub.user, type))
+                    ("{0} was not distributed event '{1}' because of settings,"
+                     "even though subscribed").format(sub.user, type))
 
     # Add the event to the senders own list if there is one
     if self_send:

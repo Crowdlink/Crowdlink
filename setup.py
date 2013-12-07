@@ -23,7 +23,8 @@ setup(name='crowdlink',
       author='Isaac Cook',
       author_email='isaac@simpload.com',
       install_requires=requires,
-      dependency_links=["https://code.stripe.com/stripe/stripe-1.9.8.tar.gz#egg=stripe-1.9.8"],
+      dependency_links=
+      ["https://code.stripe.com/stripe/stripe-1.9.8.tar.gz#egg=stripe-1.9.8"],
       url='http://www.python.org/sigs/distutils-sig/',
       packages=find_packages()
-     )
+      )
