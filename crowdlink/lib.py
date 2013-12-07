@@ -1,6 +1,6 @@
 from flask import url_for, session, g, current_app, request, flash, render_template, jsonify
 
-from . import db, github, app
+from . import db, github
 from .models import User
 
 import sys
@@ -29,8 +29,8 @@ def redirect_angular(url):
 
 def send_email(to_addr, typ, **kwargs):
     conf = email_cfg[typ]
-    send_addr = app.config['EMAIL_SENDER']
-    send_name = app.config['EMAIL_SEND_NAME']
+    send_addr = current_app.config['EMAIL_SENDER']
+    send_name = current_app.config['EMAIL_SEND_NAME']
     msg = MIMEMultipart('alternative')
     msg['Subject'] = conf['subject']
     msg['From'] = "{0} <{1}>".format(send_name, send_addr)
@@ -41,15 +41,15 @@ def send_email(to_addr, typ, **kwargs):
         msg.attach(MIMEText(render_template(conf['html_template'], **kwargs), 'html'))
 
     try:
-        host = smtplib.SMTP(app.config['EMAIL_SERVER'],
-                            app.config['EMAIL_PORT'],
-                            app.config['EMAIL_EHLO'],
+        host = smtplib.SMTP(current_app.config['EMAIL_SERVER'],
+                            current_app.config['EMAIL_PORT'],
+                            current_app.config['EMAIL_EHLO'],
                             timeout=2)
-        host.set_debuglevel(app.config['EMAIL_DEBUG'])
-        if app.config['EMAIL_USE_TLS']:
+        host.set_debuglevel(current_app.config['EMAIL_DEBUG'])
+        if current_app.config['EMAIL_USE_TLS']:
             host.starttls()
         host.ehlo()
-        host.login(app.config['EMAIL_USERNAME'], app.config['EMAIL_PASSWORD'])
+        host.login(current_app.config['EMAIL_USERNAME'], current_app.config['EMAIL_PASSWORD'])
         current_app.logger.info(host.sendmail(send_addr,
                       to_addr,
                       msg.as_string()))

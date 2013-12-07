@@ -12,60 +12,35 @@ import babel.dates as dates
 import os
 import datetime
 
+
 root = os.path.abspath(os.path.dirname(__file__) + '/../')
 
-# initialize our flask application
-app = Flask(__name__, static_folder='../static', static_url_path='/static')
-# set our template path and configs
-app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
-app.config.update(
-    EMAIL_SERVER="localhost",
-    EMAIL_DEBUG=0,
-    EMAIL_USE_TLS=False,
-    EMAIL_PORT=25
-)
-app.config.from_pyfile('../application.cfg')
-
-if app.config['DEBUG']:
-    from flask_debugtoolbar import DebugToolbarExtension
-    toolbar = DebugToolbarExtension(app)
-
-# Setup login stuff
+db = SQLAlchemy()
 lm = LoginManager()
-lm.init_app(app)
+oauth = OAuth()
 
-# api extension
-api_restful = Api(app)
-
-# sqlalchemy connection
-db = SQLAlchemy(app)
-
-# Monkey patch the login managers error function
-def unauthorized(self):
-    '''
-    This is a slightly patched version of the default flask-login
-    de-auth function. Instead of a 302 redirect we pass some json back
-    for angular to catch
-    '''
-    user_unauthorized.send(current_app._get_current_object())
-
-    if self.unauthorized_callback:
-        return self.unauthorized_callback()
-
-    return jsonify(access_denied=True)
-LoginManager.unauthorized = unauthorized
-
-# Monkey patch flasks request to inject a helper function
-from flask import Request
-def dict_args(self):
-    return {one: two for one, two in self.args.iteritems()}
-Request.dict_args = dict_args
-
-
-# OAuth configuration
-oauth = OAuth(app)
+# OAuth configuration, must be outside function to be importable
 github = oauth.remote_app(
-        'github',
+    'github',
+    app_key='GITHUB'
+)
+
+
+def create_app():
+
+    # initialize our flask application
+    app = Flask(__name__, static_folder='../static', static_url_path='/static')
+
+    # set our template path and configs
+    app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
+    app.config.from_pyfile('../application.cfg')
+    app.config.update(
+        EMAIL_SERVER="localhost",
+        EMAIL_DEBUG=0,
+        EMAIL_USE_TLS=False,
+        EMAIL_PORT=25
+    )
+    app.config['GITHUB'] = dict(
         consumer_key=app.config['GITHUB_CONSUMER_KEY'],
         consumer_secret=app.config['GITHUB_CONSUMER_SECRET'],
         request_token_params={'scope': 'user:email,repo'},
@@ -74,90 +49,57 @@ github = oauth.remote_app(
         access_token_method='POST',
         access_token_url='https://github.com/login/oauth/access_token',
         authorize_url='https://github.com/login/oauth/authorize'
-)
+    )
 
+    # add the debug toolbar if we're in debug mode...
+    if app.config['DEBUG']:
+        from flask_debugtoolbar import DebugToolbarExtension
+        toolbar = DebugToolbarExtension(app)
 
-# General configuration
-# ======================
+    # register all our plugins
+    db.init_app(app)
+    lm.init_app(app)
+    oauth.init_app(app)
+    api_restful = Api(app)
 
-# Add a date format filter to jinja templating
-@app.template_filter('datetime')
-def format_datetime(value, format='medium'):
-    if format == 'full':
-        format="EEEE, d. MMMM y 'at' HH:mm"
-    elif format == 'medium':
-        format="EE dd.MM.y HH:mm"
-    return dates.format_datetime(value, format)
+    # Monkey patch the login managers error function
+    # =========================================================================
+    def unauthorized(self):
+        '''
+        This is a slightly patched version of the default flask-login
+        de-auth function. Instead of a 302 redirect we pass some json back
+        for angular to catch
+        '''
+        user_unauthorized.send(current_app._get_current_object())
 
-@app.template_filter('date')
-def format_datetime(value, format='medium'):
-    if format == 'full':
-        format="EEEE, d. MMMM y"
-    elif format == 'medium':
-        format="EE dd.MM.y"
-    return dates.format_datetime(value, format)
+        if self.unauthorized_callback:
+            return self.unauthorized_callback()
 
-@app.template_filter('plural')
-def plural(value):
-    if value > 1:
-        return 's'
-    else:
-        return ''
+        return jsonify(access_denied=True)
+    LoginManager.unauthorized = unauthorized
 
-@app.template_filter('attrencode')
-def attr_encode(value):
-    html_escape_table = {
-        "&": "&amp;",
-        '"': "&quot;",
-        "'": "&apos;",
-        ">": "&gt;",
-        "<": "&lt;",
-    }
-    return "".join(html_escape_table.get(c,c) for c in value)
+    # Monkey patch flasks request to inject a helper function
+    # =========================================================================
+    from flask import Request
+    def dict_args(self):
+        return {one: two for one, two in self.args.iteritems()}
+    @property
+    def json_dict(self):
+        js = self.json
+        if js is None:
+            return {}
+        return js
+    Request.dict_args = dict_args
+    Request.json_dict = json_dict
 
-@app.template_filter('date_ago')
-def format_date_ago(time):
-    """
-    Get a datetime object or a int() Epoch timestamp and return a
-    pretty string like 'an hour ago', 'Yesterday', '3 months ago',
-    'just now', etc
-    """
-    now = datetime.datetime.now()
-    if type(time) is int:
-        diff = now - datetime.fromtimestamp(time)
-    elif isinstance(time, datetime.datetime):
-        diff = now - time
-    elif not time:
-        diff = now - now
-    second_diff = diff.seconds
-    day_diff = diff.days
+    # Route registration
+    # =========================================================================
+    from . import api, views, models
+    app.register_blueprint(api.api, url_prefix='/api')
+    app.register_blueprint(views.main)
 
-    if day_diff < 0:
-        return ''
+    api_restful.add_resource(api.ProjectAPI, '/api/project')
+    api_restful.add_resource(api.IssueAPI, '/api/issue')
+    api_restful.add_resource(api.SolutionAPI, '/api/solution')
 
-    if day_diff == 0:
-        if second_diff < 10:
-            return "just now"
-        if second_diff < 60:
-            return str(second_diff) + " seconds ago"
-        if second_diff < 120:
-            return  "a minute ago"
-        if second_diff < 3600:
-            return str( second_diff / 60 ) + " minutes ago"
-        if second_diff < 7200:
-            return "an hour ago"
-        if second_diff < 86400:
-            return str( second_diff / 3600 ) + " hours ago"
-    if day_diff == 1:
-        return "Yesterday"
-    if day_diff < 7:
-        return str(day_diff) + " days ago"
-    if day_diff < 31:
-        return str(day_diff/7) + " weeks ago"
-    if day_diff < 365:
-        return str(day_diff/30) + " months ago"
-    return str(day_diff/365) + " years ago"
-
-from . import api, views, models
-app.register_blueprint(api.api, url_prefix='/api')
-app.register_blueprint(views.main)
+    return app

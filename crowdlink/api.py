@@ -2,10 +2,9 @@ from flask import Blueprint, request, g, current_app, jsonify, abort
 from flask.ext.login import login_required, logout_user, current_user, login_user
 from flask.ext.restful import Resource
 
-from . import root, lm, app, api_restful
+from . import root, lm
 from .models import (User, Project, Issue, Transaction, Solution)
 from .lib import get_json_joined, get_joined, redirect_angular
-from .util import convert_args
 
 import json
 import valideer
@@ -25,7 +24,7 @@ api = Blueprint('api_bp', __name__)
 @api.route("/user/check", methods=['POST'])
 def check_user():
     """ Check if a specific username is taken """
-    js = request.json
+    js = request.json_dict
 
     # try to access the issue with identifying information
     try:
@@ -43,7 +42,7 @@ def check_user():
 @login_required
 def check_ptitle():
     """ Check if a specific username is taken """
-    js = request.json
+    js = request.json_dict
 
     # try to access the issue with identifying information
     try:
@@ -60,7 +59,7 @@ def check_ptitle():
 @api.route("/email/check", methods=['POST'])
 def check_email():
     """ Check if a specific username is taken """
-    js = request.json
+    js = request.json_dict
 
     # try to access the issue with identifying information
     try:
@@ -172,7 +171,7 @@ class ProjectAPI(BaseResource):
 
     @catch_common
     def put(self):
-        data = request.json
+        data = request.json_dict
         project = self.get_project(data)
         return_val = {}
 
@@ -200,7 +199,7 @@ class ProjectAPI(BaseResource):
 
     @catch_common
     def post(self):
-        data = request.json
+        data = request.json_dict
         project = Project()
         project.username = g.user.username
         project.maintainer = g.user.get()
@@ -226,7 +225,7 @@ class SolutionAPI(BaseResource):
 
     @catch_common
     def post(self):
-        data = request.json
+        data = request.json_dict
         issue = IssueAPI.get_issue(data)
         # ensure that the user was allowed to insert that issue
         assert issue.can('action_add_solution')
@@ -254,7 +253,7 @@ class SolutionAPI(BaseResource):
 
     @catch_common
     def put(self):
-        data = request.json
+        data = request.json_dict
         return_val = {}
 
         sol = SolutionAPI.get_solution(data)
@@ -305,7 +304,7 @@ class IssueAPI(BaseResource):
 
     @catch_common
     def post(self):
-        data = request.json
+        data = request.json_dict
         project = IssueAPI.get_parent_project(data, minimal=True)
         # ensure that the user was allowed to insert that issue
         assert project.can('action_add_issue')
@@ -346,7 +345,7 @@ class IssueAPI(BaseResource):
 
     @catch_common
     def put(self):
-        data = request.json
+        data = request.json_dict
         return_val = {}
 
         issue = IssueAPI.get_issue(data)
@@ -380,14 +379,9 @@ class IssueAPI(BaseResource):
         return jsonify(return_val)
 
 
-api_restful.add_resource(ProjectAPI, '/api/project')
-api_restful.add_resource(IssueAPI, '/api/issue')
-api_restful.add_resource(SolutionAPI, '/api/solution')
-
 # User getter/setter
 # =============================================================================
 @api.route("/user", methods=['GET'])
-@login_required
 def get_user():
     js = request.args
     join_prof = request.args.get('join_prof', 'standard_join')
@@ -404,7 +398,6 @@ def get_user():
         else:
             return incorrect_syntax()
         ret = {'success': True}
-        print type(user)
         ret.update(get_joined(user, join_prof=join_prof))
         return jsonify(ret)
     except sqlalchemy.orm.exc.NoResultFound:
@@ -415,7 +408,7 @@ def get_user():
 @api.route("/user", methods=['POST'])
 @login_required
 def update_user():
-    js = request.json
+    js = request.json_dict
 
     # try to access the issue with identifying information
     try:
@@ -450,20 +443,19 @@ def logout():
 
 @api.route("/login", methods=['POST'])
 def login():
-    js = request.json
+    js = request.json_dict
 
     try:
         user = User.query.filter_by(username=js['username']).one()
         if user.check_password(js['password']):
             login_user(user)
-        else:
-            return jsonify(success=False, message="Invalid credentials")
-    except KeyError:
-        return jsonify(success=False, message="Invalid credentials")
-    except sqlalchemy.orm.exc.NoResultFound:
-        return jsonify(success=False, message="Invalid credentials")
+    except (KeyError, sqlalchemy.orm.exc.NoResultFound):
+        pass
+    else:
+        return jsonify(success=True, user=get_joined(user))
 
-    return jsonify(success=True, user=get_joined(user))
+    return jsonify(success=False, message="Invalid credentials")
+
 
 
 # Finance related function
@@ -476,7 +468,7 @@ def transaction():
 
     # try to access the issue with identifying information
     try:
-        trans = Transaction.query.filter_by(user=userid)
+        trans = Transaction.query.filter_by(user_id=userid)
         return get_json_joined(trans)
     except KeyError as e:
         return incorrect_syntax()
@@ -486,7 +478,7 @@ def transaction():
 
 @api.route("/charge", methods=['POST'])
 def run_charge():
-    js = request.json
+    js = request.json_dict
 
     # try to access the issue with identifying information
     try:
@@ -497,7 +489,7 @@ def run_charge():
             return incorrect_syntax()
         user = User.query.filter_by(id=js['userid']).one()
 
-        stripe.api_key = app.config['STRIPE_SECRET_KEY']
+        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
         try:
             retval = stripe.Charge.create(
                 amount=amount,

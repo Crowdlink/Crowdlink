@@ -13,6 +13,7 @@ bower_components/**
 .idea
 node_modules
 application.cfg
+testing.cfg
 .cake_task_cache
 
 # tmp saves

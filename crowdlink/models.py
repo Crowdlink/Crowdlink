@@ -1,4 +1,5 @@
 from flask import url_for, session, g, current_app, flash
+from flask.ext.login import current_user
 
 from . import db, github
 from .exc import AccessDenied
@@ -27,6 +28,7 @@ import hashlib
 import datetime
 import calendar
 import operator
+import copy
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
@@ -34,12 +36,12 @@ crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 def validate_attr(self, attr, value):
     """ Allows calling a single validator by passing in a dotted notation for the object.
     """
-    parts = attr.split('.', 1)
-    validator = [v for i, v in enumerate(self._named_validators) if v[0] == parts[0]][0][1]
-    if len(parts) > 1:
-        return validator.validate_attr(parts[1])
-
-    return validator.validate(value)
+    attr = str(attr).split('.', 1)[1]
+    validator = [v for i, v in enumerate(self._named_validators) if v[0] == attr][0][1]
+    try:
+        return validator.validate(value)
+    except V.ValidationError as e:
+        raise AttributeError(str(e) + " on attribute " + attr)
 V.Object.validate_attr = validate_attr
 
 
@@ -59,21 +61,20 @@ class BaseMapper(object):
     acl = {}
 
     def __new__(cls, *args, **kwargs):
-        def valid_closure(obj, prefix=""):
-            # if there's validation on this object
-            valid = getattr(cls, 'valid_profile', None)
-            if valid:
-                for name, validator in valid._named_validators:
-                    if isinstance(validator, V.Object):
-                        valid_closure(validator, prefix=prefix + name + ".")
-                    else:  # base case
-                        current_app.logger.debug("Setting listener for change on attr " + prefix + name)
-                        event.listen(getattr(obj, name),
-                                    'set',
-                                    lambda target, value, oldvalue, initiator: valid.validate_attr(prefix + name, value),
-                                    prefix + name)
+        # if there's validation on this object
+        valid = getattr(cls, 'valid_profile', None)
+        if valid:
+            for name, validator in valid._named_validators:
+                if isinstance(validator, V.Object):
+                    pass
+                else:  # base case
+                    current_app.logger.debug("Setting listener for change on attr {}, attr obj {}".format(getattr(cls, name), name))
+                    func = lambda target, value, oldvalue, initiator: valid.validate_attr(initiator, value)
+                    event.listen(getattr(cls, name),
+                                'set',
+                                func,
+                                name)
 
-        valid_closure(cls)
 
         return super(BaseMapper, cls).__new__(cls, *args, **kwargs)
 
@@ -82,7 +83,7 @@ class BaseMapper(object):
         """ Generates an acl list for a specific user which defaults to the
         authed user """
         if not user:
-            user = g.user
+            user = current_user
         roles = self.roles(user=user)
         allowed = set()
         for role in roles:
@@ -93,7 +94,7 @@ class BaseMapper(object):
     def roles(user=None):
         """ This should be overriden to use logic for determining roles """
         if not user:
-            user = g.user
+            user = current_user
         return []
 
     def can(self, action):
@@ -106,16 +107,14 @@ class BaseMapper(object):
         """ a lazy loaded acl list for the current user """
         # Run an extra check to ensure we don't hand out an acl list for the
         # wrong user. Possibly un-neccesary, I'm paranoid
-        if not hasattr(self, '_user_acl') or self._user_acl[0] != g.user:
-            self._user_acl = (g.user, self.get_acl())
+        if not hasattr(self, '_user_acl') or self._user_acl[0] != current_user:
+            self._user_acl = (current_user, self.get_acl())
         return self._user_acl[1]
 
     def safe_save(self, **kwargs):
         """ Catches a bunch of common mongodb errors when saving and handles
         them appropriately. A convenient wrapper around catch_error_graceful.
         """
-        if hasattr(self, 'valid_profile'):
-            self.valid_profile.validate(self.to_dict())
         form = kwargs.pop('form', None)
         flash = kwargs.pop('flash', False)
         try:
@@ -154,7 +153,7 @@ class BaseMapper(object):
                 attr = dict({str(x): x.index for x in attr})
             elif isinstance(attr, datetime.datetime):
                 attr = calendar.timegm(attr.utctimetuple()) * 1000
-            elif isinstance(attr, bool): # don't convert bool to str
+            elif isinstance(attr, bool) or isinstance(attr, int): # don't convert bool to str
                 pass
             elif isinstance(attr, set): # don't convert bool to str
                 attr = {x: True for x in attr}
@@ -170,8 +169,9 @@ class BaseMapper(object):
             return json.dumps(dct)
 
 
-base = declarative_base(cls=BaseMapper, metaclass=_BoundDeclarativeMeta, name='BaseMapper')
+base = declarative_base(cls=BaseMapper, metaclass=_BoundDeclarativeMeta, name='Model')
 base.query = _QueryProperty(db)
+db.Model = base
 
 
 class EventJSON(TypeDecorator):
@@ -207,22 +207,22 @@ class VotableMixin(object):
         """ save isn't needed, this operation must be atomic """
         cls = self.vote_cls
         if not vote:  # unvote
-            cls.query.filter_by(voter=g.user.get(),
+            cls.query.filter_by(voter=current_user.get(),
                                 votee=self).delete()
             current_app.logger.debug(
-                "Unvoting on {} as user {}".format(self.__class__.__name__, g.user.username))
+                "Unvoting on {} as user {}".format(self.__class__.__name__, current_user.username))
             return True
         else:  # vote
             current_app.logger.debug(
-                "Voting on {} as user {}".format(self.__class__.__name__, g.user.username))
-            cls(voter=g.user.get(),
+                "Voting on {} as user {}".format(self.__class__.__name__, current_user.username))
+            cls(voter=current_user.get(),
                 votee=self).init().safe_save()
             return True
         return "already_set"
 
     @property
     def vote_status(self):
-        return bool(self.vote_cls.query.filter_by(voter=g.user.get(),
+        return bool(self.vote_cls.query.filter_by(voter=current_user.get(),
                                                   votee=self).first())
 
 
@@ -233,23 +233,23 @@ class SubscribableMixin(object):
 
     def unsubscribe(self):
         self.subscription_cls.query.filter_by(
-            subscriber=g.user.get(),
+            subscriber=current_user.get(),
             subscribee=self).delete()
         current_app.logger.debug(
-            "Unsubscribing on {} as user {}".format(self.__class__.__name__, g.user.username))
+            "Unsubscribing on {} as user {}".format(self.__class__.__name__, current_user.username))
         return True
 
     def subscribe(self):
         current_app.logger.debug(
-            "Subscribing on {} as user {}".format(self.__class__.__name__, g.user.username))
-        self.subscription_cls(subscriber=g.user.get(),
+            "Subscribing on {} as user {}".format(self.__class__.__name__, current_user.username))
+        self.subscription_cls(subscriber=current_user.get(),
                               subscribee=self).init().safe_save()
         return True
 
     @property
     def subscribed(self):
         return bool(
-            self.subscription_cls.query.filter_by(subscriber=g.user.get(),
+            self.subscription_cls.query.filter_by(subscriber=current_user.get(),
                                                   subscribee=self).first())
 
     @property
@@ -348,7 +348,7 @@ class Project(base, SubscribableMixin, VotableMixin):
     # ======================================================================
 
     valid_profile = V.parse({
-        "?created_at": "?datetime",
+        "?created_at": "datetime",
         #"user": 'testing',
         "url_key": V.String(max_length=64),
         "name": V.String(max_length=128),
@@ -396,7 +396,7 @@ class Project(base, SubscribableMixin, VotableMixin):
     def roles(self, user=None):
         """ Logic to determin what auth roles a user gets """
         if not user:
-            user = g.user
+            user = current_user
 
         if self.maintainer == user:
             return ['maintainer']
@@ -523,7 +523,7 @@ class Issue(base, SubscribableMixin, VotableMixin):
     def roles(self, user=None):
         """ Logic to determin what roles a person gets """
         if not user:
-            user = g.user
+            user = current_user
 
         roles = []
 
@@ -652,7 +652,7 @@ class Solution(base, SubscribableMixin, VotableMixin):
     def roles(self, user=None):
         """ Logic to determin what roles a person gets """
         if not user:
-            user = g.user
+            user = current_user
 
         roles = []
 
@@ -765,15 +765,16 @@ class User(base, SubscribableMixin):
     meta = {'indexes': [{'fields': ['gh_token'], 'unique': True, 'sparse': True}]}
     standard_join = ['gh_linked',
                      'id',
-                     'subscribed',
                      'created_at',
                      '-_password',
-                     {'obj': 'primary_email'}
                     ]
     home_join = inherit_lst(standard_join,
                             [{'obj': 'events'},
                              {'obj': 'projects',
                               'join_prof': 'disp_join'}])
+
+    settings_join = inherit_lst(standard_join,
+                                {'obj': 'primary_email'})
 
 
     # used for displaying the project in noifications, etc
@@ -915,12 +916,6 @@ class User(base, SubscribableMixin):
     def __get__(self, one, two):
         current_app.logger.debug("{} : {}".format(one, two))
         return self
-
-
-@event.listens_for(base, 'before_update', propagate=True)
-def validation_listener(mapper, connection, target):
-    current_app.logger.warn("Updater")
-    raise ValueError
 
 
 from . import events as events

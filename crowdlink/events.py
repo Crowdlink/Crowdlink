@@ -1,10 +1,10 @@
 from . import db
 from .lib import distribute_event, catch_error_graceful
-from .models import User, CommonMixin
+from .models import User, BaseMapper
 
 import datetime
 
-class Event(CommonMixin):
+class Event(BaseMapper):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 

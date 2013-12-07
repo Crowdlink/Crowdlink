@@ -46,6 +46,7 @@ issue_acl = {'maintainer': issue_maintainer,
 project_anon = P(
     ('view', ['standard_join',
               'page_join',
+              'issue_page_join',
               'disp_join']
     )
 ).keys
