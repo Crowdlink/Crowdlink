@@ -1,5 +1,5 @@
 from . import db
-from .lib import distribute_event, catch_error_graceful
+from .lib import distribute_event
 from .models import User, BaseMapper
 
 import datetime

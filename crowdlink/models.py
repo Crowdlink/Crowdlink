@@ -115,15 +115,16 @@ class BaseMapper(object):
         """ Catches a bunch of common mongodb errors when saving and handles
         them appropriately. A convenient wrapper around catch_error_graceful.
         """
+        # add to the main session if not added
+        if db.object_session(self) is None:
+            db.session.add(self)
         form = kwargs.pop('form', None)
         flash = kwargs.pop('flash', False)
         try:
+            db.session.flush()
             db.session.commit(**kwargs)
         except Exception:
-            catch_error_graceful(
-                form=form,
-                out_flash=flash
-            )
+            current_app.logger.warn("Unkown error commiting to db", exc_info=True)
             return False
         else:
             return True
@@ -719,7 +720,7 @@ class Transaction(base):
     _status = db.Column(db.Integer, default=StatusVals.Pending.index)
 
     id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Numeric(precision=2))
+    amount = db.Column(db.Integer)
     livemode = db.Column(db.Boolean)
     stripe_id = db.Column(db.String)
     created = db.Column(db.DateTime)
@@ -919,4 +920,4 @@ class User(base, SubscribableMixin):
 
 
 from . import events as events
-from .lib import (catch_error_graceful, get_json_joined, distribute_event)
+from .lib import (get_json_joined, distribute_event)

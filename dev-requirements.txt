@@ -1,0 +1,5 @@
+Flask-Testing
+mock
+nose
+nose-progressive
+selenium

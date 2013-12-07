@@ -6,6 +6,7 @@ import tempfile
 import decorator
 import logging
 import sys
+import stripe
 
 from pprint import pprint
 from crowdlink.util import provision
@@ -28,15 +29,16 @@ class APITests(TestCase):
         return app
 
     @decorator.decorator
-    def login_required(func, username='crowdlink', password='testing'):
-        def magic(self):
-            self.login(username, password)
-            self.func()
-            self.logout()
-        return magic
+    def login_required(func, self, username='crowdlink', password='testing'):
+        self.user = self.login(username, password)['user']
+        func(self)
+        self.logout()
 
     def json_post(self, url, data):
         return self.client.post(url, data=json.dumps(data), content_type='application/json')
+
+    def json_get(self, url, data):
+        return self.client.get(url, query_string=data, content_type='application/json')
 
     def login(self, username, password):
         data = {
@@ -80,6 +82,8 @@ class APITests(TestCase):
         assert 'website' in res
         assert res['success']
 
+    def test_project_400(self):
+        self.assert400(self.json_get('/api/project', {}))
     def test_project_page(self):
         """ page_join project test """
         qs = {'username': 'crowdlink',
@@ -111,6 +115,32 @@ class APITests(TestCase):
         assert self.json_post('/api/purl_key/check',
                               {'value': 'dsflgjsdf;lgjksdfg;lk'}).json['taken'] == False
         self.assert400(self.json_post('/api/purl_key/check', {}))
+
+
+    # Test all the form checks
+    # =========================================================================
+    @login_required
+    def test_run_charge(self):
+        # create a new token via the api. this is usually done via the JS side
+        stripe.api_key = self.app.config['STRIPE_SECRET_KEY']
+        token = stripe.Token.create(
+            card={
+                "number": '4242424242424242',
+                "exp_month": 12,
+                "exp_year": 2014,
+                "cvc": '123'
+            },
+        )
+        dct_token = dict(token)
+        dct_token['card'] = dict(token.card)
+        data = {'amount': 1500,
+                'token': dct_token}
+        print self.user
+        res = self.json_post('/api/charge', data=data)
+        pprint(res.json)
+        assert res.json['success']
+
+
 
     def test_login(self):
         self.login('crowdlink', 'testing')

@@ -98,6 +98,3 @@ def home():
     else:
         form = RegisterForm.get_sm()
         return render_template('home.html', form=form.render())
-
-
-from .lib import catch_error_graceful

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, g, current_app, jsonify, abort
+from flask import Blueprint, request, g, current_app, jsonify, abort, Response
 from flask.ext.login import login_required, logout_user, current_user, login_user
 from flask.ext.restful import Resource
 
@@ -25,69 +25,74 @@ api = Blueprint('api_bp', __name__)
 # =============================================================================
 def catch_common(func):
     # tries to catch common exceptions and return properly
-    def decorated(self, *args, **kwargs):
+    def decorated(*args, **kwargs):
         # get the auth dictionary
         try:
-            return func(self, *args, **kwargs)
+            return func(*args, **kwargs)
 
         # Missing required data error
-        except KeyError:
+        except KeyError as e:
             current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
-            return {'success': False, 'message': 'Incorrect syntax'}, 400
+            ret = {'success': False, 'message': 'Incorrect syntax on key ' + e.message}, 400
 
         # Permission error
         except AssertionError:
             current_app.logger.debug("Permission error", exc_info=True)
-            return {'success': False, 'message': 'You don\'t have permission to do that'}, 403
+            ret = {'success': False, 'message': 'You don\'t have permission to do that'}, 403
 
         # validation errors
         except valideer.base.ValidationError as e:
             current_app.logger.debug("Validation Error", exc_info=True)
-            return {'success': False, 'validation_errors': e.to_dict()}
+            ret = {'success': False, 'validation_errors': e.to_dict()}, 200
 
         # SQLA errors
         except sqlalchemy.orm.exc.NoResultFound:
             current_app.logger.debug("Does not exist", exc_info=True)
-            return {'error': 'Could not be found'}, 404
+            ret = {'error': 'Could not be found'}, 404
         except sqlalchemy.exc.IntegrityError as e:
             current_app.logger.debug("Attempted to insert duplicate", exc_info=True)
-            return {'success': False, 'message': "A duplicate value already exists in the database", 'detail': e.message}
+            ret = {'success': False, 'message': "A duplicate value already exists in the database", 'detail': e.message}, 200
         except sqlalchemy.exc:
             current_app.logger.debug("Unkown SQLAlchemy Error", exc_info=True)
-            return {'success': False, 'message': "An unknown database operations error has occurred"}
+            ret = {'success': False, 'message': "An unknown database operations error has occurred"}, 200
+
+        # a bit of a hack to make it work with flask-restful and regular views
+        r = jsonify(ret[0])
+        r.status_code = ret[1]
+        return r
 
     return decorated
 
 
-def catch_stripe(func):
+@decorator.decorator
+def catch_stripe(func, *args, **kwargs):
     # catches the more generic stripe errors and logs them
-    def decorated(self, *args, **kwargs):
-        js = request.json_dict
-        try:
-            return func(self, *args, **kwargs)
+    js = request.json_dict
+    try:
+        return func(*args, **kwargs)
 
-        except stripe.InvalidRequestError as e:
-            current_app.logger.error(
-                "An InvalidRequestError was recieved from stripe."
-                "Original token information: {0}".format(js.get('token')), exc_info=True)
-            return jsonify(success=False)
-        except stripe.AuthenticationError as e:
-            current_app.logger.error(
-                "An AuthenticationError was recieved from stripe."
-                "Original token information: {0}".format(js.get('token')), exc_info=True)
-            return jsonify(success=False)
-        except stripe.APIConnectionError as e:
-            current_app.logger.warn(
-                "An APIConnectionError was recieved from stripe."
-                "Original token information: {0}".format(js.get('token')), exc_info=True)
-            return jsonify(success=False)
-        except stripe.StripeError as e:
-            current_app.logger.warn(
-                "An StripeError occurred in stripe API."
-                "Original token information: {0}".format(js.get('token')), exc_info=True)
-            return jsonify(success=False)
+    except stripe.InvalidRequestError as e:
+        current_app.logger.error(
+            "An InvalidRequestError was recieved from stripe."
+            "Original token information: {0}".format(js.get('token')), exc_info=True)
+        return jsonify(success=False)
+    except stripe.AuthenticationError as e:
+        current_app.logger.error(
+            "An AuthenticationError was recieved from stripe."
+            "Original token information: {0}".format(js.get('token')), exc_info=True)
+        return jsonify(success=False)
+    except stripe.APIConnectionError as e:
+        current_app.logger.warn(
+            "An APIConnectionError was recieved from stripe."
+            "Original token information: {0}".format(js.get('token')), exc_info=True)
+        return jsonify(success=False)
+    except stripe.StripeError as e:
+        current_app.logger.warn(
+            "An StripeError occurred in stripe API."
+            "Original token information: {0}".format(js.get('token')), exc_info=True)
+        return jsonify(success=False)
 
-    return decorated
+    return jsonify(success=False)
 
 
 class BaseResource(Resource):
@@ -133,7 +138,7 @@ def check_user():
 def check_ptitle():
     """ Check if a specific project url_key is taken """
     js = request.json_dict
-    project = Project.query.filter_by(username=current_user.username,
+    project = Project.query.filter_by(maintainer_username=current_user.username,
                                       url_key=js['value']).one()
 
 
@@ -484,14 +489,13 @@ def login():
 # Finance related function
 # =============================================================================
 @api.route("/transaction", methods=['GET'])
+@login_required
 def transaction():
     js = request.args
 
-    userid = request.args.get('userid', None)
-
     # try to access the issue with identifying information
     try:
-        trans = Transaction.query.filter_by(user_id=userid)
+        trans = Transaction.query.filter_by(user_id=current_user.id)
         return get_json_joined(trans)
     except KeyError as e:
         return incorrect_syntax()
@@ -503,6 +507,7 @@ def transaction():
 @api.route("/charge", methods=['POST'])
 @catch_stripe
 @catch_common
+@login_required
 def run_charge():
     """ Runs a charge for a User and generates a new transaction in the process
     """
@@ -512,9 +517,7 @@ def run_charge():
     card = js['token']['id']
     livemode = js['token']['livemode']
     if amount > 100000 or amount < 500:
-        return incorrect_syntax()
-
-    user = User.query.filter_by(id=js['userid']).one()
+        raise KeyError('amount')
 
     stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
     try:
@@ -539,13 +542,12 @@ def run_charge():
             livemode=livemode,
             stripe_id=retval['id'],
             created=datetime.datetime.fromtimestamp(retval['created']),
-            user=user.id,
+            user=current_user,
             _status=status,
             last_four=retval['card']['last4']
         )
-        trans.safe_save()
 
-    return jsonify(success=True)
+        return jsonify(success=True, transaction=trans.to_dict())
 
 def incorrect_syntax(message='Incorrect syntax', **kwargs):
     return jsonify(message=message, **kwargs), 400

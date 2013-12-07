@@ -131,36 +131,6 @@ def get_joined(obj, join_prof="standard_join"):
             dct[key] = subobj
     return dct
 
-def catch_error_graceful(form=None, out_flash=False):
-    """ This is a utility function that handles exceptions that might be omitted
-    from Mongoengine in a graceful, patterned way. In production these errors
-    should never really happen, so they can be handled uniformly logging and user
-    return. It is called by the safe_save utility. """
-    exc, txt, tb = sys.exc_info()
-    def log(msg):
-        from pprint import pformat
-        from traceback import format_exc
-        exc = format_exc()
-        try:
-            current_app.logger.warn(
-                "=============================================================\n" +
-                "{0}\nRequest dump: {1}\n{2}\n".format(msg, pformat(vars(request)), exc) +
-                "=============================================================\n"
-            )
-        except RuntimeError:
-            print("{0}\n\n{1}\n".format(msg, exc))
-
-    # default to danger....
-    cat = "danger"
-    if exc is sqlalchemy.exc:
-        msg = ('An unknown database replated exception occured')
-        log("Unknown error")
-
-    if form:
-        form.start.add_msg(message=msg, type=cat)
-    elif out_flash:
-        flash(msg, category=cat)
-
 
 def distribute_event(sender, event, type, subscriber_send=False, self_send=False):
     """ A function that will de-normalize an event by distributing it to requested
