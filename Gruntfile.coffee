@@ -64,6 +64,8 @@ module.exports = (grunt) ->
     shell:
       reload:
         command: 'uwsgi --stop uwsgi.pid; sleep 1.5; uwsgi --ini uwsgi.ini'
+      clean:
+        command: 'find . -name "*.pyc" -delete; find . -name "*.swo" -delete; find . -name "*.swp" -delete; echo "" > uwsgi.log'
 
     watch:
       options:
