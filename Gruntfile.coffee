@@ -7,6 +7,9 @@ module.exports = (grunt) ->
     pkg: grunt.file.readJSON("package.json")
     banner: "/*! <%= pkg.title || pkg.name %> - v<%= pkg.version %> - " + "<%= grunt.template.today(\"yyyy-mm-dd\") %>\n" + "<%= pkg.homepage ? \"* \" + pkg.homepage + \"\\n\" : \"\" %>" + "* Copyright (c) <%= grunt.template.today(\"yyyy\") %> <%= pkg.author.name %>;" + " Licensed <%= _.pluck(pkg.licenses, \"type\").join(\", \") %> */\n"
 
+    coffeelint:
+      app: ['coffee/*.coffee']
+
     haml:
       development:
         options:
@@ -72,7 +75,17 @@ module.exports = (grunt) ->
           stdout: true
           stderr: true
       new_flake8:
-        command: 'git diff HEAD~3 -U0 | flake8 --diff'
+        command: 'git diff HEAD -U0 | flake8 --diff'
+        options:
+          stdout: true
+          stderr: true
+      jshint:
+        command: 'coffee-jshint coffee/*.coffee'
+        options:
+          stdout: true
+          stderr: true
+      test:
+        command: 'nosetests --with-cover --cover-package=crowdlink --with-progressive'
         options:
           stdout: true
           stderr: true
@@ -103,7 +116,10 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-contrib-compass')
   grunt.loadNpmTasks('grunt-contrib-coffee')
   grunt.loadNpmTasks('grunt-shell')
+  grunt.loadNpmTasks('grunt-coffeelint')
 
   grunt.registerTask "default", ["less", "haml", "compass", "coffee"]
+  grunt.registerTask "lint", ["shell:flake8", "coffeelint"]
   grunt.registerTask "flake8", ["shell:flake8"]
+  grunt.registerTask "test", ["shell:test"]
   grunt.registerTask "new_flake8", ["shell:new_flake8"]

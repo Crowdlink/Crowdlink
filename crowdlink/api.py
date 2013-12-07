@@ -18,55 +18,53 @@ api = Blueprint('api_bp', __name__)
 
 # Common Fixtures
 # =============================================================================
-def catch_common(func):
-    # tries to catch common exceptions and return properly
-    def decorated(*args, **kwargs):
-        # get the auth dictionary
-        try:
-            return func(*args, **kwargs)
+@decorator.decorator
+def catch_common(func, *args, **kwargs):
+    """ tries to catch common exceptions and return properly """
+    # get the auth dictionary
+    try:
+        return func(*args, **kwargs)
 
-        # Missing required data error
-        except KeyError as e:
-            current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
-            ret = {'success': False,
-                   'message': 'Incorrect syntax on key ' + e.message}, 400
+    # Missing required data error
+    except KeyError as e:
+        current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
+        ret = {'success': False,
+            'message': 'Incorrect syntax on key ' + e.message}, 400
 
-        # Permission error
-        except AssertionError:
-            current_app.logger.debug("Permission error", exc_info=True)
-            ret = {'success': False,
-                   'message': 'You don\'t have permission to do that'}, 403
+    # Permission error
+    except AssertionError:
+        current_app.logger.debug("Permission error", exc_info=True)
+        ret = {'success': False,
+            'message': 'You don\'t have permission to do that'}, 403
 
-        # validation errors
-        except valideer.base.ValidationError as e:
-            current_app.logger.debug("Validation Error", exc_info=True)
-            ret = {'success': False, 'validation_errors': e.to_dict()}, 200
+    # validation errors
+    except valideer.base.ValidationError as e:
+        current_app.logger.debug("Validation Error", exc_info=True)
+        ret = {'success': False, 'validation_errors': e.to_dict()}, 200
 
-        # SQLA errors
-        except sqlalchemy.orm.exc.NoResultFound:
-            current_app.logger.debug("Does not exist", exc_info=True)
-            ret = {'error': 'Could not be found'}, 404
-        except sqlalchemy.exc.IntegrityError as e:
-            current_app.logger.debug("Attempted to insert duplicate",
-                                     exc_info=True)
-            ret = {
-                'success': False,
-                'message': "A duplicate value already exists in the database",
-                'detail': e.message},
-            200
-        except sqlalchemy.exc:
-            current_app.logger.debug("Unkown SQLAlchemy Error", exc_info=True)
-            ret = {
-                'success': False,
-                'message': "An unknown database operations error has occurred"},
-            200
+    # SQLA errors
+    except sqlalchemy.orm.exc.NoResultFound:
+        current_app.logger.debug("Does not exist", exc_info=True)
+        ret = {'error': 'Could not be found'}, 404
+    except sqlalchemy.exc.IntegrityError as e:
+        current_app.logger.debug("Attempted to insert duplicate",
+                                exc_info=True)
+        ret = {
+            'success': False,
+            'message': "A duplicate value already exists in the database",
+            'detail': e.message},
+        200
+    except sqlalchemy.exc:
+        current_app.logger.debug("Unkown SQLAlchemy Error", exc_info=True)
+        ret = {
+            'success': False,
+            'message': "An unknown database operations error has occurred"},
+        200
 
-        # a bit of a hack to make it work with flask-restful and regular views
-        r = jsonify(ret[0])
-        r.status_code = ret[1]
-        return r
-
-    return decorated
+    # a bit of a hack to make it work with flask-restful and regular views
+    r = jsonify(ret[0])
+    r.status_code = ret[1]
+    return r
 
 
 @decorator.decorator
@@ -173,12 +171,6 @@ class ProjectAPI(BaseResource):
 
         # Mild optimization for objects that need to get the project from
         # url_key and username
-        """
-        if minimal:
-            base = Project.query.only('id', 'url_key')
-        else:
-            base = Project.objects
-        """
 
         if proj_id:
             return Project.query.filter_by(id=proj_id).one()
@@ -328,11 +320,12 @@ class IssueAPI(BaseResource):
 
     @classmethod
     def get_issue(cls, data):
+        # XXX: Needs a refactor with new keys present
         idval = data.pop('id', None)
         if idval:
             return Issue.query.filter_by(id=idval).one()
         else:
-            project = IssueAPI.get_parent_project(data, minimal=True)
+            project = IssueAPI.get_parent_project(data)
             return Issue.query.filter_by(url_key=data['url_key'],
                                          project=project).one()
 

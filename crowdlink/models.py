@@ -86,7 +86,7 @@ class BaseMapper(object):
 
         return allowed
 
-    def roles(user=None):
+    def roles(self, user=None):
         """ This should be overriden to use logic for determining roles """
         if not user:
             user = current_user

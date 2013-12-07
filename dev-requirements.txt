@@ -2,5 +2,7 @@ Flask-Testing
 mock
 nose
 nose-progressive
+coverage
 selenium
 flake8
+pylint

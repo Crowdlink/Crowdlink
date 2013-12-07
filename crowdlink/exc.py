@@ -1,2 +1,0 @@
-class AccessDenied(Exception):
-        pass

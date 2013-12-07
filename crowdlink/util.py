@@ -54,7 +54,7 @@ def provision():
         name='crowdlink',
         website="http://crowdlink.com",
         url_key='crowdlink',
-        desc="A platform for user feedback").init()
+        desc="A platform for user feedback")
     proj.safe_save()
 
     issues = [

@@ -1,5 +1,11 @@
 'use strict'
-mainApp = angular.module("mainApp", ['mainServices', 'mainControllers', 'mainFilters', 'ngRoute', 'ngAnimate'])
+mainApp = angular.module("mainApp",
+  ['mainServices',
+   'mainControllers',
+   'mainFilters',
+   'ngRoute',
+   'ngAnimate']
+)
 # Avoid collision with Jinja templates
 mainApp.config ($interpolateProvider) ->
   $interpolateProvider.startSymbol "{[{"
@@ -91,7 +97,8 @@ mainFilters.filter('searchFilter', ($sce) ->
     if input == undefined
       return
     if input
-      tmp = input.replace(RegExp('('+ query + ')', 'gi'), '<span class="match">$1</span>')
+      tmp = input.replace(
+        RegExp('('+ query + ')', 'gi'), '<span class="match">$1</span>')
       return trusted[tmp] || (trusted[tmp] = $sce.trustAsHtml(tmp))
     else
       return input
@@ -112,7 +119,10 @@ mainFilters.filter('fuseImpFilter', ->
 mainFilters.filter "date_ago", ->
   (input, p_allowFuture) ->
     substitute = (stringOrFunction, number, strings) ->
-      string = (if $.isFunction(stringOrFunction) then stringOrFunction(number, dateDifference) else stringOrFunction)
+      if $.isFunction(stringOrFunction)
+        string = stringOrFunction(number, dateDifference)
+      else
+        string = stringOrFunction
       value = (strings.numbers and strings.numbers[number]) or number
       string.replace /%d/i, value
 
@@ -145,7 +155,10 @@ mainFilters.filter "date_ago", ->
     hours = minutes / 60
     days = hours / 24
     years = days / 365
-    separator = (if strings.wordSeparator is `undefined` then " " else strings.wordSeparator)
+    if strings.wordSeparator?
+      separator = " "
+    else
+      separator = strings.wordSeparator
 
     # var strings = this.settings.strings;
     prefix = strings.prefixAgo
@@ -197,8 +210,8 @@ mainApp.directive "markItUp", ->
     new_settings = $.extend(mySettings,
       afterInsert: ->
         scope.$apply(
-            element.trigger('input')
-            element.trigger('change')
+          element.trigger('input')
+          element.trigger('change')
         )
     )
     element.markItUp(new_settings)
@@ -245,7 +258,8 @@ mainApp.directive "validClass", [->
     )
 ]
 
-mainApp.directive "uniqueServerside", ["$http", "$timeout", ($http, $timeout) ->
+mainApp.directive "uniqueServerside",
+["$http", "$timeout", ($http, $timeout) ->
   require: "ngModel"
   restrict: "A"
   link: (scope, elem, attrs, ctrl) ->
