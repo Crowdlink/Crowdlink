@@ -3,7 +3,7 @@ from flask.ext.login import current_user
 
 from . import db, github
 from .util import inherit_lst
-from .acl import issue_acl, project_acl, solution_acl
+from .acl import issue_acl, project_acl, solution_acl, user_acl
 
 from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
                                   _QueryProperty)
@@ -799,14 +799,22 @@ class User(base, SubscribableMixin):
     # Github sync
     gh_token = db.Column(db.String)
 
-    standard_join = ['gh_linked',
+    standard_join = ['id',
+                     'gh_linked',
                      'id',
                      'created_at',
+                     'user_acl',
+                     'get_abs_url',
                      '-_password',
                      ]
     home_join = inherit_lst(standard_join,
-                            [{'obj': 'events'},
+                            [{'obj': 'events',
+                              'join_prof': 'disp_join'},
                              {'obj': 'projects',
+                              'join_prof': 'disp_join'}])
+
+    page_join = inherit_lst(standard_join,
+                            [{'obj': 'public_events',
                               'join_prof': 'disp_join'}])
 
     settings_join = inherit_lst(standard_join,
@@ -820,6 +828,21 @@ class User(base, SubscribableMixin):
     # specify which table is used for votes, subscriptions, etc so mixins can
     # use it
     subscription_cls = UserSubscription
+
+    acl = user_acl
+
+    def roles(self, user=None):
+        """ Logic to determin what auth roles a user gets """
+        if not user:
+            user = current_user
+
+        if self.id == getattr(user, 'id', None):
+            return ['owner']
+
+        if user.is_anonymous():
+            return ['anonymous']
+        else:
+            return ['user']
 
     @property
     def password(self):

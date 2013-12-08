@@ -49,8 +49,7 @@ project_anon = P(
               'page_join',
               'issue_page_join',
               'disp_join']
-     )
-).keys
+     )).keys
 project_user = P(project_anon,
                  ('action', ['vote',
                              'add_issue',
@@ -75,7 +74,8 @@ solution_user = P(solution_anon,
                   ('action', ['vote',
                               'watch']
                    )).keys
-solution_maintainer = P(solution_anon, solution_user,
+solution_maintainer = P(solution_anon,
+                        solution_user,
                         ('edit', ['url_key',
                                   'title',
                                   'desc']
@@ -84,3 +84,26 @@ solution_maintainer = P(solution_anon, solution_user,
 solution_acl = {'maintainer': solution_maintainer,
                 'anonymous': solution_anon,
                 'user': solution_user}
+
+# User
+user_anon = P(
+    ('view', ['standard_join',
+              'page_join',
+              'disp_join']
+     )).keys
+user_user = P(user_anon,
+                  ('action', ['vote',
+                              'watch']
+                   )).keys
+user_owner = P(user_anon,
+               user_user,
+               ('edit', ['url_key',
+                         'title',
+                         'desc']
+                ),
+               ('view', ['home_join']
+               )).keys
+
+user_acl = {'owner': user_owner,
+            'anonymous': user_anon,
+            'user': user_user}

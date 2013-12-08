@@ -21,6 +21,10 @@ class BaseTest(TestCase):
         return self.client.get(
             url, query_string=data, content_type='application/json')
 
+    def json_put(self, url, data):
+        return self.client.put(
+            url, data=json.dumps(data), content_type='application/json')
+
     def create_app(self):
         app = crowdlink.create_app()
         app.config['TESTING'] = True
@@ -41,7 +45,6 @@ class BaseTest(TestCase):
             'password': password
         }
         ret = self.json_post('/api/login', data=data).json
-        pprint(ret)
         assert ret['success']
         return ret
 

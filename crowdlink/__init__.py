@@ -71,7 +71,9 @@ def create_app():
         if self.unauthorized_callback:
             return self.unauthorized_callback()
 
-        return jsonify(access_denied=True)
+        ret = jsonify(access_denied=True)
+        ret.status_code = 403
+        return ret
     LoginManager.unauthorized = unauthorized
 
     # Monkey patch flasks request to inject a helper function
@@ -100,5 +102,6 @@ def create_app():
     api_restful.add_resource(api.ProjectAPI, '/api/project')
     api_restful.add_resource(api.IssueAPI, '/api/issue')
     api_restful.add_resource(api.SolutionAPI, '/api/solution')
+    api_restful.add_resource(api.UserAPI, '/api/user')
 
     return app

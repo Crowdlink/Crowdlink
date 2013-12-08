@@ -26,7 +26,7 @@ def catch_common(func, *args, **kwargs):
         return func(*args, **kwargs)
 
     # Missing required data error
-    except KeyError as e:
+    except (KeyError, AttributeError) as e:
         current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
         ret = {'success': False,
             'message': 'Incorrect syntax on key ' + e.message}, 400
@@ -230,6 +230,7 @@ class ProjectAPI(BaseResource):
         return return_val
 
     @catch_common
+    @login_required
     def post(self):
         data = request.json_dict
         project = Project()
@@ -411,54 +412,51 @@ class IssueAPI(BaseResource):
 
 # User getter/setter
 # =============================================================================
-@api.route("/user", methods=['GET'])
-def get_user():
-    js = request.dict_args
-    join_prof = request.args.get('join_prof', 'standard_join')
+class UserAPI(BaseResource):
+    model = User
 
-    # try to access the issue with identifying information
-    try:
+    def get_user(self, js):
+        # accept either a username or id
         username = js.get('username', None)
-        userid = js.get('id', None)
 
         if username:
-            user = User.query.filter_by(username=username).one()
-        elif userid:
-            user = User.query.filter_by(id=userid).one()
-        else:
-            return incorrect_syntax()
-        ret = {'success': True}
-        ret.update(get_joined(user, join_prof=join_prof))
-        return jsonify(ret)
-    except sqlalchemy.orm.exc.NoResultFound:
-        pass
-    return resource_not_found()
+            return User.query.filter_by(username=username).one()
 
+        # prefer an explicit id, but fallback to getting current user id
+        userid = js.get('id', None)
+        if userid is None:
+            userid = getattr(current_user, 'id')
 
-@api.route("/user", methods=['POST'])
-@login_required
-@catch_common
-def update_user():
-    js = request.json_dict
+        return User.query.filter_by(id=userid).one()
 
-    # try to access the issue with identifying information
-    try:
-        username = js.pop('username')
-        user = User.query.filter_by(username=username).one()
-    except KeyError:
-        return incorrect_syntax()
-    except sqlalchemy.orm.exc.NoResultFound:
-        return resource_not_found()
+    @catch_common
+    def get(self):
+        js = request.dict_args
+        join_prof = request.args.get('join_prof', 'standard_join')
+        user = self.get_user(js)
+        # assert permission to perform join
+        assert user.can('view_' + join_prof)
 
-    subscribe = js.pop('subscribed', None)
-    if subscribe is True:
-        user.subscribe()
-    elif subscribe is False:
-        user.unsubscribe()
+        return {'success': True,
+                'user': get_joined(user, join_prof=join_prof)}
 
-    user.safe_save()
+    @catch_common
+    def post(self):
+        js = request.json_dict
 
-    return jsonify(success=True)
+        # try to access the issue with identifying information
+        user = User.query.filter_by(username=js['username']).one()
+
+        subscribe = js.pop('subscribed', None)
+        if subscribe is True:
+            user.subscribe()
+        elif subscribe is False:
+            user.unsubscribe()
+
+        if not user.safe_save():
+            return {'success': False}
+
+        return {'success': True}
 
 
 @api.route("/logout")
