@@ -17,10 +17,13 @@ class PaymentTests(BaseTest):
                 "cvc": '123'
             },
         )
+        # serialize it
         dct_token = dict(token)
         dct_token['card'] = dict(token.card)
         data = {'amount': 1500,
                 'token': dct_token}
-        res = self.json_post('/api/charge', data=data)
+        pprint(data)
+        # run our transaction test
+        res = self.json_post('/api/transaction', data=data)
         pprint(res.json)
         assert res.json['success']

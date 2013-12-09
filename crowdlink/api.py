@@ -484,58 +484,80 @@ def login():
 
 # Finance related function
 # =============================================================================
-@api.route("/transaction", methods=['GET'])
-@login_required
-@catch_common
-def transaction():
-    trans = Transaction.query.filter_by(user_id=current_user.id)
-    return jsonify(success=True, transactions=get_joined(trans))
+class TransactionAPI(BaseResource):
+    model = User
 
+    def get_user(self, js):
+        # accept either a username or id
+        username = js.get('username', None)
 
-@api.route("/charge", methods=['POST'])
-@catch_stripe
-@catch_common
-@login_required
-def run_charge():
-    """ Runs a charge for a User and generates a new transaction in the process
-    """
-    js = request.json_dict
+        if username:
+            return User.query.filter_by(username=username).one()
 
-    amount = js['amount']
-    card = js['token']['id']
-    livemode = js['token']['livemode']
-    if amount > 100000 or amount < 500:
-        raise KeyError('amount')
+        # prefer an explicit id, but fallback to getting current user id
+        userid = js.get('id', None)
+        if userid is None:
+            userid = getattr(current_user, 'id')
 
-    stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
-    try:
-        retval = stripe.Charge.create(
-            amount=amount,
-            currency="usd",
-            card=card)
-    except stripe.CardError as e:
-        body = e.json_body
-        err = body['error']
+        return User.query.filter_by(id=userid).one()
 
-        current_app.logger.info(err, exc_info=True)
-        return jsonify(success=False)
-    else:
-        if retval['paid']:
-            status = Transaction.StatusVals.Cleared.index
+    @login_required
+    @catch_common
+    def transaction(self):
+        trans = Transaction.query.filter_by(user_id=current_user.id)
+        return {'success': True, 'transactions': get_joined(trans)}
+
+    @catch_stripe
+    @catch_common
+    @login_required
+    def post(self):
+        """ Runs a charge for a User and generates a new transaction in the
+        process """
+        js = request.json_dict
+
+        amount = js['amount']
+        card = js['token']['id']
+        livemode = js['token']['livemode']
+
+        # check the amount they're trying to charge before running the charge
+        # with strip
+        if amount > 100000 or amount < 500:
+            raise KeyError('amount')
+
+        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+        try:
+            retval = stripe.Charge.create(
+                amount=amount,
+                currency="usd",
+                card=card)
+        except stripe.CardError as e:
+            body = e.json_body
+            err = body['error']
+
+            current_app.logger.info(err, exc_info=True)
+            return {'success': False}
         else:
-            status = Transaction.StatusVals.Pending.index
+            if retval['paid']:
+                status = Transaction.StatusVals.Cleared.index
+            else:
+                status = Transaction.StatusVals.Pending.index
 
-        trans = Transaction(
-            amount=amount,
-            livemode=livemode,
-            stripe_id=retval['id'],
-            created=datetime.datetime.fromtimestamp(retval['created']),
-            user=current_user,
-            _status=status,
-            last_four=retval['card']['last4']
-        )
+            trans = Transaction(
+                amount=amount,
+                livemode=livemode,
+                stripe_id=retval['id'],
+                stripe_created_at=datetime.datetime.fromtimestamp(retval['created']),
+                user=current_user,
+                _status=status,
+                last_four=retval['card']['last4']
+            )
 
-        return jsonify(success=True, transaction=trans.to_dict())
+            trans_serial = get_joined(trans)
+            current_app.logger.debug("Just created {}".format(trans_serial))
+            return {'success': True,
+                    'transaction': trans_serial}
+
+        return {'success': False}
 
 
 def incorrect_syntax(message='Incorrect syntax', **kwargs):

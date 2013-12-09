@@ -761,12 +761,15 @@ class Transaction(base):
     amount = db.Column(db.Integer)
     livemode = db.Column(db.Boolean)
     stripe_id = db.Column(db.String)
-    created = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    stripe_created_at = db.Column(db.DateTime)
     last_four = db.Column(db.Integer)
     user = db.relationship('User')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    standard_join = ['status']
+    standard_join = ['status',
+                     'created_at',
+                     '-stripe_created_at']
 
     @property
     def status(self):

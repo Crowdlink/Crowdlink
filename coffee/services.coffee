@@ -58,7 +58,7 @@ mainServices.factory("ProjectService", ($resource) ->
 )
 
 mainServices.factory("StripeService", ($resource) ->
-  $resource window.api_path + "charge", {},
+  $resource window.api_path + "transaction", {},
     update:
       method: "POST"
       timeout: 10000

@@ -103,5 +103,6 @@ def create_app():
     api_restful.add_resource(api.IssueAPI, '/api/issue')
     api_restful.add_resource(api.SolutionAPI, '/api/solution')
     api_restful.add_resource(api.UserAPI, '/api/user')
+    api_restful.add_resource(api.TransactionAPI, '/api/transaction')
 
     return app
