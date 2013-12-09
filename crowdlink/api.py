@@ -3,7 +3,7 @@ from flask.ext.login import (login_required, logout_user, current_user,
                              login_user)
 from flask.ext.restful import Resource
 
-from .models import User, Project, Issue, Transaction, Solution, Email
+from .models import User, Project, Issue, Transaction, Solution, Email, Earmark
 from .lib import get_joined
 
 import valideer
@@ -103,6 +103,20 @@ def catch_stripe(func, *args, **kwargs):
 
 
 class BaseResource(Resource):
+    def limit_offset(self, query_base, js):
+        """ Utility function that interprets offsets and limits for pagination
+        """
+        # add a limit if requested
+        limit = js.pop('limit', None)
+        if limit:
+            query_base = query_base.limit(limit)
+        # add an offset if requested
+        offset = js.pop('offset', None)
+        if offset:
+            query_base = query_base.offset(offset)
+
+        return query_base
+
     def update_model(self, data, model):
         # updates all fields if data is provided, checks acl
         for field in sqlalchemy.orm.class_mapper(model.__class__).columns:
@@ -113,6 +127,13 @@ class BaseResource(Resource):
                     "Updating value {} to {}".format(field, new_val))
                 assert model.can('edit_' + field)
                 setattr(model, field, new_val)
+
+    def get_user(self, js):
+        """ Most objects relate to a user, thus this is useful for determining
+        the owner you're trying to select on """
+        return UserAPI.get_user(
+            {'id': js.get('userid'),
+             'username': js.get('username')})
 
 
 # Check functions for forms
@@ -415,6 +436,7 @@ class IssueAPI(BaseResource):
 class UserAPI(BaseResource):
     model = User
 
+    @classmethod
     def get_user(self, js):
         # accept either a username or id
         username = js.get('username', None)
@@ -422,10 +444,13 @@ class UserAPI(BaseResource):
         if username:
             return User.query.filter_by(username=username).one()
 
-        # prefer an explicit id, but fallback to getting current user id
+        # prefer an explicit id, but fallback to getting current
         userid = js.get('id', None)
         if userid is None:
-            userid = getattr(current_user, 'id')
+            if current_user.is_anonymous():  # error out, no user info avaiable
+                raise KeyError
+            # just return the current user object
+            return current_user.get()
 
         return User.query.filter_by(id=userid).one()
 
@@ -433,7 +458,7 @@ class UserAPI(BaseResource):
     def get(self):
         js = request.dict_args
         join_prof = request.args.get('join_prof', 'standard_join')
-        user = self.get_user(js)
+        user = UserAPI.get_user(js)
         # assert permission to perform join
         assert user.can('view_' + join_prof)
 
@@ -482,30 +507,26 @@ def login():
     return jsonify(success=False, message="Invalid credentials")
 
 
-# Finance related function
+# Transaction API
 # =============================================================================
 class TransactionAPI(BaseResource):
-    model = User
-
-    def get_user(self, js):
-        # accept either a username or id
-        username = js.get('username', None)
-
-        if username:
-            return User.query.filter_by(username=username).one()
-
-        # prefer an explicit id, but fallback to getting current user id
-        userid = js.get('id', None)
-        if userid is None:
-            userid = getattr(current_user, 'id')
-
-        return User.query.filter_by(id=userid).one()
+    model = Transaction
 
     @login_required
     @catch_common
-    def transaction(self):
-        trans = Transaction.query.filter_by(user_id=current_user.id)
-        return {'success': True, 'transactions': get_joined(trans)}
+    def get(self):
+        js = request.dict_args
+        # get the user who's transactions we want
+        user = self.get_user(js)
+        trans = Transaction.query.filter_by(user_id=user.id)
+        trans = self.limit_offset(trans, js)  # allow pagination
+
+        join_prof = js.pop('join_prof', 'standard_join')
+        for tran in trans:
+            assert tran.can('view_' + join_prof)
+
+        return {'success': True,
+                'transactions': get_joined(trans, join_prof=join_prof)}
 
     @catch_stripe
     @catch_common
@@ -558,6 +579,65 @@ class TransactionAPI(BaseResource):
                     'transaction': trans_serial}
 
         return {'success': False}
+
+
+# Earmark API
+# =============================================================================
+class EarmarkAPI(BaseResource):
+    model = Earmark
+
+    def get_transaction(self, js):
+        return Transaction.query.filter_by(id==js['transid'])
+
+    @catch_common
+    @login_required
+    def earmark(self):
+        js = request.json_dict
+        # get the user whose earmark we're getting. defaults to current user,
+        # but allows arbitrary username of id override
+        user = self.get_user(js)
+
+        # build up a filter dictionary
+        flter = {}
+        earid = js.pop('id', None)
+        if earid:
+            flter['id'] = earid
+        role_type = js.pop('type', 'sender')
+        # don't match on user role if specifying explicit id
+        if role_type and not earid:
+            flter[role_type] = user
+
+        earmarks = Earmark.query.filter_by(**flter)
+        earmarks = self.limit_offset(earmarks, js)
+
+        # execute query
+        earmarks = earmarks.all()
+
+        # security check, assert that they can perform join
+        join_prof = data.pop('join_prof', 'standard_join')
+        for earmark in earmarks:
+            assert earmark.can('view_' + join_prof)
+
+        return {'success': True,
+                'earmarks': get_joined(earmarks, join_prof)}
+
+    @catch_common
+    @login_required
+    def post(self):
+        """ Create a new earmark """
+        js = request.json_dict
+        trans = self.get_transaction(js)
+
+        amount = js['amount']
+
+        mark = Earmark(
+            amount=amount,
+            sender=current_user,
+            _status=status,
+            last_four=retval['card']['last4']
+        )
+
+        return {'success': True}
 
 
 def incorrect_syntax(message='Incorrect syntax', **kwargs):

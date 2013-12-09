@@ -3,7 +3,7 @@ from flask.ext.login import current_user
 
 from . import db, github
 from .util import inherit_lst
-from .acl import issue_acl, project_acl, solution_acl, user_acl
+from .acl import issue_acl, project_acl, solution_acl, user_acl, transaction_acl, earmark_acl
 
 from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
                                   _QueryProperty)
@@ -176,12 +176,18 @@ class BaseMapper(object):
         else:
             return json.dumps(dct)
 
-
+metadata = db.MetaData()
 base = declarative_base(cls=BaseMapper,
                         metaclass=_BoundDeclarativeMeta,
+                        metadata=metadata,
                         name='Model')
 base.query = _QueryProperty(db)
 db.Model = base
+
+
+thing_table = db.Table('thing',
+                       metadata,
+                       db.Column('id', db.Integer, primary_key=True))
 
 
 class EventJSON(TypeDecorator):
@@ -348,38 +354,41 @@ class ProjectVote(base):
         db.Integer, db.ForeignKey("project.id"), primary_key=True)
 
 
-class Project(base, SubscribableMixin, VotableMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    maintainer_username = db.Column(db.String, db.ForeignKey('user.username'))
-    maintainer = db.relationship('User')
-    url_key = db.Column(db.String)
+project_table = db.Table('project', metadata,
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('maintainer_username', db.String, db.ForeignKey('user.username')),
+    db.Column('url_key', db.String),
+    db.Column('thing_id', db.Integer, db.ForeignKey('thing.id')),
 
     # description info
-    name = db.Column(db.String(128))
-    website = db.Column(db.String(256))
-    desc = db.Column(db.String)
-    issue_count = db.Column(db.Integer)  # XXX: Currently not implemented
+    db.Column('name', db.String(128)),
+    db.Column('website', db.String(256)),
+    db.Column('desc', db.String),
+    db.Column('issue_count', db.Integer),  # XXX: Currently not implemented
 
     # voting
-    votes = db.Column(db.Integer, default=0)
+    db.Column('votes', db.Integer, default=0),
 
     # Event log
-    events = db.Column(EventJSON)
+    db.Column('events', EventJSON),
 
     # Github Syncronization information
-    gh_repo_id = db.Column(db.Integer, default=-1)
-    gh_repo_path = db.Column(db.String)
-    gh_synced_at = db.Column(db.DateTime)
-    gh_synced = db.Column(db.Boolean, default=False)
+    db.Column('gh_repo_id', db.Integer, default=-1),
+    db.Column('gh_repo_path', db.String),
+    db.Column('gh_synced_at', db.DateTime),
+    db.Column('gh_synced', db.Boolean, default=False),
+    db.UniqueConstraint("url_key", "maintainer_username"))
 
-    __table_args__ = (
-        db.UniqueConstraint("url_key", "maintainer_username"),
-    )
+class Project(base, SubscribableMixin, VotableMixin):
+    """ This class is a composite of thing and project tables """
+    id = db.column_property(thing_table.c.id, project_table.c.thing_id)
+    __table__ = db.join(thing_table, project_table)
+    project_id = project_table.c.id
+    maintainer = db.relationship('User')
 
     # Validation Profile
     # ======================================================================
-
     valid_profile = V.parse({
         "?created_at": "datetime",
         #"user": 'testing',
@@ -493,40 +502,47 @@ class Project(base, SubscribableMixin, VotableMixin):
         current_app.logger.debug("Desynchronized repository")
 
 
-class Issue(base, SubscribableMixin, VotableMixin):
-
-    statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
-
-    id = db.Column(db.Integer, primary_key=True)
+issue_table = db.Table('issue', metadata,
+    db.Column('id', db.Integer, primary_key=True),
     # key pair, unique identifier
-    url_key = db.Column(db.String, unique=True)
+    db.Column('url_key', db.String, unique=True),
 
-    _status = db.Column(db.Integer, default=statuses.Discussion.index)
-    title = db.Column(db.String(128))
-    desc = db.Column(db.Text)
-    creator = db.relationship('User')
-    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+    db.Column('_status', db.Integer, default=1),
+    db.Column('title', db.String(128)),
+    db.Column('desc', db.Text),
+    db.Column('creator_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('thing_id', db.Integer, db.ForeignKey('thing.id')),
 
     # voting
-    votes = db.Column(db.Integer, default=0)
+    db.Column('votes', db.Integer, default=0),
 
     # Event log
-    events = db.Column(EventJSON)
+    db.Column('events', EventJSON),
 
     # our project relationship
-    project = db.relationship('Project')
-    project_url_key = db.Column(db.String)
-    project_maintainer_username = db.Column(db.String)
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username],
-            [Project.url_key, Project.maintainer_username]),
-        db.UniqueConstraint(
-            "url_key",
-            "project_maintainer_username",
-            "project_url_key"),
-        {})
+    db.Column('project_url_key', db.String),
+    db.Column('project_maintainer_username', db.String),
+    db.ForeignKeyConstraint(
+        ['project_url_key', 'project_maintainer_username'],
+        ['project.url_key', 'project.maintainer_username']),
+    db.UniqueConstraint(
+        "url_key",
+        "project_maintainer_username",
+        "project_url_key"))
+
+
+class Issue(base, SubscribableMixin, VotableMixin):
+    statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
+
+
+    id = db.column_property(thing_table.c.id, issue_table.c.thing_id)
+    __table__ = db.join(thing_table, issue_table)
+    issue_id = issue_table.c.id
+    project = db.relationship(
+        'Project',
+        foreign_keys='[Issue.project_url_key, Issue.project_maintainer_username]')
+    creator = db.relationship('User')
 
     acl = issue_acl
     standard_join = ['get_abs_url',
@@ -631,38 +647,49 @@ class Issue(base, SubscribableMixin, VotableMixin):
         self.safe_save()
 
 
-class Solution(base, SubscribableMixin, VotableMixin):
+solution_table = db.Table('solution', metadata,
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('url_key', db.String, unique=True),
 
-    id = db.Column(db.Integer, primary_key=True)
-    # key pair, unique identifier
-    url_key = db.Column(db.String, unique=True)
-
-    title = db.Column(db.String(128))
-    desc = db.Column(db.Text)
-    creator = db.relationship('User')
-    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+    db.Column('title', db.String(128)),
+    db.Column('desc', db.Text),
+    db.Column('creator_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('thing_id', db.Integer, db.ForeignKey('thing.id')),
 
     # voting
-    votes = db.Column(db.Integer, default=0)
+    db.Column('votes', db.Integer, default=0),
 
     # Event log
-    events = db.Column(EventJSON)
+    db.Column('events', EventJSON),
 
-    # our project relationship
-    project = db.relationship('Project')
-    project_url_key = db.Column(db.String)
-    project_maintainer_username = db.Column(db.String)
-    issue = db.relationship('Issue')
-    issue_url_key = db.Column(db.String)
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username],
-            [Project.url_key, Project.maintainer_username]),
-        db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username, issue_url_key],
-            [Issue.project_url_key, Issue.project_maintainer_username, Issue.url_key]),
-        {})
+    # our project and issue relationship
+    db.Column('project_url_key', db.String),
+    db.Column('project_maintainer_username', db.String),
+    db.Column('issue_url_key', db.String),
+    db.ForeignKeyConstraint(
+        ['project_url_key', 'project_maintainer_username'],
+        ['project.url_key', 'project.maintainer_username']),
+    db.ForeignKeyConstraint(
+        ['project_url_key', 'project_maintainer_username', 'issue_url_key'],
+        ['issue.project_url_key', 'issue.project_maintainer_username', 'issue.url_key']))
+
+
+class Solution(base, SubscribableMixin, VotableMixin):
+    """ A composite of the solution table and the thing table.
+
+    Solutions are attributes of Issues that can be voted on, commented on etc
+    """
+
+    id = db.column_property(thing_table.c.id, solution_table.c.thing_id)
+    __table__ = db.join(thing_table, solution_table)
+    solution_id = solution_table.c.id
+    project = db.relationship(
+        'Project',
+        foreign_keys='[Solution.project_url_key, Solution.project_maintainer_username]')
+    issue = db.relationship(
+        'Issue',
+        foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_maintainer_username]')
 
     acl = solution_acl
     standard_join = ['get_abs_url',
@@ -768,12 +795,74 @@ class Transaction(base):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     standard_join = ['status',
+                     'StatusVals',
                      'created_at',
                      '-stripe_created_at']
+
+    acl = transaction_acl
+
+    def roles(self, user=None):
+        """ Logic to determin what auth roles a user gets """
+        if not user:
+            user = current_user
+
+        if self.user_id == getattr(user, 'id', None):
+            return ['owner']
+
+        if user.is_anonymous():
+            return ['anonymous']
+        else:
+            return ['user']
 
     @property
     def status(self):
         return self.StatusVals[self._status]
+
+
+class Earmark(base):
+    StatusVals = Enum('Pending', 'Assigned', 'Cleared')
+    _status = db.Column(db.Integer, default=StatusVals.Pending.index)
+
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    sender = db.relationship('User', foreign_keys=[sender_id])
+    reciever_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    reciever = db.relationship('User', foreign_keys=[reciever_id])
+    transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'))
+    transaction = db.relationship('Transaction')
+
+    standard_join = ['status',
+                     'StatusVals',
+                     'created_at',
+                     '-stripe_created_at']
+
+    acl = earmark_acl
+
+    def roles(self, user=None):
+        """ Logic to determin what auth roles a user gets """
+        if not user:
+            user = current_user
+
+        if self.reciever_id == getattr(user, 'id', None):
+            return ['reciever']
+
+        if self.sender_id == getattr(user, 'id', None):
+            return ['sender']
+
+        if user.is_anonymous():
+            return ['anonymous']
+        else:
+            return ['user']
+
+    @property
+    def status(self):
+        return self.StatusVals[self._status]
+
+    @property
+    def matured(self):
+        return (datetime.datetime.now() - self.created_at).day >= (amount/100)
 
 
 class Email(base):

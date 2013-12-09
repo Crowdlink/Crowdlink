@@ -633,7 +633,7 @@ mainControllers.controller('homeController',
       id: $rootScope.user.id
       join_prof: "home_join"
     ,(value) ->
-      $scope.huser = value
+      $scope.huser = value.user
     , $rootScope.noty_error)
 )
 
