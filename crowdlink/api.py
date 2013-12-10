@@ -334,7 +334,7 @@ class SolutionAPI(BaseResource):
 
         # return a true value to the user
         return_val.update({'success': True})
-        return jsonify(return_val)
+        return return_val
 
 
 # Issue getter/setter
@@ -436,7 +436,7 @@ class IssueAPI(BaseResource):
 
         # return a true value to the user
         return_val.update({'success': True})
-        return jsonify(return_val)
+        return return_val
 
 
 # User getter/setter
@@ -447,13 +447,13 @@ class UserAPI(BaseResource):
     @classmethod
     def get_user(self, js):
         # accept either a username or id
-        username = js.get('username', None)
+        username = js.pop('username', None)
 
         if username:
             return User.query.filter_by(username=username).one()
 
         # prefer an explicit id, but fallback to getting current
-        userid = js.get('id', None)
+        userid = js.pop('id', None)
         if userid is None:
             if current_user.is_anonymous():  # error out, no user info avaiable
                 raise KeyError
@@ -490,6 +490,28 @@ class UserAPI(BaseResource):
             return {'success': False}
 
         return {'success': True}
+
+    @catch_common
+    def put(self):
+        js = request.json_dict
+        user = UserAPI.get_user(js)
+        return_val = {}
+
+        self.update_model(js, user)
+
+        sub_status = js.pop('subscribed', None)
+        if sub_status:
+            assert user.can('action_watch')
+        if sub_status is True:
+            user.subscribe()
+        elif sub_status is False:
+            user.unsubscribe()
+
+        user.safe_save()
+
+        # return a true value to the user
+        return_val.update({'success': True})
+        return return_val
 
 
 @api.route("/logout")
@@ -622,7 +644,7 @@ class EarmarkAPI(BaseResource):
         earmarks = earmarks.all()
 
         # security check, assert that they can perform join
-        join_prof = data.pop('join_prof', 'standard_join')
+        join_prof = js.pop('join_prof', 'standard_join')
         for earmark in earmarks:
             assert earmark.can('view_' + join_prof)
 

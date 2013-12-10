@@ -111,6 +111,7 @@ class BaseMapper(object):
         try:
             db.session.commit(**kwargs)
         except Exception:
+            db.session.rollback()
             current_app.logger.warn("Unkown error commiting to db",
                                     exc_info=True)
             return False
@@ -221,10 +222,9 @@ class VotableMixin(object):
     uniqueness of user by hand through these checks """
 
     def set_vote(self, vote):
-        """ save isn't needed, this operation must be atomic """
         # XXX: Really needs error catching
         if not vote:  # unvote
-            Vote.filter_by(voter=current_user.get(),
+            Vote.query.filter_by(voter=current_user.get(),
                            votee_id=self.id).delete()
             current_app.logger.debug(
                 ("Unvoting on {} as user "
@@ -234,7 +234,11 @@ class VotableMixin(object):
             current_app.logger.debug(
                 ("Voting on {} as user "
                  "{}").format(self.__class__.__name__, current_user.username))
-            Vote(voter=current_user.get(), votee_id=self.id).safe_save()
+            Vote(voter=current_user.get(), votee_id=self.id)
+            try:
+                db.session.commit()
+            except sqlalchemy.exc.IntegrityError:
+                pass
             return True
         return "already_set"
 
@@ -275,7 +279,11 @@ class SubscribableMixin(object):
             ("Subscribing on {} as user "
              "{}").format(self.__class__.__name__, current_user.username))
         Subscription(subscriber=current_user.get(),
-                     subscribee_id=self.id).safe_save()
+                     subscribee_id=self.id)
+        try:
+            db.session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            pass
         return True
 
     @property
@@ -616,6 +624,7 @@ class Solution(base, SubscribableMixin, VotableMixin):
     issue = db.relationship(
         'Issue',
         foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_maintainer_username]')
+    creator = db.relationship('User', foreign_keys='Solution.creator_id')
 
     acl = solution_acl
     standard_join = ['get_abs_url',

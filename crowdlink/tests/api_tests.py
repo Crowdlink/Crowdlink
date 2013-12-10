@@ -2,19 +2,63 @@ import crowdlink
 import json
 
 from crowdlink.tests import BaseTest, login_required
-from crowdlink.models import Issue, Project
+from crowdlink.models import Issue, Project, Solution, User
 from pprint import pprint
 
 
 class APITests(BaseTest):
-    def test_home(self):
-        rv = self.client.get('/')
+    @login_required
+    def test_voting(self):
+        """ can i vote on an issue/project/solution? """
+        lst = [(Issue, 'issue'),
+               (Project, 'project'),
+               (Solution, 'solution')]
+        for cls, key in lst:
+            print "Voting for " + key
+            obj = self.db.session.query(cls).first()
+            res = self.json_put('/api/' + key,
+                                {'id': obj.id,
+                                'vote_status': True}).json
+            assert res['success']
+            res = self.json_put('/api/' + key,
+                                {'id': obj.id,
+                                'vote_status': True}).json
+            assert res['success']
+            res = self.json_put('/api/' + key,
+                                {'id': obj.id,
+                                'vote_status': False}).json
+            assert res['success']
+            res = self.json_put('/api/' + key,
+                                {'id': obj.id,
+                                'vote_status': False}).json
+            assert res['success']
 
-    def test_user(self):
-        res = self.client.get('/api/user?username=crowdlink').json
-        assert res['username'] == 'crowdlink'
-        assert '_password' not in res
-        assert 'password' not in res
+    @login_required
+    def test_subscribe(self):
+        """ can i subscribe to an issue/project/user/solution? """
+        lst = [(Issue, 'issue'),
+               (Project, 'project'),
+               (Solution, 'solution'),
+               (User, 'user')]
+        for cls, key in lst:
+            print "Subscribing for " + key
+            obj = self.db.session.query(cls).first()
+            res = self.json_put('/api/' + key,
+                                {'id': obj.id,
+                                'subscribed': True}).json
+            assert res['success']
+            res = self.json_put('/api/' + key,
+                                {'id': obj.id,
+                                'subscribed': True}).json
+            assert res['success']
+            res = self.json_put('/api/' + key,
+                                {'id': obj.id,
+                                'subscribed': False}).json
+            assert res['success']
+            res = self.json_put('/api/' + key,
+                                {'id': obj.id,
+                                'subscribed': False}).json
+            assert res['success']
 
     # Issue api views
     # =========================================================================
@@ -45,22 +89,6 @@ class APITests(BaseTest):
                                      {'id': 12,
                                       'join_prof': 'standard_join'}))
 
-    @login_required
-    def test_issue_voting(self):
-        issue = self.db.session.query(Issue).first()
-        res = self.json_put('/api/issue',
-                            {'id': issue.id,
-                             'vote_status': True}).json
-        assert res['success']
-
-    @login_required
-    def test_issue_subscribe(self):
-        issue = self.db.session.query(Issue).first()
-        res = self.json_put('/api/issue',
-                            {'id': issue.id,
-                             'subscribed': True}).json
-        assert res['success']
-
     def test_issue_403(self):
         issue = self.db.session.query(Issue).first()
         self.assert403(self.json_put('/api/issue',
@@ -73,7 +101,7 @@ class APITests(BaseTest):
         qs = {'username': 'crowdlink',
               'url_key': 'crowdlink',
               'join_prof': 'standard_join'}
-        res = self.json_get('/api/project', data=qs).json
+        res = self.json_get('/api/project', qs).json
         pprint(res)
         assert type(res['created_at']) == int
         assert type(res['id']) == int
@@ -92,8 +120,7 @@ class APITests(BaseTest):
         qs = {'username': 'crowdlink',
               'url_key': 'crowdlink',
               'join_prof': 'page_join'}
-        res = self.client.get('/api/project',
-                              query_string=qs).json
+        res = self.json_get('/api/project', qs).json
         assert type(res['events']) == list
 
     def test_project_cant_edit(self):
@@ -115,14 +142,16 @@ class APITests(BaseTest):
     def test_user(self):
         """ Test anonymous standard join get """
         qs = {'username': 'crowdlink'}
-        res = self.client.get('/api/user',
-                              query_string=qs).json
+        res = self.json_get('/api/user', qs).json
         pprint(res)
         user = res['user']
         assert res['success']
         assert 'gh_linked' in user
         assert type(user['id']) == int
+        assert user['username'] == 'crowdlink'
         assert type(user['user_acl']) == dict
+        assert '_password' not in user
+        assert 'password' not in user
         assert user['get_abs_url'].startswith('/')
 
     def test_user_400(self):
@@ -132,27 +161,30 @@ class APITests(BaseTest):
         """ ensure that anonymous users can't access user data"""
         qs = {'id': 1,
               'join_prof': 'settings_join'}
-        res = self.client.get('/api/user', query_string=qs)
+        res = self.json_get('/api/user', qs)
         pprint(res.json)
         assert res.json['success'] is False
         self.assert403(res)
 
     def test_explicit_user(self):
         """ simple explicit id definition for user lookup """
-        qs = {'id': 1,
+        data = {'id': 1,
               'join_prof': 'page_join'}
-        res = self.client.get('/api/user', query_string=qs).json
+        res = self.json_get('/api/user', data).json
         pprint(res)
         user = res['user']
         assert res['success']
-        assert res['user']['username']
+        assert user['username'] == 'crowdlink'
+        assert '_password' not in user
+        assert 'password' not in user
+        assert user['username']
         assert type(user['events']) == list
 
     @login_required
     def test_user_page(self):
         """ page_join user test """
         qs = {'join_prof': 'page_join'}
-        res = self.client.get('/api/user', query_string=qs).json
+        res = self.json_get('/api/user', qs).json
         pprint(res)
         user = res['user']
         assert res['success']
@@ -162,7 +194,7 @@ class APITests(BaseTest):
     def test_user_home(self):
         """ home_join user test """
         qs = {'join_prof': 'home_join'}
-        res = self.client.get('/api/user', query_string=qs).json
+        res = self.json_get('/api/user', qs).json
         pprint(res)
         user = res['user']
         assert res['success']

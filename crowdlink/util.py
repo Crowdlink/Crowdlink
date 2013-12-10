@@ -45,7 +45,7 @@ def inherit_lst(*args):
 
 
 def provision():
-    from crowdlink.models import User, Project, Issue
+    from crowdlink.models import User, Project, Issue, Solution
     usr = User.create_user("crowdlink", "testing", "support@crowdlink.com")
 
     # Create the project for crowdlink
@@ -58,7 +58,8 @@ def provision():
     proj.safe_save()
 
     issues = [
-('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.'),
+('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.',
+    ['test']),
 ('Change log for Improvements', 'Like gists on Github, show a historical revision log for an Improvements descriptions'),
 ('Hot sorting metric for Improvements', 'Periodically re-calculate a "hot" value for various improvements based on how quickly they\'ve recieved votes over time. Similar to reddit, or other websites trending function'),
 ('Allow revoking of Github synchronization via crowdlink', 'Currently, desynchronizing can only be done via Github.'),
@@ -66,9 +67,19 @@ def provision():
 ('Promote with donations', 'Instead of dontaing to the project, donate to a charity, yet earmark this donation towards a project or Improvement to show your support'),
 ('Google Analytics Hooks', 'Allow project maintainers to specify a Google Analytics Key and select from a range of events that they would like logged into their GA account'),
         ]
-    for title, desc in issues:
+    for data in issues:
+        if len(data) > 2:
+            title, desc, solutions = data
+        else:
+            title, desc = data
         issue = Issue(
             creator=usr,
             title=title,
             desc=desc)
         proj.add_issue(issue, usr)
+
+        for sol in solutions:
+            sol = Solution(
+                title=sol,
+                creator=usr,
+                issue=issue).safe_save()
