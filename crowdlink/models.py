@@ -138,7 +138,7 @@ class BaseMapper(object):
         representation.  For passing back object state via the api """
         dct = {}
         for key in args:
-            attr = getattr(self, key, 1)
+            attr = getattr(self, key)
             # If it's being joined this way, just use the id
             if isinstance(attr, BaseMapper):
                 try:
@@ -154,7 +154,7 @@ class BaseMapper(object):
             elif isinstance(attr, datetime.datetime):
                 attr = calendar.timegm(attr.utctimetuple()) * 1000
             # don't convert bool or int to str
-            elif isinstance(attr, bool) or isinstance(attr, int):
+            elif isinstance(attr, bool) or isinstance(attr, int) or attr is None:
                 pass
             # convert set (user_acl list) to a dictionary for easy conditionals
             elif isinstance(attr, set):
@@ -238,8 +238,9 @@ class VotableMixin(object):
 
     @property
     def vote_status(self):
-        return bool(self.vote_cls.query.filter_by(voter=current_user.get(),
-                                                  votee=self).first())
+        if not current_user.is_anonymous():
+            return bool(self.vote_cls.query.filter_by(voter=current_user.get(),
+                                                    votee=self).first())
 
 
 class SubscribableMixin(object):
@@ -265,10 +266,11 @@ class SubscribableMixin(object):
 
     @property
     def subscribed(self):
-        return bool(
-            self.subscription_cls.query.filter_by(
-                subscriber=current_user.get(),
-                subscribee=self).first())
+        if not current_user.is_anonymous():
+            return bool(
+                self.subscription_cls.query.filter_by(
+                    subscriber=current_user.get(),
+                    subscribee=self).first())
 
     @property
     def subscribers(self):

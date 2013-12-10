@@ -43,7 +43,9 @@ def catch_common(func, *args, **kwargs):
         ret = {'success': False, 'validation_errors': e.to_dict()}, 200
 
     # SQLA errors
-    except sqlalchemy.orm.exc.NoResultFound:
+    except (sqlalchemy.orm.exc.NoResultFound,
+
+            sqlalchemy.orm.exc.MultipleResultsFound):
         current_app.logger.debug("Does not exist", exc_info=True)
         ret = {'error': 'Could not be found'}, 404
     except sqlalchemy.exc.IntegrityError as e:
@@ -54,7 +56,7 @@ def catch_common(func, *args, **kwargs):
             'message': "A duplicate value already exists in the database",
             'detail': e.message},
         200
-    except sqlalchemy.exc:
+    except (sqlalchemy.exc, sqlalchemy.orm.exc):
         current_app.logger.debug("Unkown SQLAlchemy Error", exc_info=True)
         ret = {
             'success': False,
@@ -347,16 +349,18 @@ class IssueAPI(BaseResource):
         if idval:
             return Issue.query.filter_by(id=idval).one()
         else:
-            project = IssueAPI.get_parent_project(data)
             return Issue.query.filter_by(url_key=data['url_key'],
-                                         project=project).one()
-
+                                         project_maintainer_username=data['usernmae'],
+                                         project_url_key=data['purl_key']).one()
     @classmethod
     def get_parent_project(cls, data, **kwargs):
-        proj_data = {'url_key': data.pop('purl_key', None),
-                     'id': data.pop('pid', None),
-                     'username': data.pop('username', None)}
-        return ProjectAPI.get_project(proj_data, **kwargs)
+        pid = data.pop('pid', None)
+        if pid:
+            d = {'id': pid}
+        else:
+            d = {'url_key': data.pop('purl_key'),
+                 'username': data.pop('username')}
+        return ProjectAPI.get_project(d, **kwargs)
 
     @catch_common
     def post(self):
@@ -393,8 +397,12 @@ class IssueAPI(BaseResource):
 
         join_prof = data.get('join_prof', None)
         if join_prof:
-            retval.update(get_joined(issue, join_prof=join_prof))
+            retval['issue'] = get_joined(issue, join_prof=join_prof)
 
+        if len(retval) > 0:
+            retval['success'] = True
+        else:
+            raise AttributeError
         return retval
 
     @catch_common

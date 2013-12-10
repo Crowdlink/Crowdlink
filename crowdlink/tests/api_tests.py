@@ -2,6 +2,7 @@ import crowdlink
 import json
 
 from crowdlink.tests import BaseTest, login_required
+from crowdlink.models import Issue
 from pprint import pprint
 
 
@@ -14,6 +15,41 @@ class APITests(BaseTest):
         assert res['username'] == 'crowdlink'
         assert '_password' not in res
         assert 'password' not in res
+
+    # Issue api views
+    # =========================================================================
+    def test_issue(self):
+        """ test access by id or composite keys """
+        first_issue = self.db.session.query(Issue).first()
+        qs = {'id': first_issue.id, 'join_prof': 'standard_join'}
+        res = self.json_get('/api/issue', data=qs).json
+        pprint(res)
+        issue = res['issue']
+        assert 'desc' in issue
+        assert 'title' in issue
+        assert issue['vote_status'] is None  # attribute for anonymous
+        assert res['success']
+
+        # now login
+        self.login('crowdlink', 'testing')
+        qs = {'id': first_issue.id, 'join_prof': 'standard_join'}
+        res = self.json_get('/api/issue', data=qs).json
+        pprint(res)
+        assert res['issue']['vote_status'] is False  # difference from above
+
+    def test_issue_400(self):
+        self.assert400(self.json_get('/api/issue', {}))
+
+    def test_issue_404(self):
+        self.assert404(self.json_get('/api/issue',
+                                     {'id': 12,
+                                      'join_prof': 'standard_join'}))
+
+    def test_issue_403(self):
+        issue = self.db.session.query(Issue).first()
+        self.assert403(self.json_put('/api/issue',
+                                     {'id': issue.id,
+                                      'url_key': 'crap'}))
 
     # Project api views
     # =========================================================================

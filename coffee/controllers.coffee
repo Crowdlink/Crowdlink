@@ -256,7 +256,7 @@ mainControllers.controller('issueController',
       solution_join_prof: "page_join"
     ,(value) ->
       $timeout ->
-        $scope.issue = value
+        $scope.issue = value.issue
         $scope.prev =
           issue: $.extend({}, value)
         $timeout ->
