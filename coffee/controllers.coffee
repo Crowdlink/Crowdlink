@@ -102,10 +102,10 @@ mainControllers.controller('rootController',
         id: user_id
       ,(value) ->
         if 'success' of value and value.success
-          $rootScope.user = value
+          $rootScope.user = value.user
         else
           $rootScope.noty_error value
-      , $rootScope.noty_error)
+      , $scope.logout)  # logout the user if there was an error accessing it
 
   $rootScope.noty_error = (response) ->
     options =
@@ -258,7 +258,7 @@ mainControllers.controller('issueController',
       $timeout ->
         $scope.issue = value.issue
         $scope.prev =
-          issue: $.extend({}, value)
+          issue: $.extend({}, value.issue)
         $timeout ->
           $rootScope.loading = false
         , 200

@@ -234,8 +234,9 @@ class VotableMixin(object):
             current_app.logger.debug(
                 ("Voting on {} as user "
                  "{}").format(self.__class__.__name__, current_user.username))
-            Vote(voter=current_user.get(), votee_id=self.id)
+            vote = Vote(voter=current_user.get(), votee_id=self.id)
             try:
+                db.session.add(vote)
                 db.session.commit()
             except sqlalchemy.exc.IntegrityError:
                 pass
@@ -278,9 +279,10 @@ class SubscribableMixin(object):
         current_app.logger.debug(
             ("Subscribing on {} as user "
              "{}").format(self.__class__.__name__, current_user.username))
-        Subscription(subscriber=current_user.get(),
+        sub = Subscription(subscriber=current_user.get(),
                      subscribee_id=self.id)
         try:
+            db.session.add(sub)
             db.session.commit()
         except sqlalchemy.exc.IntegrityError:
             pass
@@ -393,6 +395,10 @@ class Project(base, SubscribableMixin, VotableMixin):
             return ['user']
 
     @property
+    def get_dur_url(self):
+        return "/p/{id}".format(id=self.id)
+
+    @property
     def get_abs_url(self):
         return "/{username}/{url_key}/".format(
             username=self.maintainer_username,
@@ -405,8 +411,7 @@ class Project(base, SubscribableMixin, VotableMixin):
         issue.safe_save()
 
         # send a notification to all subscribers
-        inotif = events.IssueNotif(user=user, issue=issue)
-        inotif.distribute()
+        events.IssueNotif.generate(issue)
 
     def add_comment(self, body, user):
         # Send the actual comment to the issue event queue
@@ -533,17 +538,21 @@ class Issue(base, SubscribableMixin, VotableMixin):
 
         return roles
 
-    # Closevalue masking for render
+    @property
+    def get_dur_url(self):
+        return "/i/{id}".format(id=self.id)
+
+    @property
     def get_abs_url(self):
         return "/{username}/{purl_key}/{url_key}".format(
-            purl_key=self.project.url_key,
-            username=self.project.maintainer.username,
+            purl_key=self.project_url_key,
+            username=self.project_maintainer_username,
             url_key=self.url_key)
 
     @property
     def get_project_abs_url(self):
         return "/{username}/{url_key}/".format(
-            username=self.maintainer_username,
+            username=self.project_maintainer_username,
             url_key=self.project_url_key)
 
     @property
@@ -667,7 +676,11 @@ class Solution(base, SubscribableMixin, VotableMixin):
 
         return roles
 
-    # Closevalue masking for render
+    @property
+    def get_dur_url(self):
+        return "/s/{id}".format(id=self.id)
+
+    @property
     def get_abs_url(self):
         return "/{id}/{url_key}".format(
             id=self.id,
@@ -837,10 +850,12 @@ class User(base, SubscribableMixin):
                      'user_acl',
                      'get_abs_url',
                      '-_password',
+                     '-events',
+                     '-public_events',
                      ]
     home_join = inherit_lst(standard_join,
                             [{'obj': 'events',
-                              'join_prof': 'disp_join'},
+                              'join_prof': 'standard_join'},
                              {'obj': 'projects',
                               'join_prof': 'disp_join'}])
 
@@ -870,6 +885,10 @@ class User(base, SubscribableMixin):
             return ['anonymous']
         else:
             return ['user']
+
+    @property
+    def get_dur_url(self):
+        return "/u/{id}".format(id=self.id)
 
     @property
     def password(self):

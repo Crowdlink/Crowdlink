@@ -350,7 +350,7 @@ class IssueAPI(BaseResource):
             return Issue.query.filter_by(id=idval).one()
         else:
             return Issue.query.filter_by(url_key=data['url_key'],
-                                         project_maintainer_username=data['usernmae'],
+                                         project_maintainer_username=data['username'],
                                          project_url_key=data['purl_key']).one()
     @classmethod
     def get_parent_project(cls, data, **kwargs):

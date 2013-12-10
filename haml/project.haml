@@ -17,9 +17,10 @@
         %span{"ng-hide" => "project.user_acl.edit_name"}
           {[{ project.name }]}
       %h4
-        %b> Created
-        {[{ project.created_at| date:'medium' }]}
-        ({[{ project.created_at| date_ago }]})
+        %small
+          %b Created
+          {[{ project.created_at| date:'medium' }]}
+          ({[{ project.created_at| date_ago }]})
       %h4
         %b Maintainer
         %a{:href => "#/{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}

@@ -4,13 +4,22 @@ import json
 
 from pprint import pprint
 from flask.ext.testing import TestCase
+from flask.ext.login import login_user
 from crowdlink.util import provision
+from crowdlink.models import User
 
 @decorator.decorator
 def login_required(func, self, username='crowdlink', password='testing'):
     self.user = self.login(username, password)['user']
     func(self)
     self.logout()
+
+@decorator.decorator
+def login_required_ctx(func, self, username='crowdlink'):
+    with self.app.test_request_context():
+        self.user = self.db.session.query(User).filter_by(username=username).first()
+        login_user(self.user)
+        func(self)
 
 class BaseTest(TestCase):
     def json_post(self, url, data):

@@ -137,15 +137,15 @@ mainFilters.filter "date_ago", ->
       suffixAgo: "ago"
       suffixFromNow: "from now"
       seconds: "less than a minute"
-      minute: "about a minute"
+      minute: "a minute"
       minutes: "%d minutes"
-      hour: "about an hour"
-      hours: "about %d hours"
+      hour: "an hour"
+      hours: "%d hours"
       day: "a day"
       days: "%d days"
-      month: "about a month"
+      month: "a month"
       months: "%d months"
-      year: "about a year"
+      year: "a year"
       years: "%d years"
 
     dateDifference = nowTime - date
@@ -155,10 +155,6 @@ mainFilters.filter "date_ago", ->
     hours = minutes / 60
     days = hours / 24
     years = days / 365
-    if strings.wordSeparator?
-      separator = " "
-    else
-      separator = strings.wordSeparator
 
     # var strings = this.settings.strings;
     prefix = strings.prefixAgo
@@ -178,7 +174,7 @@ mainFilters.filter "date_ago", ->
             or days < 365 and substitute(strings.months, Math.round(days / 30), strings) \
             or years < 1.5 and substitute(strings.year, 1, strings) \
             or substitute(strings.years, Math.round(years), strings)
-    $.trim [prefix, words, suffix].join(separator)
+    $.trim [prefix, words, suffix].join(" ")
 
 
 ##############################################################################
