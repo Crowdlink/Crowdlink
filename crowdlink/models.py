@@ -115,7 +115,7 @@ class BaseMapper(object):
             current_app.logger.warn("Unkown error commiting to db",
                                     exc_info=True)
             return False
-        return True
+        return self
 
     def to_dict(model):
         """ converts a sqlalchemy model to a dictionary """
@@ -178,9 +178,13 @@ db.Model = base
 
 
 # our parent table for issues, projects, solutions and users
-thing_table = db.Table('thing',
-                       metadata,
-                       db.Column('id', db.Integer, primary_key=True))
+class Thing(base):
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String)
+    __mapper_args__ = {
+        'polymorphic_identity': 'Thing',
+        'polymorphic_on':type
+    }
 
 
 class EventJSON(TypeDecorator):
@@ -301,13 +305,12 @@ class SubscribableMixin(object):
 
 
 project_table = db.Table('project', metadata,
-    db.Column('id', db.Integer, primary_key=True),
-    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('id', db.Integer, db.ForeignKey('thing.id'), primary_key=True),
     db.Column('maintainer_username', db.String, db.ForeignKey('user.username')),
     db.Column('url_key', db.String),
-    db.Column('thing_id', db.Integer, db.ForeignKey('thing.id')),
 
     # description info
+    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
     db.Column('name', db.String(128)),
     db.Column('website', db.String(256)),
     db.Column('desc', db.String),
@@ -327,12 +330,11 @@ project_table = db.Table('project', metadata,
     db.UniqueConstraint("url_key", "maintainer_username"))
 
 
-class Project(base, SubscribableMixin, VotableMixin):
+class Project(Thing, SubscribableMixin, VotableMixin):
     """ This class is a composite of thing and project tables """
-    id = db.column_property(thing_table.c.id, project_table.c.thing_id)
-    __table__ = db.join(thing_table, project_table)
-    project_id = project_table.c.id
+    __table__ = project_table
     maintainer = db.relationship('User', foreign_keys='Project.maintainer_username')
+    __mapper_args__ = {'polymorphic_identity': 'Project'}
 
     # Validation Profile
     # ======================================================================
@@ -447,8 +449,7 @@ class Project(base, SubscribableMixin, VotableMixin):
 
 
 issue_table = db.Table('issue', metadata,
-    db.Column('id', db.Integer, primary_key=True),
-    # key pair, unique identifier
+    db.Column('id', db.Integer, db.ForeignKey('thing.id'), primary_key=True),
     db.Column('url_key', db.String, unique=True),
 
     db.Column('_status', db.Integer, default=1),
@@ -456,7 +457,6 @@ issue_table = db.Table('issue', metadata,
     db.Column('desc', db.Text),
     db.Column('creator_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('created_at', db.DateTime, default=datetime.datetime.now),
-    db.Column('thing_id', db.Integer, db.ForeignKey('thing.id')),
 
     # voting
     db.Column('votes', db.Integer, default=0),
@@ -470,23 +470,22 @@ issue_table = db.Table('issue', metadata,
     db.ForeignKeyConstraint(
         ['project_url_key', 'project_maintainer_username'],
         ['project.url_key', 'project.maintainer_username']),
+    # ensure uniqueness on the project/url_key combo
     db.UniqueConstraint(
         "url_key",
         "project_maintainer_username",
         "project_url_key"))
 
 
-class Issue(base, SubscribableMixin, VotableMixin):
+class Issue(Thing, SubscribableMixin, VotableMixin):
     statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
 
-
-    id = db.column_property(thing_table.c.id, issue_table.c.thing_id)
-    __table__ = db.join(thing_table, issue_table)
-    issue_id = issue_table.c.id
+    __table__ = issue_table
     project = db.relationship(
         'Project',
         foreign_keys='[Issue.project_url_key, Issue.project_maintainer_username]')
     creator = db.relationship('User', foreign_keys='Issue.creator_id')
+    __mapper_args__ = {'polymorphic_identity': 'Issue'}
 
     acl = issue_acl
     standard_join = ['get_abs_url',
@@ -591,14 +590,13 @@ class Issue(base, SubscribableMixin, VotableMixin):
 
 
 solution_table = db.Table('solution', metadata,
-    db.Column('id', db.Integer, primary_key=True),
+    db.Column('id', db.Integer, db.ForeignKey('thing.id'), primary_key=True),
     db.Column('url_key', db.String, unique=True),
 
     db.Column('title', db.String(128)),
     db.Column('desc', db.Text),
     db.Column('creator_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('created_at', db.DateTime, default=datetime.datetime.now),
-    db.Column('thing_id', db.Integer, db.ForeignKey('thing.id')),
 
     # voting
     db.Column('votes', db.Integer, default=0),
@@ -618,14 +616,13 @@ solution_table = db.Table('solution', metadata,
         ['issue.project_url_key', 'issue.project_maintainer_username', 'issue.url_key']))
 
 
-class Solution(base, SubscribableMixin, VotableMixin):
+class Solution(Thing, SubscribableMixin, VotableMixin):
     """ A composite of the solution table and the thing table.
 
     Solutions are attributes of Issues that can be voted on, commented on etc
     """
 
-    id = db.column_property(thing_table.c.id, solution_table.c.thing_id)
-    __table__ = db.join(thing_table, solution_table)
+    __table__ = solution_table
     solution_id = solution_table.c.id
     project = db.relationship(
         'Project',
@@ -634,6 +631,7 @@ class Solution(base, SubscribableMixin, VotableMixin):
         'Issue',
         foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_maintainer_username]')
     creator = db.relationship('User', foreign_keys='Solution.creator_id')
+    __mapper_args__ = {'polymorphic_identity': 'Solution'}
 
     acl = solution_acl
     standard_join = ['get_abs_url',
@@ -775,6 +773,8 @@ class Earmark(base):
     reciever = db.relationship('User', foreign_keys=[reciever_id])
     transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'))
     transaction = db.relationship('Transaction')
+    thing_id = db.Column(db.Integer, db.ForeignKey('thing.id'))
+    thing = db.relationship('Thing')
 
     standard_join = ['status',
                      'StatusVals',
@@ -819,29 +819,25 @@ class Email(base):
 
 
 user_table = db.Table('user', metadata,
-    # _id
-    db.Column('id', db.Integer, primary_key=True),
+    db.Column('id', db.Integer, db.ForeignKey('thing.id'), primary_key=True),
     db.Column('username', db.String(32), unique=True),
-    db.Column('thing_id', db.Integer, db.ForeignKey('thing.id')),
 
     # User information
     db.Column('created_at', db.DateTime, default=datetime.datetime.now),
     db.Column('_password', db.String),
+    db.Column('gh_token', db.String),
 
     # Event information
     db.Column('public_events', EventJSON),
     db.Column('events', EventJSON),
 
-    db.Column('gh_token', db.String),
-
     # Github sync
     gh_token = db.Column(db.String))
 
 
-class User(base, SubscribableMixin):
-    id = db.column_property(thing_table.c.id, user_table.c.thing_id)
-    __table__ = db.join(thing_table, user_table)
-    user_id = user_table.c.id
+class User(Thing, SubscribableMixin):
+    __table__ = user_table
+    __mapper_args__ = {'polymorphic_identity': 'User'}
 
     standard_join = ['id',
                      'gh_linked',
@@ -854,14 +850,12 @@ class User(base, SubscribableMixin):
                      '-public_events',
                      ]
     home_join = inherit_lst(standard_join,
-                            [{'obj': 'events',
-                              'join_prof': 'standard_join'},
+                            [{'obj': 'events'},
                              {'obj': 'projects',
                               'join_prof': 'disp_join'}])
 
     page_join = inherit_lst(standard_join,
-                            [{'obj': 'public_events',
-                              'join_prof': 'disp_join'}])
+                            [{'obj': 'public_events'}])
 
     settings_join = inherit_lst(standard_join,
                                 {'obj': 'primary_email'})

@@ -178,7 +178,7 @@ class APITests(BaseTest):
         assert '_password' not in user
         assert 'password' not in user
         assert user['username']
-        assert type(user['events']) == list
+        assert type(user['public_events']) == list
 
     @login_required
     def test_user_page(self):
@@ -199,6 +199,25 @@ class APITests(BaseTest):
         user = res['user']
         assert res['success']
         assert type(user['events']) == list
+
+    # Earmark api
+    # =========================================================================
+    def test_earmark(self):
+        """ test creation
+        qs = {'username': 'crowdlink'}
+        res = self.json_get('/api/user', qs).json
+        pprint(res)
+        user = res['user']
+        assert res['success']
+        assert 'gh_linked' in user
+        assert type(user['id']) == int
+        assert user['username'] == 'crowdlink'
+        assert type(user['user_acl']) == dict
+        assert '_password' not in user
+        assert 'password' not in user
+        assert user['get_abs_url'].startswith('/')
+        """
+        pass
 
     # Test all the form checks
     # =========================================================================
