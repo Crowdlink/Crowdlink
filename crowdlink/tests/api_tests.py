@@ -2,7 +2,7 @@ import crowdlink
 import json
 
 from crowdlink.tests import BaseTest, login_required
-from crowdlink.models import Issue
+from crowdlink.models import Issue, Project
 from pprint import pprint
 
 
@@ -45,6 +45,22 @@ class APITests(BaseTest):
                                      {'id': 12,
                                       'join_prof': 'standard_join'}))
 
+    @login_required
+    def test_issue_voting(self):
+        issue = self.db.session.query(Issue).first()
+        res = self.json_put('/api/issue',
+                            {'id': issue.id,
+                             'vote_status': True}).json
+        assert res['success']
+
+    @login_required
+    def test_issue_subscribe(self):
+        issue = self.db.session.query(Issue).first()
+        res = self.json_put('/api/issue',
+                            {'id': issue.id,
+                             'subscribed': True}).json
+        assert res['success']
+
     def test_issue_403(self):
         issue = self.db.session.query(Issue).first()
         self.assert403(self.json_put('/api/issue',
@@ -82,7 +98,8 @@ class APITests(BaseTest):
 
     def test_project_cant_edit(self):
         """ ensure non-priv can't edit project """
-        qs = {'id': 1,
+        first_project = self.db.session.query(Project).first()
+        qs = {'id': first_project.id,
               'url_key': 'crowdlink2'}
         res = self.json_put('/api/project', data=qs)
         self.assert403(res)

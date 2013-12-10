@@ -42,38 +42,33 @@ V.Object.validate_attr = validate_attr
 
 
 class BaseMapper(object):
-    """ Lots of boiler plate/replication here because @declared_attr didn't
-    want to work correctly for model inheritence. Not pretty, but it will work
-    for now """
+    """ The base model instance for all model. Provides lots of useful
+    utilities in addition to access control logic and serialization helpers """
 
-    #: the query class used.  The :attr:`query` attribute is an instance
-    #: of this class.  By default a :class:`BaseQuery` is used.
+    # Allows us to run query on the class directly, instead of through a
+    # session
     query_class = BaseQuery
-
-    #: an instance of :attr:`query_class`.  Can be used to query the
-    #: database for instances of this model.
     query = None
 
-    standard_join = []
-    acl = {}
-
     def __new__(cls, *args, **kwargs):
+        """ If a valideer validation class is set then validation triggers are
+        set on the object """
+
         # if there's validation on this object
         valid = getattr(cls, 'valid_profile', None)
         if valid:
             for name, validator in valid._named_validators:
-                if isinstance(validator, V.Object):
-                    pass
-                else:  # base case
-                    func = lambda target, value, oldvalue, initiator: \
-                        valid.validate_attr(initiator, value)
-                    event.listen(getattr(cls, name),
-                                 'set',
-                                 func,
-                                 name)
+                func = lambda target, value, oldvalue, initiator: \
+                    valid.validate_attr(initiator, value)
+                event.listen(getattr(cls, name),
+                                'set',
+                                func,
+                                name)
 
         return super(BaseMapper, cls).__new__(cls, *args, **kwargs)
 
+    # Access Control Methods
+    # =========================================================================
     def get_acl(self, user=None):
         """ Generates an acl list for a specific user which defaults to the
         authed user """
@@ -107,9 +102,8 @@ class BaseMapper(object):
         return self._user_acl[1]
 
     def safe_save(self, **kwargs):
-        """ Catches a bunch of common mongodb errors when saving and handles
-        them appropriately. A convenient wrapper around catch_error_graceful.
-        """
+        """ Automatically adds object to the global session and saves with
+        error catching """
         # add to the main session if not added
         if db.object_session(self) is None:
             db.session.add(self)
@@ -121,10 +115,6 @@ class BaseMapper(object):
                                     exc_info=True)
             return False
         return True
-
-    def init(self):
-        db.session.add(self)
-        return self
 
     def to_dict(model):
         """ converts a sqlalchemy model to a dictionary """
@@ -176,6 +166,7 @@ class BaseMapper(object):
         else:
             return json.dumps(dct)
 
+# setup our base mapper and database metadata
 metadata = db.MetaData()
 base = declarative_base(cls=BaseMapper,
                         metaclass=_BoundDeclarativeMeta,
@@ -185,6 +176,7 @@ base.query = _QueryProperty(db)
 db.Model = base
 
 
+# our parent table for issues, projects, solutions and users
 thing_table = db.Table('thing',
                        metadata,
                        db.Column('id', db.Integer, primary_key=True))
@@ -214,16 +206,26 @@ class EventJSON(TypeDecorator):
         return []
 
 
+class Vote(base):
+    """ associative table for voting on things """
+    voter_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    voter = db.relationship('User', foreign_keys=[voter_id])
+
+    votee_id = db.Column(
+        db.Integer, db.ForeignKey("thing.id"), primary_key=True)
+
+
 class VotableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
 
     def set_vote(self, vote):
         """ save isn't needed, this operation must be atomic """
-        cls = self.vote_cls
+        # XXX: Really needs error catching
         if not vote:  # unvote
-            cls.query.filter_by(voter=current_user.get(),
-                                votee=self).delete()
+            Vote.filter_by(voter=current_user.get(),
+                           votee_id=self.id).delete()
             current_app.logger.debug(
                 ("Unvoting on {} as user "
                  "{}").format(self.__class__.__name__, current_user.username))
@@ -232,15 +234,27 @@ class VotableMixin(object):
             current_app.logger.debug(
                 ("Voting on {} as user "
                  "{}").format(self.__class__.__name__, current_user.username))
-            cls(voter=current_user.get(), votee=self).safe_save()
+            Vote(voter=current_user.get(), votee_id=self.id).safe_save()
             return True
         return "already_set"
 
     @property
     def vote_status(self):
         if not current_user.is_anonymous():
-            return bool(self.vote_cls.query.filter_by(voter=current_user.get(),
-                                                    votee=self).first())
+            return bool(Vote.query.filter_by(voter=current_user.get(),
+                                             votee_id=self.id).first())
+
+
+class Subscription(base):
+    """ associative table for subscribing to things. Includes an HSTORE column
+    for rules on subscription """
+    rules = db.Column(HSTORE)
+    subscriber_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    subscriber = db.relationship('User', foreign_keys=subscriber_id)
+
+    subscribee_id = db.Column(
+        db.Integer, db.ForeignKey("thing.id"), primary_key=True)
 
 
 class SubscribableMixin(object):
@@ -248,9 +262,9 @@ class SubscribableMixin(object):
     uniqueness of user by hand through these checks """
 
     def unsubscribe(self):
-        self.subscription_cls.query.filter_by(
+        Subscription.query.filter_by(
             subscriber=current_user.get(),
-            subscribee=self).delete()
+            subscribee_id=self.id).delete()
         current_app.logger.debug(
             ("Unsubscribing on {} as user "
              "{}").format(self.__class__.__name__, current_user.username))
@@ -260,100 +274,20 @@ class SubscribableMixin(object):
         current_app.logger.debug(
             ("Subscribing on {} as user "
              "{}").format(self.__class__.__name__, current_user.username))
-        self.subscription_cls(subscriber=current_user.get(),
-                              subscribee=self).safe_save()
+        Subscription(subscriber=current_user.get(),
+                     subscribee_id=self.id).safe_save()
         return True
 
     @property
     def subscribed(self):
         if not current_user.is_anonymous():
-            return bool(
-                self.subscription_cls.query.filter_by(
-                    subscriber=current_user.get(),
-                    subscribee=self).first())
+            return bool(Subscription.query.filter_by(
+                subscriber=current_user.get(),
+                subscribee_id=self.id).first())
 
     @property
     def subscribers(self):
-        return self.subscription_cls.query.filter_by(subscribee=self)
-
-
-class SubscriptionBase(object):
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
-
-    # the distribution rules for this subscription
-    rules = db.Column(HSTORE)
-
-
-class IssueSubscription(base, SubscriptionBase):
-    subscriber_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    subscriber = db.relationship('User', foreign_keys=[subscriber_id])
-
-    subscribee_id = db.Column(
-        db.Integer, db.ForeignKey("issue.id"), primary_key=True)
-    subscribee = db.relationship('Issue', foreign_keys=[subscribee_id])
-
-
-class SolutionSubscription(base, SubscriptionBase):
-    subscriber_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    subscriber = db.relationship('User', foreign_keys=[subscriber_id])
-
-    subscribee_id = db.Column(
-        db.Integer, db.ForeignKey("solution.id"), primary_key=True)
-    subscribee = db.relationship('Solution', foreign_keys=[subscribee_id])
-
-
-class UserSubscription(base, SubscriptionBase):
-    subscriber_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    subscriber = db.relationship('User', foreign_keys=[subscriber_id])
-
-    subscribee_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    subscribee = db.relationship('User', foreign_keys=[subscribee_id])
-
-
-class ProjectSubscription(base, SubscriptionBase):
-    subscriber_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    subscriber = db.relationship('User', foreign_keys=[subscriber_id])
-
-    subscribee_id = db.Column(
-        db.Integer, db.ForeignKey("project.id"), primary_key=True)
-    subscribee = db.relationship('Project', foreign_keys=[subscribee_id])
-
-
-class IssueVote(base):
-    voter_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    voter = db.relationship('User', foreign_keys=[voter_id])
-
-    votee = db.relationship("Issue")
-    votee_id = db.Column(
-        db.Integer, db.ForeignKey("issue.id"), primary_key=True)
-
-
-class SolutionVote(base):
-    voter_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    voter = db.relationship('User', foreign_keys=[voter_id])
-
-    votee = db.relationship("Solution")
-    votee_id = db.Column(
-        db.Integer, db.ForeignKey("solution.id"), primary_key=True)
-
-
-class ProjectVote(base):
-    voter_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    voter = db.relationship('User', foreign_keys=[voter_id])
-
-    votee = db.relationship("Project")
-    votee_id = db.Column(
-        db.Integer, db.ForeignKey("project.id"), primary_key=True)
+        return Subscription.query.filter_by(subscribee_id=self.id)
 
 
 project_table = db.Table('project', metadata,
@@ -382,12 +316,13 @@ project_table = db.Table('project', metadata,
     db.Column('gh_synced', db.Boolean, default=False),
     db.UniqueConstraint("url_key", "maintainer_username"))
 
+
 class Project(base, SubscribableMixin, VotableMixin):
     """ This class is a composite of thing and project tables """
     id = db.column_property(thing_table.c.id, project_table.c.thing_id)
     __table__ = db.join(thing_table, project_table)
     project_id = project_table.c.id
-    maintainer = db.relationship('User')
+    maintainer = db.relationship('User', foreign_keys='Project.maintainer_username')
 
     # Validation Profile
     # ======================================================================
@@ -433,11 +368,6 @@ class Project(base, SubscribableMixin, VotableMixin):
     # Import the acl from acl file
     acl = project_acl
 
-    # specify which table is used for votes, subscriptions, etc so mixins can
-    # use it
-    vote_cls = ProjectVote
-    subscription_cls = ProjectSubscription
-
     def issues(self):
         return Issue.query.filter_by(project=self)
 
@@ -464,7 +394,6 @@ class Project(base, SubscribableMixin, VotableMixin):
         """ Add a new issue to this project """
         issue.create_key()
         issue.project = self
-        issue.init()
         issue.safe_save()
 
         # send a notification to all subscribers
@@ -544,7 +473,7 @@ class Issue(base, SubscribableMixin, VotableMixin):
     project = db.relationship(
         'Project',
         foreign_keys='[Issue.project_url_key, Issue.project_maintainer_username]')
-    creator = db.relationship('User')
+    creator = db.relationship('User', foreign_keys='Issue.creator_id')
 
     acl = issue_acl
     standard_join = ['get_abs_url',
@@ -572,11 +501,6 @@ class Issue(base, SubscribableMixin, VotableMixin):
                  'get_abs_url',
                  {'obj': 'project',
                   'join_prof': 'disp_join'}]
-
-    # specify which table is used for votes, subscriptions, etc so mixins can
-    # use it
-    vote_cls = IssueVote
-    subscription_cls = IssueSubscription
 
     def solutions(self):
         return Solution.query.filter_by(issue=self)
@@ -713,11 +637,6 @@ class Solution(base, SubscribableMixin, VotableMixin):
     brief_join = ['__dont_mongo',
                   'title',
                   'get_abs_url']
-
-    # specify which table is used for votes, subscriptions, etc so mixins can
-    # use it
-    vote_cls = SolutionVote
-    subscription_cls = SolutionSubscription
 
     def roles(self, user=None):
         """ Logic to determin what roles a person gets """
@@ -877,21 +796,30 @@ class Email(base):
     primary = db.Column(db.Boolean, default=True)
 
 
-class User(base, SubscribableMixin):
+user_table = db.Table('user', metadata,
     # _id
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(32), unique=True)
+    db.Column('id', db.Integer, primary_key=True),
+    db.Column('username', db.String(32), unique=True),
+    db.Column('thing_id', db.Integer, db.ForeignKey('thing.id')),
 
     # User information
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
-    _password = db.Column(db.String)
+    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('_password', db.String),
 
     # Event information
-    public_events = db.Column(EventJSON)
-    events = db.Column(EventJSON)
+    db.Column('public_events', EventJSON),
+    db.Column('events', EventJSON),
+
+    db.Column('gh_token', db.String),
 
     # Github sync
-    gh_token = db.Column(db.String)
+    gh_token = db.Column(db.String))
+
+
+class User(base, SubscribableMixin):
+    id = db.column_property(thing_table.c.id, user_table.c.thing_id)
+    __table__ = db.join(thing_table, user_table)
+    user_id = user_table.c.id
 
     standard_join = ['id',
                      'gh_linked',
@@ -918,10 +846,6 @@ class User(base, SubscribableMixin):
     disp_join = ['__dont_mongo',
                  'username',
                  'get_abs_url']
-
-    # specify which table is used for votes, subscriptions, etc so mixins can
-    # use it
-    subscription_cls = UserSubscription
 
     acl = user_acl
 
@@ -1020,7 +944,7 @@ class User(base, SubscribableMixin):
     # ========================================================================
     @classmethod
     def create_user(cls, username, password, email_address):
-        user = cls(username=username).init()
+        user = cls(username=username)
         user.password = password
         user.safe_save()
         Email(address=email_address, user=user).safe_save()
