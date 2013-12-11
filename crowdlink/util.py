@@ -56,6 +56,7 @@ def provision():
         url_key='crowdlink',
         desc="A platform for user feedback")
     proj.safe_save()
+    proj.subscribe(user=usr)
 
     issues = [
 ('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.',

@@ -131,36 +131,3 @@ def get_joined(obj, join_prof="standard_join"):
                 "type".format(key, type(obj), subobj))
             dct[key] = subobj
     return dct
-
-
-def distribute_event(sender, event, type, subscriber_send=False,
-                     self_send=False):
-    """ A function that will de-normalize an event by distributing it to
-    requested subscribing event lists. This only handles the logic and action
-    of distribution, and not the initial routing which is instead handled on
-    notifications distribute method """
-    # Distribute to all subscribers who have the right options
-    if subscriber_send:
-        for sub in sender.subscribers:
-            # If they wish to recieve this type of event
-            if getattr(sub, type, False):
-                # This could be optimized by loading all users at once, instead
-                # of resolving one at a time
-                sub.user.events.append(event)
-                sender.safe_save()
-                current_app.logger.debug(
-                    ("{0} was distributed event '{1}' for object "
-                     "{2}").format(sub.user.username, type, sender))
-            else:
-                current_app.logger.debug(
-                    ("{0} was not distributed event '{1}' because of settings,"
-                     "even though subscribed").format(sub.user, type))
-
-    # Add the event to the senders own list if there is one
-    if self_send:
-        if isinstance(sender, User):
-            sender.public_events.append(event)
-            sender.safe_save()
-        else:
-            sender.events = sender.events + [event]
-            sender.safe_save()

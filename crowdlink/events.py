@@ -1,5 +1,4 @@
 from . import db
-from .lib import distribute_event
 from .models import BaseMapper, EventJSON, User
 
 from sqlalchemy.orm import joinedload
@@ -9,6 +8,7 @@ import sqlalchemy
 import flask_sqlalchemy
 import datetime
 import copy
+import json
 
 
 class Event(BaseMapper):
@@ -16,9 +16,18 @@ class Event(BaseMapper):
         self.__dict__.update(kwargs)
 
     def to_dict(self):
-        ret = {str(key): str(val) for key, val in self.__dict__.items()}
+        ret = self.jsonize(self.__dict__.keys(), raw=True)
         ret["_cls"] = self.__class__.__name__
         return ret
+
+    def originates(self, id):
+        """ utility function for seeing if the event originated from an id """
+        return hasattr(self, 'origin') and self.origin == id
+
+    def sendable(self, user):
+        """ returns whether or not the user is subscribed to this type of event
+        """
+        return True
 
     def send_event(self, *args):
         """ A method that handles event disitribution """
@@ -32,7 +41,7 @@ class Event(BaseMapper):
                 for subscription in arg.options(joinedload('subscriber')):
                     # mark this path as delivered
                     deliv_tupl = ('events', subscription.subscriber.id)
-                    if deliv_tupl not in delivered or True:
+                    if deliv_tupl not in delivered:
                         delivered.append(deliv_tupl)
                         self.origin = subscription.subscribee_id
                         new = subscription.subscriber.events + [self]
@@ -47,7 +56,7 @@ class Event(BaseMapper):
                 obj, event_attr = arg
                 # mark this path as delivered
                 deliv_tupl = (event_attr, obj.id)
-                if deliv_tupl not in delivered or True:
+                if deliv_tupl not in delivered:
                     delivered.append(deliv_tupl)
                     # if it's going to a users public feed, record it so it can be
                     # removed later (hiding public things...)
@@ -96,6 +105,6 @@ class IssueNotif(Event):
             issue_p=issue.get_dur_url)
 
         notif.send_event((user, 'public_events'),
-                         (project, 'events'),
+                         (project, 'public_events'),
                          project.subscribers,
                          user.subscribers)

@@ -9,16 +9,6 @@ from crowdlink.lib import send_email
 from crowdlink import db
 from crowdlink.models import User
 
-# setup logging to go to stdout
-logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] "
-                                 "[%(levelname)-5.5s]  %(message)s")
-rootLogger = logging.getLogger()
-
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logFormatter)
-rootLogger.addHandler(consoleHandler)
-rootLogger.setLevel(logging.INFO)
-
 
 @manager.option('-u', '--userid', dest='userid')
 @manager.option('-n', '--username', dest='username')

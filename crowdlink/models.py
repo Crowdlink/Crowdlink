@@ -272,33 +272,57 @@ class SubscribableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
 
-    def unsubscribe(self):
+    def unsubscribe(self, user=None):
+        if user is None:
+            user = current_user
         Subscription.query.filter_by(
-            subscriber=current_user.get(),
+            subscriber=user.get(),
             subscribee_id=self.id).delete()
+        # remove all events that originate from the source they're
+        # unsubscribing
+        user.events = [e for e in user.events if not e.originates(self.id)]
+
         current_app.logger.debug(
             ("Unsubscribing on {} as user "
-             "{}").format(self.__class__.__name__, current_user.username))
+             "{}").format(self.__class__.__name__, user.username))
         return True
 
-    def subscribe(self):
+    def subscribe(self, user=None):
+        if user is None:
+            user = current_user
+
         current_app.logger.debug(
             ("Subscribing on {} as user "
-             "{}").format(self.__class__.__name__, current_user.username))
-        sub = Subscription(subscriber=current_user.get(),
-                     subscribee_id=self.id)
+             "{}").format(self.__class__.__name__, user.username))
+        sub = Subscription(subscriber=user.get(),
+                           subscribee_id=self.id)
+        # since they're subscribing, add the last ten events from the
+        # source to their events
+        i = 0
+        for event in self.public_events:
+            # only deliver 10
+            if i == 10:
+                break
+            if event.sendable(user):
+                user.events = user.events + [event]
+                i += 1
+
+        # sort the list
+        user.events = sorted(user.events, key=lambda x: x.time)
         try:
             db.session.add(sub)
             db.session.commit()
         except sqlalchemy.exc.IntegrityError:
-            pass
+            db.session.rollback()
         return True
 
     @property
-    def subscribed(self):
-        if not current_user.is_anonymous():
+    def subscribed(self, user=None):
+        if user is None:
+            user = current_user
+        if not user.is_anonymous():
             return bool(Subscription.query.filter_by(
-                subscriber=current_user.get(),
+                subscriber=user.get(),
                 subscribee_id=self.id).first())
 
     @property
@@ -322,7 +346,7 @@ project_table = db.Table('project', metadata,
     db.Column('votes', db.Integer, default=0),
 
     # Event log
-    db.Column('events', EventJSON),
+    db.Column('public_events', EventJSON),
 
     # Github Syncronization information
     db.Column('gh_repo_id', db.Integer, default=-1),
@@ -358,7 +382,7 @@ class Project(Thing, SubscribableMixin, VotableMixin):
                      'maintainer_username',
                      'id',
                      '-vote_list',
-                     '-events'
+                     '-public_events'
                      ]
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
@@ -375,7 +399,7 @@ class Project(Thing, SubscribableMixin, VotableMixin):
                              'name',
                              'subscribed',
                              'vote_status',
-                             {'obj': 'events'},
+                             {'obj': 'public_events'},
                              ]
                             )
 
@@ -387,7 +411,7 @@ class Project(Thing, SubscribableMixin, VotableMixin):
 
     def roles(self, user=None):
         """ Logic to determin what auth roles a user gets """
-        if not user:
+        if user is None:
             user = current_user
 
         if self.maintainer == user:
@@ -420,7 +444,6 @@ class Project(Thing, SubscribableMixin, VotableMixin):
     def add_comment(self, body, user):
         # Send the actual comment to the issue event queue
         #c = Comment(user=user, body=body)
-        #distribute_event(self, c, "comment", self_send=True)
         pass
 
     # Github Synchronization Logic
@@ -464,7 +487,7 @@ issue_table = db.Table('issue', metadata,
     db.Column('votes', db.Integer, default=0),
 
     # Event log
-    db.Column('events', EventJSON),
+    db.Column('public_events', EventJSON),
 
     # our project relationship
     db.Column('project_url_key', db.String),
@@ -498,6 +521,7 @@ class Issue(Thing, SubscribableMixin, VotableMixin):
                      'user_acl',
                      'created_at',
                      'id',
+                     '-public_events',
                      ]
     page_join = inherit_lst(standard_join,
                             ['get_project_abs_url',
@@ -604,7 +628,7 @@ solution_table = db.Table('solution', metadata,
     db.Column('votes', db.Integer, default=0),
 
     # Event log
-    db.Column('events', EventJSON),
+    db.Column('public_events', EventJSON),
 
     # our project and issue relationship
     db.Column('project_url_key', db.String),
@@ -641,7 +665,7 @@ class Solution(Thing, SubscribableMixin, VotableMixin):
                      'subscribed',
                      'user_acl',
                      'created_at',
-                     '-vote_list',
+                     '-public_events',
                      'id'
                      ]
     page_join = inherit_lst(standard_join,
@@ -849,8 +873,8 @@ class User(Thing, SubscribableMixin):
                      'user_acl',
                      'get_abs_url',
                      '-_password',
-                     '-events',
                      '-public_events',
+                     '-events',
                      ]
     home_join = inherit_lst(standard_join,
                             [{'obj': 'events'},

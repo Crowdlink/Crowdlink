@@ -121,7 +121,7 @@ class APITests(BaseTest):
               'url_key': 'crowdlink',
               'join_prof': 'page_join'}
         res = self.json_get('/api/project', qs).json
-        assert type(res['events']) == list
+        assert type(res['public_events']) == list
 
     def test_project_cant_edit(self):
         """ ensure non-priv can't edit project """

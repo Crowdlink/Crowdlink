@@ -90,7 +90,7 @@ module.exports = (grunt) ->
           stdout: true
           stderr: true
       testall:
-        command: 'nosetests --with-cover --cover-package=crowdlink -v'
+        command: 'nosetests --with-cover --cover-package=crowdlink --cover-html -v'
         options:
           stdout: true
           stderr: true
@@ -127,4 +127,6 @@ module.exports = (grunt) ->
   grunt.registerTask "lint", ["shell:flake8", "coffeelint"]
   grunt.registerTask "flake8", ["shell:flake8"]
   grunt.registerTask "test", ["shell:test"]
+  grunt.registerTask "testall", ["shell:testall"]
+  grunt.registerTask "clean", ["shell:clean"]
   grunt.registerTask "new_flake8", ["shell:new_flake8"]
