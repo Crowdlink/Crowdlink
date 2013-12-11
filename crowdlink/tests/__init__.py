@@ -19,6 +19,7 @@ def login_required(func, self, username='crowdlink', password='testing'):
         raise
     self.logout()
 
+
 @decorator.decorator
 def login_required_ctx(func, self, username='crowdlink'):
     self.user = self.db.session.query(User).filter_by(username=username).first()

@@ -22,14 +22,14 @@ github = oauth.remote_app(
 )
 
 
-def create_app():
+def create_app(config='../application.cfg'):
 
     # initialize our flask application
     app = Flask(__name__, static_folder='../static', static_url_path='/static')
 
     # set our template path and configs
     app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
-    app.config.from_pyfile('../application.cfg')
+    app.config.from_pyfile(config)
     app.config.update(
         EMAIL_SERVER="localhost",
         EMAIL_DEBUG=0,
