@@ -29,16 +29,16 @@ class Event(BaseMapper):
                 for subscription in arg.options(joinedload('subscriber')):
                     new = subscription.subscriber.events + [self]
                     subscription.subscriber.events = new
-                    current_app.logger.debug(
-                        "Sending event to subscribed user {} for notif "
-                        "{}".format(subscription.subscriber.username,
-                                    self.__class__.__name__))
+                    #current_app.logger.debug(
+                    #    "Sending event to subscribed user {} for notif "
+                    #    "{}".format(subscription.subscriber.username,
+                    #                self.__class__.__name__))
             # otherwise it's an events attribute
             elif isinstance(arg, tuple):
-                current_app.logger.debug(
-                    "Sending event to object {} event queue for notif "
-                    "{}".format(arg[0].__class__.__name__,
-                                self.__class__.__name__))
+                #current_app.logger.debug(
+                #    "Sending event to object {} event queue for notif "
+                #    "{}".format(arg[0].__class__.__name__,
+                #                self.__class__.__name__))
                 new = getattr(arg[0], arg[1]) + [self]
                 setattr(arg[0], arg[1], new)
             else:

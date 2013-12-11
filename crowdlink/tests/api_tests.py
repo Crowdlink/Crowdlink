@@ -1,8 +1,8 @@
 import crowdlink
 import json
 
-from crowdlink.tests import BaseTest, login_required
-from crowdlink.models import Issue, Project, Solution, User
+from crowdlink.tests import BaseTest, login_required, login_required_ctx
+from crowdlink.models import Issue, Project, Solution, User, Transaction
 from pprint import pprint
 
 
@@ -202,22 +202,32 @@ class APITests(BaseTest):
 
     # Earmark api
     # =========================================================================
-    def test_earmark(self):
-        """ test creation
-        qs = {'username': 'crowdlink'}
-        res = self.json_get('/api/user', qs).json
-        pprint(res)
-        user = res['user']
+    @login_required
+    def test_earmark_create(self):
+        """ test creation """
+        # create a mock transaction
+        new_trans = Transaction(amount=10000,
+                                remaining=10000,
+                                livemode=False,
+                                last_four=1234,
+                                user_id=self.user['id']).safe_save()
+        first_issue = self.db.session.query(Issue).first()
+        qs = {'amount': 1000, 'id': first_issue.id, 'transid': new_trans.id}
+        res = self.json_post('/api/earmark', qs).json
         assert res['success']
-        assert 'gh_linked' in user
-        assert type(user['id']) == int
-        assert user['username'] == 'crowdlink'
-        assert type(user['user_acl']) == dict
-        assert '_password' not in user
-        assert 'password' not in user
-        assert user['get_abs_url'].startswith('/')
-        """
-        pass
+        assert isinstance(res['earmark']['amount'], int)
+        assert res['earmark']['id'] > 0
+        assert res['earmark']['thing_id'] > 0
+        pprint(res)
+
+        # get the earmark we just inserted
+        qs = {'id': res['earmark']['id']}
+        res2 = self.json_get('/api/earmark', qs).json
+        assert res2['earmarks'][0]['id'] == res['earmark']['id']
+        assert res2['earmarks'][0]['thing_id'] == res['earmark']['thing_id']
+        assert isinstance(res2['earmarks'][0]['amount'], int)
+        assert res2['success']
+        pprint(res2)
 
     # Test all the form checks
     # =========================================================================

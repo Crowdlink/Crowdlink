@@ -113,8 +113,9 @@ transaction_anon = []
 transaction_user = []
 transaction_owner = P(transaction_anon,
                       transaction_user,
-                      ('view', ['standard_join']
-                      )).keys
+                      ('view', ['standard_join']),
+                      ('action', ['add_earmark'])
+                      ).keys
 
 transaction_acl = {'owner': transaction_owner,
                    'anonymous': transaction_anon,

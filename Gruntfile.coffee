@@ -85,7 +85,12 @@ module.exports = (grunt) ->
           stdout: true
           stderr: true
       test:
-        command: 'nosetests --with-cover --cover-package=crowdlink --with-progressive'
+        command: 'nosetests crowdlink.tests.api_tests crowdlink.tests.model_tests crowdlink.tests.event_tests --with-cover --cover-package=crowdlink -v'
+        options:
+          stdout: true
+          stderr: true
+      testall:
+        command: 'nosetests --with-cover --cover-package=crowdlink -v'
         options:
           stdout: true
           stderr: true

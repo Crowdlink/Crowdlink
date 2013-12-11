@@ -5,6 +5,7 @@ from flask.ext.restful import Resource
 
 from .models import User, Project, Issue, Transaction, Solution, Email, Earmark
 from .lib import get_joined
+from . import db
 
 import valideer
 import sqlalchemy
@@ -595,10 +596,11 @@ class TransactionAPI(BaseResource):
 
             trans = Transaction(
                 amount=amount,
+                remaining=amount,
                 livemode=livemode,
                 stripe_id=retval['id'],
                 stripe_created_at=datetime.datetime.fromtimestamp(retval['created']),
-                user=current_user,
+                user=self.get_user(js),
                 _status=status,
                 last_four=retval['card']['last4']
             )
@@ -617,12 +619,11 @@ class EarmarkAPI(BaseResource):
     model = Earmark
 
     def get_transaction(self, js):
-        return Transaction.query.filter_by(id==js['transid'])
+        return Transaction.query.filter_by(id=js['transid']).one()
 
     @catch_common
-    @login_required
-    def earmark(self):
-        js = request.json_dict
+    def get(self):
+        js = request.dict_args
         # get the user whose earmark we're getting. defaults to current user,
         # but allows arbitrary username of id override
         user = self.get_user(js)
@@ -657,17 +658,20 @@ class EarmarkAPI(BaseResource):
         """ Create a new earmark """
         js = request.json_dict
         trans = self.get_transaction(js)
-
-        amount = js['amount']
+        assert trans.can('action_add_earmark')
 
         mark = Earmark(
-            amount=amount,
-            sender=current_user,
-            _status=status,
-            last_four=retval['card']['last4']
+            amount=js['amount'],
+            sender=self.get_user(js),
+            thing_id=js['id'],
+            transaction=trans
         )
+        db.session.add(mark)
+        trans.remaining -= js['amount']
+        db.session.commit()
 
-        return {'success': True}
+        return {'success': True,
+                'earmark': get_joined(mark)}
 
 
 def incorrect_syntax(message='Incorrect syntax', **kwargs):

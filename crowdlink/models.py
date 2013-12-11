@@ -727,6 +727,7 @@ class Transaction(base):
 
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Integer)
+    remaining = db.Column(db.Integer)
     livemode = db.Column(db.Boolean)
     stripe_id = db.Column(db.String)
     created_at = db.Column(db.DateTime, default=datetime.datetime.now())
