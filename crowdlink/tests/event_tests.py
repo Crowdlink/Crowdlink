@@ -29,3 +29,6 @@ class EventTests(BaseTest):
         assert issue.project.events[-1].iname == issue.title
         assert issue.creator.public_events[-1].iname == issue.title
         assert self.user.events[-1].iname == issue.title
+        # the subscriptions above should have double delivered. Ensure double
+        # delivery prevention is tracked
+        assert len(self.user.events) == 1

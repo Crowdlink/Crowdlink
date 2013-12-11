@@ -219,6 +219,7 @@ class Vote(base):
 
     votee_id = db.Column(
         db.Integer, db.ForeignKey("thing.id"), primary_key=True)
+    votee = db.relationship('Thing')
 
 
 class VotableMixin(object):
@@ -264,6 +265,7 @@ class Subscription(base):
 
     subscribee_id = db.Column(
         db.Integer, db.ForeignKey("thing.id"), primary_key=True)
+    subscribee = db.relationship('Thing')
 
 
 class SubscribableMixin(object):
