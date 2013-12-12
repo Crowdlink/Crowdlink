@@ -247,7 +247,7 @@ class ProjectAPI(BaseResource):
         if vote_status is not None:
             project.set_vote(vote_status)
 
-        project.safe_save()
+        project.save()
 
         # return a true value to the user
         return_val['success'] = True
@@ -265,7 +265,7 @@ class ProjectAPI(BaseResource):
         project.website = data.get('website')
         project.description = data.get('website')
 
-        project.safe_save()
+        project.save()
 
         return {'success': True}
 
@@ -295,7 +295,7 @@ class SolutionAPI(BaseResource):
         sol.project = issue.project
         sol.creator = g.user.get()
 
-        sol.safe_save()
+        sol.save()
 
         return {'success': True, 'url_key': sol.url_key, 'id': str(sol.id)}
 
@@ -331,7 +331,7 @@ class SolutionAPI(BaseResource):
         if vote_status is not None:
             sol.set_vote(vote_status)
 
-        sol.safe_save()
+        sol.save()
 
         # return a true value to the user
         return_val.update({'success': True})
@@ -377,7 +377,7 @@ class IssueAPI(BaseResource):
         issue.project = project
         issue.creator = g.user.get()
 
-        issue.safe_save()
+        issue.save()
 
         return {'success': True, 'url_key': issue.url_key, 'id': str(issue.id)}
 
@@ -433,7 +433,7 @@ class IssueAPI(BaseResource):
         if status:
             issue.set_status(status)
 
-        issue.safe_save()
+        issue.save()
 
         # return a true value to the user
         return_val.update({'success': True})
@@ -487,7 +487,7 @@ class UserAPI(BaseResource):
         elif subscribe is False:
             user.unsubscribe()
 
-        if not user.safe_save():
+        if not user.save():
             return {'success': False}
 
         return {'success': True}
@@ -508,7 +508,7 @@ class UserAPI(BaseResource):
         elif sub_status is False:
             user.unsubscribe()
 
-        user.safe_save()
+        user.save()
 
         # return a true value to the user
         return_val.update({'success': True})

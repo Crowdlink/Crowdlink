@@ -256,11 +256,7 @@ class VotableMixin(object):
                 ("Voting on {} as user "
                  "{}").format(self.__class__.__name__, current_user.username))
             vote = Vote(voter=current_user.get(), votee_id=self.id)
-            try:
-                db.session.add(vote)
-                db.session.commit()
-            except sqlalchemy.exc.IntegrityError:
-                pass
+            vote.save(sqlalchemy.exc.IntegrityError)
             return True
         return "already_set"
 
@@ -325,11 +321,10 @@ class SubscribableMixin(object):
 
         # sort the list
         user.events = sorted(user.events, key=lambda x: x.time)
-        try:
-            db.session.add(sub)
-            db.session.commit()
-        except sqlalchemy.exc.IntegrityError:
-            db.session.rollback()
+
+        # save the new subscription object along with the modified events in
+        # one go. events won't get added if already subscribed...
+        sub.save(sqlalchemy.exc.IntegrityError)
         return True
 
     @property
