@@ -3,7 +3,7 @@ from flask.ext.login import (login_required, logout_user, current_user,
                              login_user)
 from flask.ext.restful import Resource
 
-from .models import User, Project, Issue, Transaction, Solution, Email, Earmark
+from .models import User, Project, Issue, Transaction, Solution, Email, Earmark, Recipient
 from .lib import get_joined
 from . import db
 
@@ -51,7 +51,7 @@ def catch_common(func, *args, **kwargs):
         ret = {'error': 'Could not be found'}, 404
     except sqlalchemy.exc.IntegrityError as e:
         current_app.logger.debug("Attempted to insert duplicate",
-                                exc_info=True)
+                                 exc_info=True)
         ret = {
             'success': False,
             'message': "A duplicate value already exists in the database",
@@ -536,6 +536,64 @@ def login():
         return jsonify(success=True, user=get_joined(user))
 
     return jsonify(success=False, message="Invalid credentials")
+
+
+# Recipeint API
+# =============================================================================
+class RecipientAPI(BaseResource):
+    model = Transaction
+
+    @login_required
+    @catch_common
+    def get(self):
+        js = request.dict_args
+        # get the user who's transactions we want
+        user = self.get_user(js)
+        recps = Recipient.query.filter_by(user_id=user.id)
+        recps = self.limit_offset(recp, js)  # allow pagination
+
+        join_prof = js.pop('join_prof', 'standard_join')
+        for recp in recps:
+            assert recp.can('view_' + join_prof)
+
+        return {'success': True,
+                'recipients': get_joined(trans, join_prof=join_prof)}
+
+    @catch_stripe
+    @catch_common
+    @login_required
+    def post(self):
+        """ Runs a request to stripe to create a new recipient from a token """
+        js = request.json_dict
+        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+        user = self.get_user(js)
+
+        account = js['token']['id']
+        livemode = js['token']['livemode']
+        typ = 'corporation' if js['corporation'] else 'individual'
+
+        retval = stripe.Recipient.create(
+            bank_account=account,
+            name=js['name'],
+            type=typ,
+            tax_id=js['tax_id'],
+            metadata={'username': current_user.username,
+                        'userid': current_user.id}
+        )
+
+        recp = Recipient(
+            livemode=livemode,
+            stripe_id=retval['id'],
+            stripe_created_at=datetime.datetime.fromtimestamp(retval['created']),
+            user=user,
+            last_four=retval['card']['last4'],
+            verified=retval['verified']
+        )
+
+        recp_serial = get_joined(recp)
+        current_app.logger.debug("Just created {}".format(recp_serial))
+        return {'success': True,
+                'recipient': trans_serial}
 
 
 # Transaction API

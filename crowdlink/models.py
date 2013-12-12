@@ -8,7 +8,7 @@ from .acl import issue_acl, project_acl, solution_acl, user_acl, transaction_acl
 from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
                                   _QueryProperty)
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
-from sqlalchemy.dialects.postgresql import HSTORE
+from sqlalchemy.dialects.postgresql import HSTORE, ARRAY
 from sqlalchemy.types import TypeDecorator, TEXT
 from sqlalchemy import event
 
@@ -336,7 +336,7 @@ project_table = db.Table('project', metadata,
     db.Column('url_key', db.String),
 
     # description info
-    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('created_at', db.DateTime, default=datetime.datetime.utcnow),
     db.Column('name', db.String(128)),
     db.Column('website', db.String(256)),
     db.Column('desc', db.String),
@@ -455,7 +455,7 @@ class Project(Thing, SubscribableMixin, VotableMixin):
     def gh_sync(self, data):
         self.gh_repo_id = data['id']
         self.gh_repo_path = data['full_name']
-        self.gh_synced_at = datetime.datetime.now()
+        self.gh_synced_at = datetime.datetime.utcnow()
         self.gh_synced = True
         current_app.logger.debug("Synchronized repository")
 
@@ -481,7 +481,7 @@ issue_table = db.Table('issue', metadata,
     db.Column('title', db.String(128)),
     db.Column('desc', db.Text),
     db.Column('creator_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('created_at', db.DateTime, default=datetime.datetime.utcnow),
 
     # voting
     db.Column('votes', db.Integer, default=0),
@@ -622,7 +622,7 @@ solution_table = db.Table('solution', metadata,
     db.Column('title', db.String(128)),
     db.Column('desc', db.Text),
     db.Column('creator_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('created_at', db.DateTime, default=datetime.datetime.utcnow),
 
     # voting
     db.Column('votes', db.Integer, default=0),
@@ -756,7 +756,7 @@ class Transaction(base):
     remaining = db.Column(db.Integer)
     livemode = db.Column(db.Boolean)
     stripe_id = db.Column(db.String)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     stripe_created_at = db.Column(db.DateTime)
     last_four = db.Column(db.Integer)
     user = db.relationship('User')
@@ -786,6 +786,10 @@ class Transaction(base):
     def status(self):
         return self.StatusVals[self._status]
 
+    def get_stripe_charge(self):
+        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+        return stripe.Charge.retrieve(self.stripe_id)
+
 
 class Earmark(base):
     StatusVals = Enum('Pending', 'Assigned', 'Cleared')
@@ -793,7 +797,7 @@ class Earmark(base):
 
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     sender = db.relationship('User', foreign_keys=[sender_id])
     reciever_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -832,7 +836,7 @@ class Earmark(base):
 
     @property
     def matured(self):
-        return (datetime.datetime.now() - self.created_at).day >= (amount/100)
+        return (datetime.datetime.utcnow() - self.created_at).day >= (amount/100)
 
 
 class Email(base):
@@ -850,7 +854,7 @@ user_table = db.Table('user', metadata,
     db.Column('username', db.String(32), unique=True),
 
     # User information
-    db.Column('created_at', db.DateTime, default=datetime.datetime.now),
+    db.Column('created_at', db.DateTime, default=datetime.datetime.utcnow),
     db.Column('_password', db.String),
     db.Column('gh_token', db.String),
 
@@ -861,6 +865,45 @@ user_table = db.Table('user', metadata,
     # Github sync
     gh_token = db.Column(db.String))
 
+
+class Recipient(base):
+    id = db.Column(db.Integer, primary_key=True)
+    stripe_id = db.Column(db.String)
+    name = db.Column(db.String)
+    hash = db.Column(ARRAY(db.String))
+    verified = db.Column(db.Boolean)
+    livemode = db.Column(db.Boolean)
+    last_four = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    stripe_created_at = db.Column(db.DateTime)
+    user = db.relationship('User')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    standard_join = ['created_at',
+                     'last_four',
+                     'verified',
+                     'name',
+                     'created_at',
+                     '-stripe_created_at']
+
+    acl = transaction_acl
+
+    def roles(self, user=None):
+        """ Logic to determin what auth roles a user gets """
+        if not user:
+            user = current_user
+
+        if self.user_id == getattr(user, 'id', None):
+            return ['owner']
+
+        if user.is_anonymous():
+            return ['anonymous']
+        else:
+            return ['user']
+
+    @property
+    def status(self):
+        return self.StatusVals[self._status]
 
 class User(Thing, SubscribableMixin):
     __table__ = user_table

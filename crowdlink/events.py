@@ -46,7 +46,6 @@ class Event(BaseMapper):
                         self.origin = subscription.subscribee_id
                         new = subscription.subscriber.events + [self]
                         subscription.subscriber.events = new
-                        # mark this path as delivered
                         #current_app.logger.debug(
                         #    "Sending event to subscribed user {} for notif "
                         #    "{}".format(subscription.subscriber.username,
