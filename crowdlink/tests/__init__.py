@@ -13,7 +13,7 @@ def login_required(func, self, username='crowdlink', password='testing'):
     self.user = self.login(username, password)['user']
     try:
         func(self)
-    except AssertionError:
+    except AssertionError as e:
         self.db.session.rollback()
         self.logout()
         raise
