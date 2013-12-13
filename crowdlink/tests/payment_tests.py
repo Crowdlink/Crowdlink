@@ -1,4 +1,5 @@
 import stripe
+import logging
 
 from crowdlink.tests import BaseTest, login_required
 from pprint import pprint
@@ -56,8 +57,26 @@ class PaymentTests(BaseTest):
                 'corporation': False,
                 'tax_id': '',
                 'token': dct_token}
+        #logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
         res = self.json_post('/api/recipient', data=data)
+        #logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
         pprint(res.json)
         assert res.json['success']
         assert isinstance(res.json['recipient']['id'], int)
         assert res.json['recipient']['id'] > 0
+
+    # Transfer api
+    # =========================================================================
+    @login_required
+    def test_transfer_create(self):
+        """ can we make a new transfer? """
+        """
+        # run our recipient test
+        data = {'amount': 1000}
+        res = self.json_post('/api/transfer', data=data)
+        pprint(res.json)
+        assert res.json['success']
+        assert isinstance(res.json['recipient']['id'], int)
+        assert res.json['recipient']['id'] > 0
+        """
+        pass

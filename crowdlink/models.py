@@ -3,7 +3,8 @@ from flask.ext.login import current_user
 
 from . import db, github
 from .util import inherit_lst
-from .acl import issue_acl, project_acl, solution_acl, user_acl, transaction_acl, earmark_acl
+from .acl import (issue_acl, project_acl, solution_acl, user_acl,
+                  transaction_acl, earmark_acl, recipient_acl, transfer_acl)
 
 from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
                                   _QueryProperty)
@@ -182,6 +183,23 @@ class BaseMapper(object):
             return dct
         else:
             return json.dumps(dct)
+
+
+class PrivateMixin(object):
+    """ Common methods for objects that are private """
+    def roles(self, user=None):
+        """ Logic to determin what auth roles a user gets """
+        if not user:
+            user = current_user
+
+        if self.user_id == getattr(user, 'id', None):
+            return ['owner']
+
+        if user.is_anonymous():
+            return ['anonymous']
+        else:
+            return ['user']
+
 
 # setup our base mapper and database metadata
 metadata = db.MetaData()
@@ -758,7 +776,7 @@ class Solution(Thing, SubscribableMixin, VotableMixin):
         self.safe_save()
 
 
-class Transaction(base):
+class Transaction(base, PrivateMixin):
     StatusVals = Enum('Pending', 'Cleared')
     _status = db.Column(db.Integer, default=StatusVals.Pending.index)
 
@@ -766,7 +784,7 @@ class Transaction(base):
     amount = db.Column(db.Integer)
     remaining = db.Column(db.Integer)
     livemode = db.Column(db.Boolean)
-    stripe_id = db.Column(db.String)
+    stripe_id = db.Column(db.String, unique=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     stripe_created_at = db.Column(db.DateTime)
     last_four = db.Column(db.Integer)
@@ -780,19 +798,6 @@ class Transaction(base):
 
     acl = transaction_acl
 
-    def roles(self, user=None):
-        """ Logic to determin what auth roles a user gets """
-        if not user:
-            user = current_user
-
-        if self.user_id == getattr(user, 'id', None):
-            return ['owner']
-
-        if user.is_anonymous():
-            return ['anonymous']
-        else:
-            return ['user']
-
     @property
     def status(self):
         return self.StatusVals[self._status]
@@ -802,8 +807,40 @@ class Transaction(base):
         return stripe.Charge.retrieve(self.stripe_id)
 
 
+class Transfer(base, PrivateMixin):
+    """ An object mirroring a stripe transfer """
+
+    id = db.Column(db.Integer, primary_key=True)
+    amount = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    stripe_id = db.Column(db.String, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', foreign_keys=[user_id])
+    StatusVals = Enum('Pending', 'Cleared')
+    _status = db.Column(db.Integer, default=StatusVals.Pending.index)
+
+    standard_join = ['status',
+                     'StatusVals',
+                     '_status',
+                     'created_at',
+                     'amount',
+                     '-stripe_created_at']
+
+    acl = transfer_acl
+
+    @property
+    def status(self):
+        return self.StatusVals[self._status]
+
+    @property
+    def matured(self):
+        return (datetime.datetime.utcnow() - self.created_at).day >= (amount/100)
+
+
 class Earmark(base):
-    StatusVals = Enum('Pending', 'Assigned', 'Cleared')
+    """ Represents a users intent to give money to another member. Linked
+    directly to a transaction. """
+    StatusVals = Enum('Pending', 'Assigned', 'Available')
     _status = db.Column(db.Integer, default=StatusVals.Pending.index)
 
     id = db.Column(db.Integer, primary_key=True)
@@ -877,9 +914,9 @@ user_table = db.Table('user', metadata,
     gh_token = db.Column(db.String))
 
 
-class Recipient(base):
+class Recipient(base, PrivateMixin):
     id = db.Column(db.Integer, primary_key=True)
-    stripe_id = db.Column(db.String)
+    tripe_id = db.Column(db.String, unique=True)
     name = db.Column(db.String)
     verified = db.Column(db.Boolean)
     livemode = db.Column(db.Boolean)
@@ -896,24 +933,12 @@ class Recipient(base):
                      'created_at',
                      '-stripe_created_at']
 
-    acl = transaction_acl
-
-    def roles(self, user=None):
-        """ Logic to determin what auth roles a user gets """
-        if not user:
-            user = current_user
-
-        if self.user_id == getattr(user, 'id', None):
-            return ['owner']
-
-        if user.is_anonymous():
-            return ['anonymous']
-        else:
-            return ['user']
+    acl = recipient_acl
 
     @property
     def status(self):
         return self.StatusVals[self._status]
+
 
 class User(Thing, SubscribableMixin):
     __table__ = user_table

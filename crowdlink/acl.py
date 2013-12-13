@@ -121,6 +121,31 @@ transaction_acl = {'owner': transaction_owner,
                    'anonymous': transaction_anon,
                    'user': transaction_user}
 
+# Transfer
+transfer_anon = []
+transfer_user = []
+transfer_owner = P(transfer_anon,
+                   transfer_user,
+                   ('view', ['standard_join']),
+                   ).keys
+
+transfer_acl = {'owner': transfer_owner,
+                'anonymous': transfer_anon,
+                'user': transfer_user}
+
+# Recipient
+recipient_anon = []
+recipient_user = []
+recipient_owner = P(recipient_anon,
+                    recipient_user,
+                    ('view', ['standard_join']),
+                    ).keys
+
+recipient_acl = {'owner': recipient_owner,
+                 'anonymous': recipient_anon,
+                 'user': recipient_user}
+
+
 # Earmark
 earmark_anon = []
 earmark_user = []

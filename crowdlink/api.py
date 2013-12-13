@@ -3,7 +3,8 @@ from flask.ext.login import (login_required, logout_user, current_user,
                              login_user)
 from flask.ext.restful import Resource
 
-from .models import User, Project, Issue, Transaction, Solution, Email, Earmark, Recipient
+from .models import (User, Project, Issue, Transaction, Solution, Email,
+                     Earmark, Recipient, Transfer)
 from .lib import get_joined
 from . import db
 
@@ -538,10 +539,77 @@ def login():
     return jsonify(success=False, message="Invalid credentials")
 
 
+# Transfer API
+# =============================================================================
+class TransferAPI(BaseResource):
+    model = Transfer
+
+    @login_required
+    @catch_common
+    def get(self):
+        js = request.dict_args
+        # get the user who's transactions we want
+        user = self.get_user(js)
+        trans = Transfer.query.filter_by(user_id=user.id)
+        trans = self.limit_offset(trans, js)  # allow pagination
+
+        join_prof = js.pop('join_prof', 'standard_join')
+        for tran in trans:
+            assert trans.can('view_' + join_prof)
+
+        return {'success': True,
+                'transfers': get_joined(trans, join_prof=join_prof)}
+
+    @catch_stripe
+    @catch_common
+    @login_required
+    def post(self):
+        """ Create a new transfer object with stripe, record the object locally
+        """
+        js = request.json_dict
+        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+        user = self.get_user(js)
+
+        account = js['token']['id']
+        livemode = js['token']['livemode']
+        typ = 'corporation' if js['corporation'] else 'individual'
+
+        vals = dict(
+            bank_account=account,
+            name=js['name'],
+            type=typ,
+            metadata={'username': current_user.username,
+                        'userid': current_user.id}
+        )
+        # avoid injecting an empty string for tax_id, stripe doesn't like
+        tax_id = js.get('tax_id')
+        if tax_id:
+            vals['tax_id'] = tax_id
+        retval = stripe.Transfer.create(**vals)
+        pprint.pprint(retval)
+
+        # create a new recipient in our db to reflect stripe
+        recp = Transfer(
+            livemode=livemode,
+            stripe_id=retval['id'],
+            stripe_created_at=datetime.datetime.fromtimestamp(retval['created']),
+            user=user,
+            last_four=retval['active_account']['last4'],
+            verified=retval['active_account']['verified'],
+            name=retval['name']
+        ).save()
+
+        recp_serial = get_joined(recp)
+        current_app.logger.debug("Just created {}".format(pprint.pformat(recp_serial)))
+        return {'success': True,
+                'recipient': recp_serial}
+
+
+
 # Recipeint API
 # =============================================================================
 class RecipientAPI(BaseResource):
-    model = Transaction
+    model = Recipient
 
     @login_required
     @catch_common
@@ -567,6 +635,13 @@ class RecipientAPI(BaseResource):
         js = request.json_dict
         stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
         user = self.get_user(js)
+
+        # check to ensure they haven't created another recipient
+        #if Recipient.query.filter_by(user=user).count() > 0:
+        #    return {'success': False,
+        #            'message': "A duplicate value already exists "
+        #                       "in the database"}, 400
+
 
         account = js['token']['id']
         livemode = js['token']['livemode']

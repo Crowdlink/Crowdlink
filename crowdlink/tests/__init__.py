@@ -1,11 +1,15 @@
 import decorator
 import crowdlink
 import json
+import logging
+import sys
+import os
 
 from pprint import pprint
 from flask.ext.testing import TestCase
 from flask.ext.login import login_user, logout_user
 from crowdlink.util import provision
+from crowdlink import root
 from crowdlink.models import User
 
 @decorator.decorator
@@ -55,9 +59,10 @@ class BaseTest(TestCase):
         del app.logger.handlers[0]
         with app.app_context():
             self.db = crowdlink.db
-            self.db.drop_all()
-            self.db.create_all()
-            provision()
+            #self.db.drop_all()
+            #self.db.create_all()
+            #provision()
+            os.system("psql -U crowdlink -h localhost crowdlink_testing -f " + root + "/assets/test_provision.sql > /dev/null 2>&1")
         return app
 
     def login(self, username, password):

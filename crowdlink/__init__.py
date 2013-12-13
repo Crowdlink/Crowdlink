@@ -106,5 +106,6 @@ def create_app(config='../application.cfg'):
     api_restful.add_resource(api.TransactionAPI, '/api/transaction')
     api_restful.add_resource(api.EarmarkAPI, '/api/earmark')
     api_restful.add_resource(api.RecipientAPI, '/api/recipient')
+    api_restful.add_resource(api.TransferAPI, '/api/transfer')
 
     return app

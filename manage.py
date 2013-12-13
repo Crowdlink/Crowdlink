@@ -5,8 +5,9 @@ app = create_app()
 manager = Manager(app)
 
 import logging
+import os
 from crowdlink.lib import send_email
-from crowdlink import db
+from crowdlink import db, root
 from crowdlink.models import User
 
 
@@ -42,6 +43,13 @@ def test_email():
 def runserver():
     app.run(debug=True, host='0.0.0.0')
 
+
+@manager.command
+def generate_trans():
+    """ Generates testing database fixtures """
+    init_db()
+    provision()
+    os.system("pg_dump -c -U crowdlink -h localhost crowdlink -f " + root + "/assets/test_provision.sql")
 
 if __name__ == "__main__":
     manager.run()

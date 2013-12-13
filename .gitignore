@@ -58,3 +58,5 @@ tags
 
 uwsgi.pid
 uwsgi.log
+
+assets/test_provision.sql
