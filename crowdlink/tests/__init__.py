@@ -12,32 +12,41 @@ from crowdlink.util import provision
 from crowdlink import root
 from crowdlink.models import User
 
-@decorator.decorator
-def login_required(func, self, username='crowdlink', password='testing'):
-    self.user = self.db.session.query(User).filter_by(username=username).first()
-    self.login(username, password)['user']
-    login_user(self.user)
-    try:
-        func(self)
-    except AssertionError as e:
-        self.db.session.rollback()
+
+def login_required(username='crowdlink', password='testing'):
+    """ Decorator that logs in the user under a request context as well as a
+    testing cleint """
+    def login_required(func, self, *args, **kwargs):
+        self.user = self.db.session.query(User).filter_by(username=username).one()
+        self.login(username, password)['user']
+        login_user(self.user)
+        try:
+            func(self)
+        except AssertionError as e:
+            self.db.session.rollback()
+            self.logout()
+            raise
         self.logout()
-        raise
-    self.logout()
-    logout_user()
-
-
-@decorator.decorator
-def login_required_ctx(func, self, username='crowdlink'):
-    self.user = self.db.session.query(User).filter_by(username=username).first()
-    login_user(self.user)
-    try:
-        func(self)
-    except AssertionError:
-        self.db.session.rollback()
         logout_user()
-        raise
-    logout_user()
+
+    return decorator.decorator(login_required)
+
+
+def login_required_ctx(username='crowdlink', password='testing'):
+    """ Decorator for loggin in the user under a request context. Helpful for
+    testing """
+    def login_required_ctx(func, self, *args, **kwargs):
+        self.user = self.db.session.query(User).filter_by(username=username).one()
+        login_user(self.user)
+        try:
+            func(self)
+        except AssertionError:
+            self.db.session.rollback()
+            logout_user()
+            raise
+        logout_user()
+
+    return decorator.decorator(login_required_ctx)
 
 
 class BaseTest(TestCase):

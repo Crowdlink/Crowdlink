@@ -6,12 +6,10 @@ from flask.ext.restful import Resource
 from .models import User, Project, Issue, Solution, Email
 from .fin_models import Earmark, Recipient, Transfer, Charge
 from .lib import get_joined
-from . import db
 
 import valideer
 import sqlalchemy
 import decorator
-import datetime
 import stripe
 import pprint
 
@@ -32,13 +30,13 @@ def catch_common(func, *args, **kwargs):
     except (KeyError, AttributeError) as e:
         current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
         ret = {'success': False,
-            'message': 'Incorrect syntax on key ' + e.message}, 400
+               'message': 'Incorrect syntax on key ' + e.message}, 400
 
     # Permission error
     except AssertionError:
         current_app.logger.debug("Permission error", exc_info=True)
         ret = {'success': False,
-            'message': 'You don\'t have permission to do that'}, 403
+               'message': 'You don\'t have permission to do that'}, 403
 
     # validation errors
     except valideer.base.ValidationError as e:
@@ -352,9 +350,11 @@ class IssueAPI(BaseResource):
         if idval:
             return Issue.query.filter_by(id=idval).one()
         else:
-            return Issue.query.filter_by(url_key=data['url_key'],
-                                         project_maintainer_username=data['username'],
-                                         project_url_key=data['purl_key']).one()
+            return Issue.query.filter_by(
+                url_key=data['url_key'],
+                project_maintainer_username=data['username'],
+                project_url_key=data['purl_key']).one()
+
     @classmethod
     def get_parent_project(cls, data, **kwargs):
         pid = data.pop('pid', None)
@@ -570,31 +570,17 @@ class TransferAPI(BaseResource):
         js = request.json_dict
         stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
         user = self.get_user(js)
+        # make the assumption that there's only one recipient they can pick for
+        # now
+        recp = Recipient.query.filter_by(user=user).one()
 
-        retval = stripe.Transfer.create(
-            bank_account=account,
-            name=js['name'],
-            type=typ,
-            metadata={'username': current_user.username,
-                      'userid': current_user.id}
-        )
-        pprint.pprint(retval)
+        trans = Transfer.create(js['amount'], recp, user)
 
-        # create a new recipient in our db to reflect stripe
-        recp = Transfer(
-            livemode=livemode,
-            stripe_id=retval['id'],
-            stripe_created_at=datetime.datetime.fromtimestamp(retval['created']),
-            user=user,
-            last_four=retval['active_account']['last4'],
-            verified=retval['active_account']['verified'],
-            name=retval['name']
-        ).save()
-
-        recp_serial = get_joined(recp)
-        current_app.logger.debug("Just created {}".format(pprint.pformat(recp_serial)))
+        trans_serial = get_joined(trans)
+        current_app.logger.debug(
+            "Just created {}".format(pprint.pformat(trans_serial)))
         return {'success': True,
-                'recipient': recp_serial}
+                'transfer': trans_serial}
 
 
 
@@ -609,7 +595,7 @@ class RecipientAPI(BaseResource):
         js = request.dict_args
         user = self.get_user(js)
         recps = Recipient.query.filter_by(user_id=user.id)
-        recps = self.limit_offset(recp, js)  # allow pagination
+        recps = self.limit_offset(recps, js)  # allow pagination
 
         join_prof = js.pop('join_prof', 'standard_join')
         for recp in recps:
@@ -633,38 +619,15 @@ class RecipientAPI(BaseResource):
                     'message': "A duplicate value already exists "
                                "in the database"}, 400
 
-
-        account = js['token']['id']
-        livemode = js['token']['livemode']
-        typ = 'corporation' if js['corporation'] else 'individual'
-
-        vals = dict(
-            bank_account=account,
-            name=js['name'],
-            type=typ,
-            metadata={'username': current_user.username,
-                        'userid': current_user.id}
-        )
-        # avoid injecting an empty string for tax_id, stripe doesn't like
-        tax_id = js.get('tax_id')
-        if tax_id:
-            vals['tax_id'] = tax_id
-        retval = stripe.Recipient.create(**vals)
-        pprint.pprint(retval)
-
-        # create a new recipient in our db to reflect stripe
-        recp = Recipient(
-            livemode=livemode,
-            stripe_id=retval['id'],
-            stripe_created_at=datetime.datetime.fromtimestamp(retval['created']),
-            user=user,
-            last_four=retval['active_account']['last4'],
-            verified=retval['active_account']['verified'],
-            name=retval['name']
-        ).save()
+        recp = Recipient.create(js['token'],
+                                js['name'],
+                                js['corporation'],
+                                tax_id=js.get('tax_id'),
+                                user=user)
 
         recp_serial = get_joined(recp)
-        current_app.logger.debug("Just created {}".format(pprint.pformat(recp_serial)))
+        current_app.logger.debug(
+            "Just created {}".format(pprint.pformat(recp_serial)))
         return {'success': True,
                 'recipient': recp_serial}
 
@@ -707,12 +670,13 @@ class ChargeAPI(BaseResource):
 
         try:
             charge = Charge.create(js['token'], amount, user=user)
-        except stripe.CardError as e:
+        except stripe.CardError:
             current_app.logger.info("Stripe card error", exc_info=True)
             return {'success': False}
 
-        charge_serial = get_joined(charges)
-        current_app.logger.debug("Just created {}".format(pprint.pformat(charges_serial)))
+        charge_serial = get_joined(charge)
+        current_app.logger.debug(
+            "Just created {}".format(pprint.pformat(charge_serial)))
         return {'success': True,
                 'charge': charge_serial}
 

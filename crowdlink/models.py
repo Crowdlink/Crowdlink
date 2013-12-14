@@ -1,5 +1,6 @@
 from flask import session, current_app, flash
 from flask.ext.login import current_user
+from datetime import datetime
 
 from . import db, github
 from .util import inherit_lst
@@ -7,15 +8,14 @@ from .acl import issue_acl, project_acl, solution_acl, user_acl
 
 from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
                                   _QueryProperty)
-from sqlalchemy.ext.declarative import declared_attr, declarative_base
-from sqlalchemy.dialects.postgresql import HSTORE, ARRAY
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import HSTORE
 from sqlalchemy.types import TypeDecorator, TEXT
 from sqlalchemy import event
 
 from enum import Enum
 
 import valideer as V
-import stripe
 import sqlalchemy
 import cryptacular.bcrypt
 import re
@@ -23,7 +23,6 @@ import werkzeug
 import json
 import urllib
 import hashlib
-import datetime
 import calendar
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
@@ -49,9 +48,9 @@ class BaseMapper(object):
                 func = lambda target, value, oldvalue, initiator: \
                     valid.validate_attr(initiator, value)
                 event.listen(getattr(cls, name),
-                                'set',
-                                func,
-                                name)
+                             'set',
+                             func,
+                             name)
 
         return super(BaseMapper, cls).__new__(cls, *args, **kwargs)
 
@@ -88,22 +87,6 @@ class BaseMapper(object):
         if not hasattr(self, '_user_acl') or self._user_acl[0] != current_user:
             self._user_acl = (current_user, self.get_acl())
         return self._user_acl[1]
-
-    def safe_save(self, **kwargs):
-        """ Automatically adds object to the global session and saves with
-        error catching """
-        # add to the main session if not added
-        if db.object_session(self) is None:
-            db.session.add(self)
-
-        try:
-            db.session.commit(**kwargs)
-        except Exception:
-            db.session.rollback()
-            current_app.logger.warn("Unkown error commiting to db",
-                                    exc_info=True)
-            return False
-        return self
 
     def save(self, *exc_catch):
         """ Automatically adds object to global session and catches exception
@@ -146,7 +129,7 @@ class BaseMapper(object):
             if isinstance(attr, Enum):
                 attr = dict({str(x): x.index for x in attr})
             # convert datetime to seconds since epoch, much more universal
-            elif isinstance(attr, datetime.datetime):
+            elif isinstance(attr, datetime):
                 attr = calendar.timegm(attr.utctimetuple()) * 1000
             # don't convert bool or int to str
             elif isinstance(attr, bool) or isinstance(attr, int) or attr is None:
@@ -188,6 +171,22 @@ class PrivateMixin(object):
             return ['user']
 
 
+class StatusMixin(object):
+    @property
+    def status(self):
+        return str(self.StatusVals[self._status])
+
+    @status.setter
+    def status(self, value):
+        """ Let the caller know if it was already set """
+        idx = getattr(self.StatusVals, value).index
+        if self._status == idx:
+            return False
+        else:
+            self._status = idx
+            return True
+
+
 # setup our base mapper and database metadata
 metadata = db.MetaData()
 base = declarative_base(cls=BaseMapper,
@@ -211,7 +210,6 @@ class Thing(base):
         """ """
         for earmark in self.earmarks:
             earmark.clear()
-
 
 
 class EventJSON(TypeDecorator):
@@ -257,7 +255,7 @@ class VotableMixin(object):
         # XXX: Really needs error catching
         if not vote:  # unvote
             Vote.query.filter_by(voter=current_user.get(),
-                           votee_id=self.id).delete()
+                                 votee_id=self.id).delete()
             current_app.logger.debug(
                 ("Unvoting on {} as user "
                  "{}").format(self.__class__.__name__, current_user.username))
@@ -355,7 +353,7 @@ class SubscribableMixin(object):
 class Project(Thing, SubscribableMixin, VotableMixin):
     """ This class is a composite of thing and project tables """
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     maintainer_username = db.Column(db.String, db.ForeignKey('user.username'))
     maintainer = db.relationship('User')
@@ -378,7 +376,8 @@ class Project(Thing, SubscribableMixin, VotableMixin):
     gh_repo_path = db.Column(db.String)
     gh_synced_at = db.Column(db.DateTime)
     gh_synced = db.Column(db.Boolean, default=False)
-    maintainer = db.relationship('User', foreign_keys='Project.maintainer_username')
+    maintainer = db.relationship('User',
+                                 foreign_keys='Project.maintainer_username')
     __table_args__ = (
         db.UniqueConstraint("url_key", "maintainer_username"),
     )
@@ -458,7 +457,7 @@ class Project(Thing, SubscribableMixin, VotableMixin):
         """ Add a new issue to this project """
         issue.create_key()
         issue.project = self
-        issue.safe_save()
+        issue.save()
 
         # send a notification to all subscribers
         events.IssueNotif.generate(issue)
@@ -477,7 +476,7 @@ class Project(Thing, SubscribableMixin, VotableMixin):
     def gh_sync(self, data):
         self.gh_repo_id = data['id']
         self.gh_repo_path = data['full_name']
-        self.gh_synced_at = datetime.datetime.utcnow()
+        self.gh_synced_at = datetime.utcnow()
         self.gh_synced = True
         current_app.logger.debug("Synchronized repository")
 
@@ -491,20 +490,20 @@ class Project(Thing, SubscribableMixin, VotableMixin):
             self.gh_synced_at = None
             self.gh_repo_path = None
             self.gh_repo_id = -1
-        self.safe_save()
+        self.save()
         current_app.logger.debug("Desynchronized repository")
 
 
-class Issue(Thing, SubscribableMixin, VotableMixin):
+class Issue(StatusMixin, Thing, SubscribableMixin, VotableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
 
-    statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
-    _status = db.Column(db.Integer, default=statuses.Discussion.index)
+    StatusVals = Enum('Completed', 'Discussion', 'Selected', 'Other')
+    _status = db.Column(db.Integer, default=StatusVals.Discussion.index)
     title = db.Column(db.String(128))
     desc = db.Column(db.Text)
     creator = db.relationship('User')
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # voting
     votes = db.Column(db.Integer, default=0)
@@ -517,10 +516,14 @@ class Issue(Thing, SubscribableMixin, VotableMixin):
     project = db.relationship('Project')
     project_url_key = db.Column(db.String)
     project_maintainer_username = db.Column(db.String)
-    __table_args__ = (db.ForeignKeyConstraint([project_url_key, project_maintainer_username],
-                                              [Project.url_key, Project.maintainer_username]),
-                      db.UniqueConstraint("url_key", "project_maintainer_username", "project_url_key"),
-                      {})
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            [project_url_key, project_maintainer_username],
+            [Project.url_key, Project.maintainer_username]),
+        db.UniqueConstraint("url_key",
+                            "project_maintainer_username",
+                            "project_url_key"),
+        {})
     project = db.relationship(
         'Project',
         foreign_keys='[Issue.project_url_key, Issue.project_maintainer_username]')
@@ -595,18 +598,6 @@ class Issue(Thing, SubscribableMixin, VotableMixin):
             username=self.project_maintainer_username,
             url_key=self.project_url_key)
 
-    @property
-    def status(self):
-        return self.statuses[self._status]
-
-    def set_status(self, value):
-        """ Let the caller know if it was already set """
-        if self._status == int(value):
-            return False
-        else:
-            self._status = True
-            return True
-
     def create_key(self):
         if self.title:
             self.url_key = re.sub(
@@ -627,7 +618,7 @@ class Issue(Thing, SubscribableMixin, VotableMixin):
         if flatten:
             self.gh_issue_num = None
             self.gh_labels = []
-        self.safe_save()
+        self.save()
 
 
 class Solution(Thing, SubscribableMixin, VotableMixin):
@@ -641,7 +632,7 @@ class Solution(Thing, SubscribableMixin, VotableMixin):
     desc = db.Column(db.Text)
     creator = db.relationship('User')
     creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # voting
     votes = db.Column(db.Integer, default=0)
@@ -656,11 +647,14 @@ class Solution(Thing, SubscribableMixin, VotableMixin):
     project_maintainer_username = db.Column(db.String)
     issue = db.relationship('Issue')
     issue_url_key = db.Column(db.String)
-    __table_args__ = (db.ForeignKeyConstraint([project_url_key, project_maintainer_username],
-                                           [Project.url_key, Project.maintainer_username]),
-                      db.ForeignKeyConstraint([project_url_key, project_maintainer_username, issue_url_key],
-                                           [Issue.project_url_key, Issue.project_maintainer_username, Issue.url_key]),
-                      {})
+    __table_args__ = (
+        db.ForeignKeyConstraint(
+            [project_url_key, project_maintainer_username],
+            [Project.url_key, Project.maintainer_username]),
+        db.ForeignKeyConstraint(
+            [project_url_key, project_maintainer_username, issue_url_key],
+            [Issue.project_url_key, Issue.project_maintainer_username, Issue.url_key]),
+        {})
 
     project = db.relationship(
         'Project',
@@ -756,7 +750,7 @@ class Solution(Thing, SubscribableMixin, VotableMixin):
         if flatten:
             self.gh_issue_num = None
             self.gh_labels = []
-        self.safe_save()
+        self.save()
 
 
 class Email(base):
@@ -778,7 +772,7 @@ class User(Thing, SubscribableMixin):
     username = db.Column(db.String(32), unique=True)
 
     # User information
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     _password = db.Column(db.String)
     gh_token = db.Column(db.String, unique=True)
 
@@ -787,9 +781,12 @@ class User(Thing, SubscribableMixin):
     events = db.Column(EventJSON)
     __mapper_args__ = {'polymorphic_identity': 'User'}
 
-    # financial information
-    current_balance = db.Column(db.Integer, default=0)  # total unpaid
-    available_balance = db.Column(db.Integer, default=0)  # total available for earmarks
+    # financial placeholders
+
+    # total unpaid
+    current_balance = db.Column(db.Integer, default=0)
+    # total available for earmarks
+    available_balance = db.Column(db.Integer, default=0)
 
     standard_join = ['id',
                      'gh_linked',
@@ -920,16 +917,16 @@ class User(Thing, SubscribableMixin):
     def create_user(cls, username, password, email_address):
         user = cls(username=username)
         user.password = password
-        user.safe_save()
-        Email(address=email_address, user=user).safe_save()
+        user.save()
+        Email(address=email_address, user=user).save()
 
         return user
 
     @classmethod
     def create_user_github(cls, access_token):
-        user = cls(gh_token=access_token).safe_save()
-        Email(address=user.gh['email'], user=user).safe_save()
-        if not user.safe_save():
+        user = cls(gh_token=access_token).save()
+        Email(address=user.gh['email'], user=user).save()
+        if not user.save():
             return False
         return user
 

@@ -205,9 +205,9 @@ class APITests(BaseTest):
 
     # Earmark api
     # =========================================================================
+    """
     @login_required
     def test_earmark_create(self):
-        """ test creation """
         current_user.available_balance = 10000
         current_user.save()
         # create a mock Charge
@@ -233,6 +233,7 @@ class APITests(BaseTest):
         assert isinstance(res2['earmarks'][0]['amount'], int)
         assert res2['success']
         pprint(res2)
+    """
 
     # Test all the form checks
     # =========================================================================

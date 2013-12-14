@@ -76,30 +76,36 @@ def inherit_lst(*args):
 
 def provision():
     from crowdlink.util import stripe_card_token
-    from random import choice
+    from crowdlink import db
     from crowdlink.models import Email, User, Project, Issue, Solution
-    from crowdlink.fin_models import Charge
+    from crowdlink.fin_models import Charge, Earmark
+
+    from random import choice
     from flask import current_app
-    from flask.ext.login import login_user
-    import json
+
+    import time
 
     stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+    users = {}
 
     # Create a simple project and user
-    usr = User.create_user("crowdlink", "testing", "support@crowdlink.com")
-    Email.activate_email('support@crowdlink.com')
+    for username in ['scrappy', 'shaggy', 'scooby', 'daphne', 'crowdlink',
+                     'barney', 'betty']:
+        usr = User.create_user(username, "testing", username + "@crowdlink.com")
+        Email.activate_email(username + '@crowdlink.com')
+        users[username] = usr
 
     # Create the project for crowdlink
     proj = Project(
-        maintainer=usr,
+        maintainer=users['crowdlink'],
         name='crowdlink',
         website="http://crowdlink.com",
         url_key='crowdlink',
         desc="A platform for user feedback")
-    proj.safe_save()
+    proj.save()
     proj.subscribe(user=usr)
 
-    issues = [
+    issues_tmpl = [
 ('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.',
     ['test']),
 ('Change log for Improvements', 'Like gists on Github, show a historical revision log for an Improvements descriptions'),
@@ -109,7 +115,9 @@ def provision():
 ('Promote with donations', 'Instead of dontaing to the project, donate to a charity, yet earmark this donation towards a project or Improvement to show your support'),
 ('Google Analytics Hooks', 'Allow project maintainers to specify a Google Analytics Key and select from a range of events that they would like logged into their GA account'),
         ]
-    for data in issues:
+    issues = []
+    for data in issues_tmpl:
+        # add some solutions to the issue
         if len(data) > 2:
             title, desc, solutions = data
         else:
@@ -118,23 +126,57 @@ def provision():
             creator=usr,
             title=title,
             desc=desc)
-        proj.add_issue(issue, usr)
+        proj.add_issue(issue, users['crowdlink'])
+        issues.append(issue)
 
         for sol in solutions:
             sol = Solution(
                 title=sol,
-                creator=usr,
-                issue=issue).safe_save()
-    # fred isn't activated, no email address verified
-    fred = User.create_user("fred", "testing", "fred@crowdlink.com")
+                creator=users['crowdlink'],
+                issue=issue).save()
+
     # velma doesn't have a real username
     #velma = User.create_user("", "testing", "velma@crowdlink.com")
 
-    # shaggy is a generous donor, with several charges and donations to
-    # crowdlink
-    shaggy = User.create_user("shaggy", "testing", "shaggy@crowdlink.com")
-    for _ in xrange(10):
-        amount = choice([5, 15, 20, 30, 50])
-        Charge.create(stripe_card_token(), amount*100, shaggy)
+    # fred isn't activated, no email address verified
+    fred = User.create_user("fred", "testing", "fred@crowdlink.com")
 
-    scooby = User.create_user("scooby", "testing", "scooby@crowdlink.com")
+    # Setup tons of test financial data
+    ##########################################################################
+    # put some money in a few accounts
+    for name in ['shaggy', 'daphne', 'scrappy']:
+        for _ in xrange(3):
+            amount = choice([5, 15, 20, 30, 50]) * 100
+            Charge.create(stripe_card_token(), amount, users[name])
+            time.sleep(0.2)
+
+    # earmark onto a few different issues with a few users
+    for i in xrange(4):
+        for name in ['shaggy', 'daphne']:
+            user = users[name]
+            amount = round(user.available_balance * (choice([5, 15, 20, 25]) / 100.0))
+            print user.available_balance
+            Earmark.create(issues[i], amount, user)
+
+    # now that we have some earmarks, mature some
+    for i in xrange(3):
+        for earmark in issues[i].earmarks:
+            earmark.matured = True
+        db.session.commit()
+
+    # mark our issue as completed
+    for i in xrange(2):
+        issues[i].status = 'Completed'
+    db.session.commit()
+
+    # Assign the earmark to some users
+    for i in xrange(2):
+        for earmark in issues[i].earmarks:
+            earmark.assign([(users['scooby'], 50),
+                            (users['barney'], 50)])
+        db.session.commit()
+
+    # now clear a few of these earmarks
+    for i in xrange(1):
+        for earmark in issues[i].earmarks:
+            earmark.clear()
