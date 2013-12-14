@@ -371,8 +371,8 @@ mainControllers.controller('projectController',
   )
 )
 
-# ChargeController ============================================================
-mainControllers.controller('chargeController',
+# NewChargeController ============================================================
+mainControllers.controller('newChargeController',
 ['$scope', 'StripeService', ($scope, StripeService)->
 
     $scope.init = () ->
@@ -422,18 +422,16 @@ mainControllers.controller('chargeController',
         amount: $scope.actual_amt
 ])
 
-# TransactionController =======================================================
-mainControllers.controller('transController',
-($scope, $rootScope, TransService)->
+# ChargeController =======================================================
+mainControllers.controller('chargeController',
+($scope, $rootScope, ChargeService)->
 
   $scope.init = () ->
-    TransService.query(
-      userid: $rootScope.user.id
-    ,(value) ->
-      $scope.trans = value
-      if trans
-        for trans in $scope.transactions
-          trans.details = false
+    ChargeService.query({}, (value) ->
+      $scope.charges = value.charges
+      if $scope.charges
+        for charge in $scope.charges
+          charge.details = false
     , $rootScope.noty_error)
 )
 

@@ -108,18 +108,18 @@ user_acl = {'owner': user_owner,
             'anonymous': user_anon,
             'user': user_user}
 
-# Transaction
-transaction_anon = []
-transaction_user = []
-transaction_owner = P(transaction_anon,
-                      transaction_user,
-                      ('view', ['standard_join']),
-                      ('action', ['add_earmark'])
-                      ).keys
+# Charge
+charge_anon = []
+charge_user = []
+charge_owner = P(charge_anon,
+                 charge_user,
+                 ('view', ['standard_join']),
+                 ('action', ['add_earmark'])
+                 ).keys
 
-transaction_acl = {'owner': transaction_owner,
-                   'anonymous': transaction_anon,
-                   'user': transaction_user}
+charge_acl = {'owner': charge_owner,
+              'anonymous': charge_anon,
+              'user': charge_user}
 
 # Transfer
 transfer_anon = []

@@ -3,8 +3,7 @@ from flask.ext.login import current_user
 
 from . import db, github
 from .util import inherit_lst
-from .acl import (issue_acl, project_acl, solution_acl, user_acl,
-                  transaction_acl, earmark_acl, recipient_acl, transfer_acl)
+from .acl import charge_acl, earmark_acl, recipient_acl, transfer_acl
 from .models import base, BaseMapper, PrivateMixin
 
 from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
@@ -150,7 +149,7 @@ class Transfer(PrivateMixin, base):
         return self.StatusVals[self._status]
 
 
-class Transaction(PrivateMixin, base):
+class Charge(PrivateMixin, base):
     StatusVals = Enum('Pending', 'Cleared')
     _status = db.Column(db.Integer, default=StatusVals.Pending.index)
 
@@ -170,7 +169,7 @@ class Transaction(PrivateMixin, base):
                      'created_at',
                      '-stripe_created_at']
 
-    acl = transaction_acl
+    acl = charge_acl
 
     @property
     def status(self):
@@ -191,9 +190,9 @@ class Transaction(PrivateMixin, base):
             card=card)
 
         if retval['paid']:
-            status = Transaction.StatusVals.Cleared.index
+            status = Charge.StatusVals.Cleared.index
         else:
-            status = Transaction.StatusVals.Pending.index
+            status = Charge.StatusVals.Pending.index
 
         trans = cls(
             amount=amount,

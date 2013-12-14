@@ -7,7 +7,7 @@ from pprint import pprint
 
 
 class PaymentTests(BaseTest):
-    # Transaction api
+    # Charge api
     # =========================================================================
     @login_required
     def test_run_charge(self):
@@ -16,12 +16,12 @@ class PaymentTests(BaseTest):
         data = {'amount': 1500,
                 'token': stripe_card_token()}
         pprint(data)
-        # run our transaction test
-        res = self.json_post('/api/transaction', data=data)
+        # run our charge test
+        res = self.json_post('/api/charge', data=data)
         pprint(res.json)
         assert res.json['success']
-        assert isinstance(res.json['transaction']['id'], int)
-        assert res.json['transaction']['id'] > 0
+        assert isinstance(res.json['charge']['id'], int)
+        assert res.json['charge']['id'] > 0
 
     # Recipeint api
     # =========================================================================

@@ -78,7 +78,7 @@ def provision():
     from crowdlink.util import stripe_card_token
     from random import choice
     from crowdlink.models import Email, User, Project, Issue, Solution
-    from crowdlink.fin_models import Transaction
+    from crowdlink.fin_models import Charge
     from flask import current_app
     from flask.ext.login import login_user
     import json
@@ -135,6 +135,6 @@ def provision():
     shaggy = User.create_user("shaggy", "testing", "shaggy@crowdlink.com")
     for _ in xrange(10):
         amount = choice([5, 15, 20, 30, 50])
-        Transaction.create(stripe_card_token(), amount*100, shaggy)
+        Charge.create(stripe_card_token(), amount*100, shaggy)
 
     scooby = User.create_user("scooby", "testing", "scooby@crowdlink.com")

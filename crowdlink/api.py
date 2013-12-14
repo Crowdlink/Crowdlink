@@ -4,7 +4,7 @@ from flask.ext.login import (login_required, logout_user, current_user,
 from flask.ext.restful import Resource
 
 from .models import User, Project, Issue, Solution, Email
-from .fin_models import Earmark, Recipient, Transfer, Transaction
+from .fin_models import Earmark, Recipient, Transfer, Charge
 from .lib import get_joined
 from . import db
 
@@ -607,7 +607,6 @@ class RecipientAPI(BaseResource):
     @catch_common
     def get(self):
         js = request.dict_args
-        # get the user who's transactions we want
         user = self.get_user(js)
         recps = Recipient.query.filter_by(user_id=user.id)
         recps = self.limit_offset(recp, js)  # allow pagination
@@ -617,7 +616,7 @@ class RecipientAPI(BaseResource):
             assert recp.can('view_' + join_prof)
 
         return {'success': True,
-                'recipients': get_joined(trans, join_prof=join_prof)}
+                'recipients': get_joined(recps, join_prof=join_prof)}
 
     @catch_stripe
     @catch_common
@@ -629,10 +628,10 @@ class RecipientAPI(BaseResource):
         user = self.get_user(js)
 
         # check to ensure they haven't created another recipient
-        #if Recipient.query.filter_by(user=user).count() > 0:
-        #    return {'success': False,
-        #            'message': "A duplicate value already exists "
-        #                       "in the database"}, 400
+        if Recipient.query.filter_by(user=user).count() > 0:
+            return {'success': False,
+                    'message': "A duplicate value already exists "
+                               "in the database"}, 400
 
 
         account = js['token']['id']
@@ -670,32 +669,32 @@ class RecipientAPI(BaseResource):
                 'recipient': recp_serial}
 
 
-# Transaction API
+# Charge API
 # =============================================================================
-class TransactionAPI(BaseResource):
-    model = Transaction
+class ChargeAPI(BaseResource):
+    model = Charge
 
     @login_required
     @catch_common
     def get(self):
         js = request.dict_args
-        # get the user who's transactions we want
+        # get the user who's chargess we want
         user = self.get_user(js)
-        trans = Transaction.query.filter_by(user_id=user.id)
-        trans = self.limit_offset(trans, js)  # allow pagination
+        charges = Charge.query.filter_by(user_id=user.id)
+        charges = self.limit_offset(charges, js)  # allow pagination
 
         join_prof = js.pop('join_prof', 'standard_join')
-        for tran in trans:
-            assert tran.can('view_' + join_prof)
+        for charge in charges:
+            assert charge.can('view_' + join_prof)
 
         return {'success': True,
-                'transactions': get_joined(trans, join_prof=join_prof)}
+                'charges': get_joined(charges, join_prof=join_prof)}
 
     @catch_stripe
     @catch_common
     @login_required
     def post(self):
-        """ Runs a charge for a User and generates a new transaction in the
+        """ Runs a charge for a User and generates a new charges in the
         process """
         js = request.json_dict
         user = self.get_user(js)
@@ -707,15 +706,15 @@ class TransactionAPI(BaseResource):
             raise KeyError('amount')
 
         try:
-            trans = Transaction.create(js['token'], amount, user=user)
+            charge = Charge.create(js['token'], amount, user=user)
         except stripe.CardError as e:
             current_app.logger.info("Stripe card error", exc_info=True)
             return {'success': False}
 
-        trans_serial = get_joined(trans)
-        current_app.logger.debug("Just created {}".format(pprint.pformat(trans_serial)))
+        charge_serial = get_joined(charges)
+        current_app.logger.debug("Just created {}".format(pprint.pformat(charges_serial)))
         return {'success': True,
-                'transaction': trans_serial}
+                'charge': charge_serial}
 
 
 # Earmark API

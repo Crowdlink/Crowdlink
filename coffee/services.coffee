@@ -58,16 +58,16 @@ mainServices.factory("ProjectService", ($resource) ->
 )
 
 mainServices.factory("StripeService", ($resource) ->
-  $resource window.api_path + "transaction", {},
+  $resource window.api_path + "charge", {},
     update:
       method: "POST"
       timeout: 10000
 )
 
-mainServices.factory("TransService", ($resource) ->
-  $resource window.api_path + "transaction",
+mainServices.factory("ChargeService", ($resource) ->
+  $resource window.api_path + "charge", {},
     query:
       method: "GET"
       timeout: 10000
-      isArray: true
+      isArray: false
 )
