@@ -14,7 +14,9 @@ from crowdlink.models import User
 
 @decorator.decorator
 def login_required(func, self, username='crowdlink', password='testing'):
-    self.user = self.login(username, password)['user']
+    self.user = self.db.session.query(User).filter_by(username=username).first()
+    self.login(username, password)['user']
+    login_user(self.user)
     try:
         func(self)
     except AssertionError as e:
@@ -22,6 +24,7 @@ def login_required(func, self, username='crowdlink', password='testing'):
         self.logout()
         raise
     self.logout()
+    logout_user()
 
 
 @decorator.decorator

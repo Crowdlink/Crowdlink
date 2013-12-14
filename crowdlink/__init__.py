@@ -7,6 +7,7 @@ from flask_oauthlib.client import OAuth
 from jinja2 import FileSystemLoader
 
 import os
+import valideer
 
 
 root = os.path.abspath(os.path.dirname(__file__) + '/../')
@@ -92,6 +93,19 @@ def create_app(config='../application.cfg'):
         return js
     Request.dict_args = dict_args
     Request.json_dict = json_dict
+
+    # Monkey patch valideer to validate a single object
+    # =========================================================================
+    def validate_attr(self, attr, value):
+        """ Allows calling a single validator by passing in a dotted notation for
+        the object.  """
+        attr = str(attr).split('.', 1)[1]
+        validator = [v for i, v in enumerate(self._named_validators) if v[0] == attr][0][1]
+        try:
+            return validator.validate(value)
+        except V.ValidationError as e:
+            raise AttributeError(str(e) + " on attribute " + attr)
+    valideer.Object.validate_attr = validate_attr
 
     # Route registration
     # =========================================================================

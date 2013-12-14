@@ -3,8 +3,8 @@ from flask.ext.login import (login_required, logout_user, current_user,
                              login_user)
 from flask.ext.restful import Resource
 
-from .models import (User, Project, Issue, Transaction, Solution, Email,
-                     Earmark, Recipient, Transfer)
+from .models import User, Project, Issue, Solution, Email
+from .fin_models import Earmark, Recipient, Transfer, Transaction
 from .lib import get_joined
 from . import db
 
@@ -75,6 +75,7 @@ def catch_common(func, *args, **kwargs):
 def catch_stripe(func, *args, **kwargs):
     # catches the more generic stripe errors and logs them
     js = request.json_dict
+    stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
     try:
         return func(*args, **kwargs)
 
@@ -570,22 +571,13 @@ class TransferAPI(BaseResource):
         stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
         user = self.get_user(js)
 
-        account = js['token']['id']
-        livemode = js['token']['livemode']
-        typ = 'corporation' if js['corporation'] else 'individual'
-
-        vals = dict(
+        retval = stripe.Transfer.create(
             bank_account=account,
             name=js['name'],
             type=typ,
             metadata={'username': current_user.username,
-                        'userid': current_user.id}
+                      'userid': current_user.id}
         )
-        # avoid injecting an empty string for tax_id, stripe doesn't like
-        tax_id = js.get('tax_id')
-        if tax_id:
-            vals['tax_id'] = tax_id
-        retval = stripe.Transfer.create(**vals)
         pprint.pprint(retval)
 
         # create a new recipient in our db to reflect stripe
@@ -706,60 +698,30 @@ class TransactionAPI(BaseResource):
         """ Runs a charge for a User and generates a new transaction in the
         process """
         js = request.json_dict
-
+        user = self.get_user(js)
         amount = js['amount']
-        card = js['token']['id']
-        livemode = js['token']['livemode']
 
         # check the amount they're trying to charge before running the charge
-        # with strip
+        # with stripe
         if amount > 100000 or amount < 500:
             raise KeyError('amount')
 
-        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
         try:
-            retval = stripe.Charge.create(
-                amount=amount,
-                currency="usd",
-                card=card)
+            trans = Transaction.create(js['token'], amount, user=user)
         except stripe.CardError as e:
-            body = e.json_body
-            err = body['error']
-
-            current_app.logger.info(err, exc_info=True)
+            current_app.logger.info("Stripe card error", exc_info=True)
             return {'success': False}
-        else:
-            if retval['paid']:
-                status = Transaction.StatusVals.Cleared.index
-            else:
-                status = Transaction.StatusVals.Pending.index
 
-            trans = Transaction(
-                amount=amount,
-                remaining=amount,
-                livemode=livemode,
-                stripe_id=retval['id'],
-                stripe_created_at=datetime.datetime.fromtimestamp(retval['created']),
-                user=self.get_user(js),
-                _status=status,
-                last_four=retval['card']['last4']
-            ).save()
-
-            trans_serial = get_joined(trans)
-            current_app.logger.debug("Just created {}".format(pprint.pformat(trans_serial)))
-            return {'success': True,
-                    'transaction': trans_serial}
-
-        return {'success': False}
+        trans_serial = get_joined(trans)
+        current_app.logger.debug("Just created {}".format(pprint.pformat(trans_serial)))
+        return {'success': True,
+                'transaction': trans_serial}
 
 
 # Earmark API
 # =============================================================================
 class EarmarkAPI(BaseResource):
     model = Earmark
-
-    def get_transaction(self, js):
-        return Transaction.query.filter_by(id=js['transid']).one()
 
     @catch_common
     def get(self):
@@ -797,18 +759,9 @@ class EarmarkAPI(BaseResource):
     def post(self):
         """ Create a new earmark """
         js = request.json_dict
-        trans = self.get_transaction(js)
-        assert trans.can('action_add_earmark')
+        user = self.get_user(js)
 
-        mark = Earmark(
-            amount=js['amount'],
-            sender=self.get_user(js),
-            thing_id=js['id'],
-            transaction=trans
-        )
-        db.session.add(mark)
-        trans.remaining -= js['amount']
-        db.session.commit()
+        mark = Earmark.create(js['id'], js['amount'], user=user)
 
         return {'success': True,
                 'earmark': get_joined(mark)}

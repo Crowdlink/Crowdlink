@@ -2,8 +2,11 @@ import crowdlink
 import json
 
 from crowdlink.tests import BaseTest, login_required, login_required_ctx
-from crowdlink.models import Issue, Project, Solution, User, Transaction
+from crowdlink.models import Issue, Project, Solution, User
+from crowdlink.fin_models import Transaction
+
 from pprint import pprint
+from flask.ext.login import current_user
 
 
 class APITests(BaseTest):
@@ -205,12 +208,14 @@ class APITests(BaseTest):
     @login_required
     def test_earmark_create(self):
         """ test creation """
+        current_user.available_balance = 10000
+        current_user.save()
         # create a mock transaction
         new_trans = Transaction(amount=10000,
                                 remaining=10000,
                                 livemode=False,
                                 last_four=1234,
-                                user_id=self.user['id']).safe_save()
+                                user_id=self.user.id).safe_save()
         first_issue = self.db.session.query(Issue).first()
         qs = {'amount': 1000, 'id': first_issue.id, 'transid': new_trans.id}
         res = self.json_post('/api/earmark', qs).json

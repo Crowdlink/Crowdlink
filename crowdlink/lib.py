@@ -20,10 +20,6 @@ email_cfg = {
 }
 
 
-def redirect_angular(url):
-    return jsonify(redirect=url)
-
-
 def send_email(to_addr, typ, **kwargs):
     conf = email_cfg[typ]
     send_addr = current_app.config['EMAIL_SENDER']

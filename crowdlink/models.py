@@ -16,7 +16,7 @@ from sqlalchemy import event
 from enum import Enum
 
 import valideer as V
-
+import stripe
 import sqlalchemy
 import cryptacular.bcrypt
 import re
@@ -28,18 +28,6 @@ import datetime
 import calendar
 
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
-
-
-def validate_attr(self, attr, value):
-    """ Allows calling a single validator by passing in a dotted notation for
-    the object.  """
-    attr = str(attr).split('.', 1)[1]
-    validator = [v for i, v in enumerate(self._named_validators) if v[0] == attr][0][1]
-    try:
-        return validator.validate(value)
-    except V.ValidationError as e:
-        raise AttributeError(str(e) + " on attribute " + attr)
-V.Object.validate_attr = validate_attr
 
 
 class BaseMapper(object):
@@ -90,7 +78,7 @@ class BaseMapper(object):
 
     def can(self, action):
         """ Can the user perform the action needed? """
-        current_app.logger.debug((action, self.user_acl))
+        current_app.logger.debug((self.roles(), action, self.user_acl))
         return action in self.user_acl
 
     @property
@@ -217,8 +205,14 @@ class Thing(base):
     type = db.Column(db.String)
     __mapper_args__ = {
         'polymorphic_identity': 'Thing',
-        'polymorphic_on':type
+        'polymorphic_on': type
     }
+
+    def clear_earmarks(self):
+        """ """
+        for earmark in self.earmarks:
+            earmark.clear()
+
 
 
 class EventJSON(TypeDecorator):
@@ -359,36 +353,36 @@ class SubscribableMixin(object):
         return Subscription.query.filter_by(subscribee_id=self.id)
 
 
-project_table = db.Table('project', metadata,
-    db.Column('id', db.Integer, db.ForeignKey('thing.id'), primary_key=True),
-    db.Column('maintainer_username', db.String, db.ForeignKey('user.username')),
-    db.Column('url_key', db.String),
-
-    # description info
-    db.Column('created_at', db.DateTime, default=datetime.datetime.utcnow),
-    db.Column('name', db.String(128)),
-    db.Column('website', db.String(256)),
-    db.Column('desc', db.String),
-    db.Column('issue_count', db.Integer),  # XXX: Currently not implemented
-
-    # voting
-    db.Column('votes', db.Integer, default=0),
-
-    # Event log
-    db.Column('public_events', EventJSON),
-
-    # Github Syncronization information
-    db.Column('gh_repo_id', db.Integer, default=-1),
-    db.Column('gh_repo_path', db.String),
-    db.Column('gh_synced_at', db.DateTime),
-    db.Column('gh_synced', db.Boolean, default=False),
-    db.UniqueConstraint("url_key", "maintainer_username"))
-
-
 class Project(Thing, SubscribableMixin, VotableMixin):
     """ This class is a composite of thing and project tables """
-    __table__ = project_table
+    id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+
+    maintainer_username = db.Column(db.String, db.ForeignKey('user.username'))
+    maintainer = db.relationship('User')
+    url_key = db.Column(db.String)
+
+    # description info
+    name = db.Column(db.String(128))
+    website = db.Column(db.String(256))
+    desc = db.Column(db.String)
+    issue_count = db.Column(db.Integer)  # XXX: Currently not implemented
+
+    # voting
+    votes = db.Column(db.Integer, default=0)
+
+    # Event log
+    public_events = db.Column(EventJSON)
+
+    # Github Syncronization information
+    gh_repo_id = db.Column(db.Integer, default=-1)
+    gh_repo_path = db.Column(db.String)
+    gh_synced_at = db.Column(db.DateTime)
+    gh_synced = db.Column(db.Boolean, default=False)
     maintainer = db.relationship('User', foreign_keys='Project.maintainer_username')
+    __table_args__ = (
+        db.UniqueConstraint("url_key", "maintainer_username"),
+    )
     __mapper_args__ = {'polymorphic_identity': 'Project'}
 
     # Validation Profile
@@ -502,39 +496,32 @@ class Project(Thing, SubscribableMixin, VotableMixin):
         current_app.logger.debug("Desynchronized repository")
 
 
-issue_table = db.Table('issue', metadata,
-    db.Column('id', db.Integer, db.ForeignKey('thing.id'), primary_key=True),
-    db.Column('url_key', db.String, unique=True),
+class Issue(Thing, SubscribableMixin, VotableMixin):
+    id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
 
-    db.Column('_status', db.Integer, default=1),
-    db.Column('title', db.String(128)),
-    db.Column('desc', db.Text),
-    db.Column('creator_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('created_at', db.DateTime, default=datetime.datetime.utcnow),
+    statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
+    _status = db.Column(db.Integer, default=statuses.Discussion.index)
+    title = db.Column(db.String(128))
+    desc = db.Column(db.Text)
+    creator = db.relationship('User')
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
 
     # voting
-    db.Column('votes', db.Integer, default=0),
+    votes = db.Column(db.Integer, default=0)
 
     # Event log
-    db.Column('public_events', EventJSON),
+    public_events = db.Column(EventJSON)
 
-    # our project relationship
-    db.Column('project_url_key', db.String),
-    db.Column('project_maintainer_username', db.String),
-    db.ForeignKeyConstraint(
-        ['project_url_key', 'project_maintainer_username'],
-        ['project.url_key', 'project.maintainer_username']),
-    # ensure uniqueness on the project/url_key combo
-    db.UniqueConstraint(
-        "url_key",
-        "project_maintainer_username",
-        "project_url_key"))
-
-
-class Issue(Thing, SubscribableMixin, VotableMixin):
-    statuses = Enum('Completed', 'Discussion', 'Selected', 'Other')
-
-    __table__ = issue_table
+    # our project relationship and keys
+    url_key = db.Column(db.String, unique=True)
+    project = db.relationship('Project')
+    project_url_key = db.Column(db.String)
+    project_maintainer_username = db.Column(db.String)
+    __table_args__ = (db.ForeignKeyConstraint([project_url_key, project_maintainer_username],
+                                              [Project.url_key, Project.maintainer_username]),
+                      db.UniqueConstraint("url_key", "project_maintainer_username", "project_url_key"),
+                      {})
     project = db.relationship(
         'Project',
         foreign_keys='[Issue.project_url_key, Issue.project_maintainer_username]')
@@ -644,41 +631,38 @@ class Issue(Thing, SubscribableMixin, VotableMixin):
         self.safe_save()
 
 
-solution_table = db.Table('solution', metadata,
-    db.Column('id', db.Integer, db.ForeignKey('thing.id'), primary_key=True),
-    db.Column('url_key', db.String, unique=True),
-
-    db.Column('title', db.String(128)),
-    db.Column('desc', db.Text),
-    db.Column('creator_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('created_at', db.DateTime, default=datetime.datetime.utcnow),
-
-    # voting
-    db.Column('votes', db.Integer, default=0),
-
-    # Event log
-    db.Column('public_events', EventJSON),
-
-    # our project and issue relationship
-    db.Column('project_url_key', db.String),
-    db.Column('project_maintainer_username', db.String),
-    db.Column('issue_url_key', db.String),
-    db.ForeignKeyConstraint(
-        ['project_url_key', 'project_maintainer_username'],
-        ['project.url_key', 'project.maintainer_username']),
-    db.ForeignKeyConstraint(
-        ['project_url_key', 'project_maintainer_username', 'issue_url_key'],
-        ['issue.project_url_key', 'issue.project_maintainer_username', 'issue.url_key']))
-
-
 class Solution(Thing, SubscribableMixin, VotableMixin):
     """ A composite of the solution table and the thing table.
 
     Solutions are attributes of Issues that can be voted on, commented on etc
     """
 
-    __table__ = solution_table
-    solution_id = solution_table.c.id
+    id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
+    title = db.Column(db.String(128))
+    desc = db.Column(db.Text)
+    creator = db.relationship('User')
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.datetime.now)
+
+    # voting
+    votes = db.Column(db.Integer, default=0)
+
+    # Event log
+    public_events = db.Column(EventJSON)
+
+    # our project relationship and all keys
+    url_key = db.Column(db.String, unique=True)
+    project = db.relationship('Project')
+    project_url_key = db.Column(db.String)
+    project_maintainer_username = db.Column(db.String)
+    issue = db.relationship('Issue')
+    issue_url_key = db.Column(db.String)
+    __table_args__ = (db.ForeignKeyConstraint([project_url_key, project_maintainer_username],
+                                           [Project.url_key, Project.maintainer_username]),
+                      db.ForeignKeyConstraint([project_url_key, project_maintainer_username, issue_url_key],
+                                           [Issue.project_url_key, Issue.project_maintainer_username, Issue.url_key]),
+                      {})
+
     project = db.relationship(
         'Project',
         foreign_keys='[Solution.project_url_key, Solution.project_maintainer_username]')
@@ -776,117 +760,6 @@ class Solution(Thing, SubscribableMixin, VotableMixin):
         self.safe_save()
 
 
-class Transaction(base, PrivateMixin):
-    StatusVals = Enum('Pending', 'Cleared')
-    _status = db.Column(db.Integer, default=StatusVals.Pending.index)
-
-    id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Integer)
-    remaining = db.Column(db.Integer)
-    livemode = db.Column(db.Boolean)
-    stripe_id = db.Column(db.String, unique=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    stripe_created_at = db.Column(db.DateTime)
-    last_four = db.Column(db.Integer)
-    user = db.relationship('User')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-    standard_join = ['status',
-                     'StatusVals',
-                     'created_at',
-                     '-stripe_created_at']
-
-    acl = transaction_acl
-
-    @property
-    def status(self):
-        return self.StatusVals[self._status]
-
-    def get_stripe_charge(self):
-        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
-        return stripe.Charge.retrieve(self.stripe_id)
-
-
-class Transfer(base, PrivateMixin):
-    """ An object mirroring a stripe transfer """
-
-    id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    stripe_id = db.Column(db.String, unique=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship('User', foreign_keys=[user_id])
-    StatusVals = Enum('Pending', 'Cleared')
-    _status = db.Column(db.Integer, default=StatusVals.Pending.index)
-
-    standard_join = ['status',
-                     'StatusVals',
-                     '_status',
-                     'created_at',
-                     'amount',
-                     '-stripe_created_at']
-
-    acl = transfer_acl
-
-    @property
-    def status(self):
-        return self.StatusVals[self._status]
-
-    @property
-    def matured(self):
-        return (datetime.datetime.utcnow() - self.created_at).day >= (amount/100)
-
-
-class Earmark(base):
-    """ Represents a users intent to give money to another member. Linked
-    directly to a transaction. """
-    StatusVals = Enum('Pending', 'Assigned', 'Available')
-    _status = db.Column(db.Integer, default=StatusVals.Pending.index)
-
-    id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    sender = db.relationship('User', foreign_keys=[sender_id])
-    reciever_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    reciever = db.relationship('User', foreign_keys=[reciever_id])
-    transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'))
-    transaction = db.relationship('Transaction')
-    thing_id = db.Column(db.Integer, db.ForeignKey('thing.id'))
-    thing = db.relationship('Thing')
-
-    standard_join = ['status',
-                     'StatusVals',
-                     'created_at',
-                     '-stripe_created_at']
-
-    acl = earmark_acl
-
-    def roles(self, user=None):
-        """ Logic to determin what auth roles a user gets """
-        if not user:
-            user = current_user
-
-        if self.reciever_id == getattr(user, 'id', None):
-            return ['reciever']
-
-        if self.sender_id == getattr(user, 'id', None):
-            return ['sender']
-
-        if user.is_anonymous():
-            return ['anonymous']
-        else:
-            return ['user']
-
-    @property
-    def status(self):
-        return self.StatusVals[self._status]
-
-    @property
-    def matured(self):
-        return (datetime.datetime.utcnow() - self.created_at).day >= (amount/100)
-
-
 class Email(base):
     standard_join = []
 
@@ -896,53 +769,28 @@ class Email(base):
     verified = db.Column(db.Boolean, default=False)
     primary = db.Column(db.Boolean, default=True)
 
-
-user_table = db.Table('user', metadata,
-    db.Column('id', db.Integer, db.ForeignKey('thing.id'), primary_key=True),
-    db.Column('username', db.String(32), unique=True),
-
-    # User information
-    db.Column('created_at', db.DateTime, default=datetime.datetime.utcnow),
-    db.Column('_password', db.String),
-    db.Column('gh_token', db.String),
-
-    # Event information
-    db.Column('public_events', EventJSON),
-    db.Column('events', EventJSON),
-
-    # Github sync
-    gh_token = db.Column(db.String))
-
-
-class Recipient(base, PrivateMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    tripe_id = db.Column(db.String, unique=True)
-    name = db.Column(db.String)
-    verified = db.Column(db.Boolean)
-    livemode = db.Column(db.Boolean)
-    last_four = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    stripe_created_at = db.Column(db.DateTime)
-    user = db.relationship('User')
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-    standard_join = ['created_at',
-                     'last_four',
-                     'verified',
-                     'name',
-                     'created_at',
-                     '-stripe_created_at']
-
-    acl = recipient_acl
-
-    @property
-    def status(self):
-        return self.StatusVals[self._status]
+    @classmethod
+    def activate_email(self, email):
+        Email.query.filter_by(address=email).update({'verified': True})
 
 
 class User(Thing, SubscribableMixin):
-    __table__ = user_table
+    id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
+    username = db.Column(db.String(32), unique=True)
+
+    # User information
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    _password = db.Column(db.String)
+    gh_token = db.Column(db.String, unique=True)
+
+    # Event information
+    public_events = db.Column(EventJSON)
+    events = db.Column(EventJSON)
     __mapper_args__ = {'polymorphic_identity': 'User'}
+
+    # financial information
+    current_balance = db.Column(db.Integer, default=0)  # total unpaid
+    available_balance = db.Column(db.Integer, default=0)  # total available for earmarks
 
     standard_join = ['id',
                      'gh_linked',
@@ -1100,14 +948,8 @@ class User(Thing, SubscribableMixin):
     def get_id(self):
         return unicode(self.id)
 
-    def __str__(self):
-        return str(self.username)
-
     # Convenience functions
     # ========================================================================
-    def __repr__(self):
-        return '<User %r>' % (self.username)
-
     def __eq__(self, other):
         """ This returns the actual user object compaison when it's a proxy
         object.  Very useful since we do this for auth checks all the time """
@@ -1117,10 +959,6 @@ class User(Thing, SubscribableMixin):
             return self is other
 
     def get(self):
-        return self
-
-    def __get__(self, one, two):
-        current_app.logger.debug("{} : {}".format(one, two))
         return self
 
 
