@@ -1,5 +1,5 @@
 from . import db
-from .models import base, JSONEncodedDict, HSTOREStringify
+from .model_lib import base, JSONEncodedDict, HSTOREStringify
 from .fin_models import Earmark, Charge, Mark, Transfer, Recipient
 
 from datetime import datetime

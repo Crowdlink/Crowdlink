@@ -8,6 +8,7 @@ from jinja2 import FileSystemLoader
 
 import os
 import logging
+import cryptacular.bcrypt
 
 
 root = os.path.abspath(os.path.dirname(__file__) + '/../')
@@ -15,6 +16,7 @@ root = os.path.abspath(os.path.dirname(__file__) + '/../')
 db = SQLAlchemy()
 lm = LoginManager()
 oauth = OAuth()
+crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
 # OAuth configuration, must be outside function to be importable
 github = oauth.remote_app(

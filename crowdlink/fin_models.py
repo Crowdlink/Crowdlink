@@ -7,7 +7,7 @@ from decimal import Decimal, setcontext, BasicContext
 
 from . import db
 from .acl import charge_acl, earmark_acl, recipient_acl, transfer_acl
-from .models import base, PrivateMixin, StatusMixin
+from .model_lib import base, PrivateMixin, StatusMixin
 from .exc import FundingException
 
 import stripe
@@ -65,6 +65,7 @@ class Source(base):
                 self.created_at)
 
     __repr__ = __str__
+
 
 class Transaction(base):
     id = db.Column(db.Integer, primary_key=True)

@@ -1,14 +1,12 @@
 from . import db
-from .models import BaseMapper, EventJSON, User
+from .model_lib import BaseMapper
+from .models import User
 
 from sqlalchemy.orm import joinedload
 from flask import current_app
 
-import sqlalchemy
 import flask_sqlalchemy
 import datetime
-import copy
-import json
 
 
 class Event(BaseMapper):
