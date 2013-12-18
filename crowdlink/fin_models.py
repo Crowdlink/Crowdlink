@@ -56,6 +56,25 @@ class Source(base):
         db.session.add(log)
         self.remaining -= amount
 
+    def __str__(self):
+        return "<Source; id: {}; type: {}; amount: {}; remaining: {}; created_at: {}>".format(
+                self.id,
+                self.type,
+                self.amount,
+                self.remaining,
+                self.created_at)
+
+    __repr__ = __str__
+
+class Transaction(base):
+    id = db.Column(db.Integer, primary_key=True)
+    source = db.relationship('Source')
+    source_id = db.Column(db.Integer, db.ForeignKey('source.id'), nullable=False)
+    sink = db.relationship('Sink')
+    sink_id = db.Column(db.Integer, db.ForeignKey('sink.id'), nullable=False)
+    amount = db.Column(db.Integer, CheckConstraint('amount>0'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
 
 class Charge(Source, PrivateMixin, base):
     """ 1:1 with the Stripe charge object. Represnets a source for transactions
@@ -93,10 +112,7 @@ class Charge(Source, PrivateMixin, base):
         return stripe.Charge.retrieve(self.stripe_id)
 
     @classmethod
-    def create(cls, token, amount, user=None, event_data=None):
-        if user is None:
-            user = current_user
-
+    def create(cls, token, amount, user=current_user, event_data=None):
         card = token['id']
         livemode = token['livemode']
 
@@ -106,13 +122,13 @@ class Charge(Source, PrivateMixin, base):
         fee = int((Decimal(amount) *
                   Decimal(current_app.config['STRIPE_TRANSFER_PERC'])) + 30)
         charge = cls(
-            remaining=amount,
             livemode=livemode,
             user=user,
             stripe_id="",
             stripe_fee=fee,
             stripe_created_at=datetime.utcnow(),
             amount=amount - fee,
+            remaining=amount - fee,
         )
         db.session.add(charge)
         db.session.flush()  # flush so we can use in stripe request
@@ -157,6 +173,44 @@ class Sink(base):
         'polymorphic_on': type
     }
 
+    def fund(self, amount, types):
+        # acquire a list of possible sources, in sorted order
+        sources = []
+        for typ in types:
+            sources += (typ.query.
+                filter(typ.cleared == True).      # that cleared
+                filter(typ.user == self.user).    # owned by current user
+                filter(typ.remaining > 0).    # remaining balance
+                order_by(typ.created_at).     # finally, order by the date
+                with_lockmode('update').all())      # lock dat boi
+
+        current_app.logger.debug(str(sources))
+
+        # process logic for pulling funds from required sources
+        for source in sources:
+            if amount == 0:  # we're done, no more need be examined
+                break
+
+            if source.remaining >= amount:
+                source.remaining -= amount
+                tran = Transaction(amount=amount,
+                                   source=source,
+                                   sink=self)
+                amount = 0
+            else:
+                tran = Transaction(amount=source.remaining,
+                                   source=source,
+                                   sink=self)
+                amount -= source.remaining
+                source.remaining = 0
+            db.session.add(tran)
+
+        # if they still need to allocate money to fund it and we're out of
+        # sources
+        if amount > 0:
+            db.session.rollback()
+            raise FundingException
+
 
 class Transfer(Sink, PrivateMixin, base):
     """ An object mirroring a stripe transfer """
@@ -181,15 +235,16 @@ class Transfer(Sink, PrivateMixin, base):
         return self.StatusVals[self._status]
 
     @classmethod
-    def create(cls, amount, recipient, user=None):
-        if user is None:
-            user = current_user
-
-        # get a total amount of cleared marks available to fund this transfer
-        total = sum([m.remaining for m in Mark.query.filter_by(user=user, cleared=True)])
-        # run some safety checks
-        if recipient.user != user or \
-           total < amount:
+    def create(cls, amount, recipient, user=current_user):
+        if (recipient.user != user or  # Make sure it's going to them
+           total < user.available_marks or  # Ensure they have enough marks
+           user.available_balance < amount):  # ensure the marks are available
+            current_app.logger.warn(
+                "Create Transfer was called with invalid pre-conditions"
+                "\nRecp Userid: {}\nAvailable Marks: {}\nAvailable Balance: {}"
+                .format(recipient.user.userid,
+                        user.available_marks,
+                        user.available_balance))
             raise AttributeError
 
         db.session.rollback()  # for the nervous person
@@ -213,27 +268,8 @@ class Transfer(Sink, PrivateMixin, base):
             name=retval['name']
         )
 
-        # process logic for pulling funds from required sources
-        deduct_total = amount
-        while deduct_total > 0:
-            src = (Mark.query.
-                   filter(Mark.remaining > 0).      # with a remaining balance
-                   filter_by(cleared=True).         # that have cleared
-                   filter_by(user=user).            # owned by current user
-                   order_by(Mark.created_at).       # order by the date
-                   with_lockmode('update').first()) # lock the row from updates
-
-            if src is None:  # if we're out of funding period
-                db.session.rollback()
-                raise FundingException
-
-            if src.remaining >= deduct_total:
-                src.withdraw(deduct_total)
-                deduct_total = 0
-            else:
-                # drain it
-                deduct_total -= src.remaining
-                src.withdraw(src.remaining)
+        # fund the transfer with Marks
+        trans.fund(amount, [Mark])
 
         user.available_balance -= amount
         user.current_balance -= amount
@@ -306,7 +342,8 @@ class Earmark(StatusMixin, Sink, base):
         if self.cleared or \
            len(self.marks) > 0 or \
            (self.thing.type == 'Issue' and self.thing.status != 'Completed'):
-            current_app.logger.debug(
+            current_app.logger.warn(
+                "Assign Earmark was called with invalid pre-conditions"
                 "Cleared: {}\nMark Count: {}\nThing Type: {}\nThing Status: {}"
                 .format(self.cleared,
                         len(self.marks),
@@ -327,21 +364,20 @@ class Earmark(StatusMixin, Sink, base):
         user_tuple.sort(key=lambda x: x[0].id)
         marks = []
         for user, perc in user_tuple:
-            marks.append(Mark.create(
-                self,
+            marks.append([
                 perc,
                 # floored to avoid floating point rounding problems
-                math.floor((perc / 100) * self.amount),
-                user))
+                math.floor((perc / 100.0) * self.amount),
+                user])
         # loop through an increment the amount given round robin until we've
         # allocated all remaining cents from the amount
         i = itertools.cycle(marks)
-        while sum([mark.amount for mark in marks]) < self.amount:
+        while sum([mark[1] for mark in marks]) < self.amount:
             u = i.next()
-            u.amount += 1
-            u.remaining += 1
+            u[1] += 1
 
-        for mark in marks:
+        for perc, amount, user in marks:
+            mark = Mark.create(self, perc, amount, user)
             db.session.add(mark)
 
         # change the status to assigned
@@ -373,7 +409,8 @@ class Earmark(StatusMixin, Sink, base):
            self.user.current_balance < self.amount or \
            (self.thing.type == 'Issue' and self.thing.status != 'Completed'):
 
-            current_app.logger.debug(
+            current_app.logger.warn(
+                "Clear Earmark was called with invalid pre-conditions"
                 "\nCleared: {}\nUser Balance: {}\nAmount: {}\nThing Status: {}"
                 "\nThing Type: {}\nFrozen: {}\nDisputed: {}\n"
                 .format(self.cleared,
@@ -399,45 +436,18 @@ class Earmark(StatusMixin, Sink, base):
         )
         db.session.add(log)
 
-        # the amount needing to be allocated
-        deduct_total = self.amount
-        # process logic for pulling funds from required sources
-        typ = Mark  # start pulling from Marks
-        while deduct_total > 0:
-            src = (typ.query.
-                   with_lockmode('update').      # lock dat boi
-                   filter(typ.remaining > 0).    # remaining balance
-                   filter_by(cleared=True).      # that cleared
-                   filter_by(user=self.user).    # owned by current user
-                   order_by(typ.created_at).     # finally, order by the date
-                   first())                      # lock the row from updates
-
-            # if we're out of Marks, switch to Charges
-            if typ is Mark and src is None:
-                typ = Charge
-                continue
-            if typ is Charge and src is None:  # if we're out of funding period
-                db.session.rollback()
-                raise FundingException
-
-            if src.remaining >= deduct_total:
-                src.remaining -= deduct_total
-                deduct_total = 0
-            else:
-                deduct_total -= src.remaining
-                src.remaining = 0
-
+        # fund the clearing with a common function
+        self.fund(self.amount, [Mark, Charge])
         self.cleared = True
+        # clear all the marks on this object now that it's funded
         for mark in self.marks:
             mark.clear()
-        # now give the money to the recipients and update all statuses
+
+        # boom!
         db.session.commit()
 
-    def roles(self, user=None):
+    def roles(self, user=current_user):
         """ Logic to determin what auth roles a user gets """
-        if not user:
-            user = current_user
-
         user_id = getattr(user, 'id', None)
 
         for mark in self.marks:
@@ -453,14 +463,15 @@ class Earmark(StatusMixin, Sink, base):
             return ['user']
 
     @classmethod
-    def create(cls, thing, amount, user=None):
-        if user is None:
-            user = current_user
+    def create(cls, thing, amount, user=current_user):
 
         amount = int(amount)
         if amount < 50:
             raise ValueError('Amount is too low to create earmark')
+        if amount > user.available_balance:
+            raise FundingException
 
+        db.session.rollback()
         setcontext(BasicContext)
         fee = Decimal(amount) * Decimal(current_app.config['TRANSFER_FEE'])
         mark = Earmark(
@@ -500,11 +511,9 @@ class Mark(Source, PrivateMixin, base):
     __table_args__ = (db.UniqueConstraint("earmark_id", "user_id"),)
 
     @classmethod
-    def create(cls, earmark, perc, amount, user=None):
+    def create(cls, earmark, perc, amount, user=current_user):
         """ Creates a new Mark object, but does not commit it to the database
         """
-        if user is None:
-            user = current_user
 
         mark = cls(amount=amount,
                    remaining=amount,
@@ -555,10 +564,7 @@ class Recipient(PrivateMixin, base):
         return self.StatusVals[self._status]
 
     @classmethod
-    def create(cls, token, name, corporation, tax_id=None, user=None):
-        if user is None:
-            user = current_user
-
+    def create(cls, token, name, corporation, tax_id=None, user=current_user):
         account = token['id']
         livemode = token['livemode']
         typ = 'corporation' if corporation else 'individual'

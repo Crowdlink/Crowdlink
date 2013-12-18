@@ -842,6 +842,9 @@ class User(Thing, SubscribableMixin):
 
     acl = user_acl
 
+    @property
+    def available_marks(self):
+        return sum([m.remaining for m in Mark.query.filter(user == user and cleared is True)])
     def roles(self, user=None):
         """ Logic to determin what auth roles a user gets """
         if not user:

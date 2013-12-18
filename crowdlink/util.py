@@ -159,7 +159,7 @@ def provision():
     # put some money in a few accounts
     for name in ['shaggy', 'daphne', 'scrappy']:
         for _ in xrange(3):
-            amount = choice([5, 15, 20, 30, 50]) * 100
+            amount = choice([333, 666, 1000])
             Charge.create(stripe_card_token(), amount, users[name])
             time.sleep(0.02)  # try not to timeout stripe
 
@@ -167,7 +167,7 @@ def provision():
     for i in xrange(4):
         for name in ['shaggy', 'daphne']:
             user = users[name]
-            amount = round(user.available_balance * (choice([5, 15, 20, 25]) / 100.0))
+            amount = round(user.available_balance * (choice([30]) / 100.0))
             Earmark.create(issues[i], amount, user)
 
     # now that we have some earmarks, mature some
