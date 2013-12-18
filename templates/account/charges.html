@@ -1,0 +1,40 @@
+<div class='col-md-9' ng-controller='chargeController' ng-init='init()' ng-show="view=='charges'" style='padding:30px;'>
+  <div ng-show='charges'>
+    <h4>Charges</h4>
+    <table class='table table-hover'>
+      <tr>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Card</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+      <tbody ng-repeat='charge in charges'>
+        <tr class='clickable' ng-class="{1: 'success', 0: 'warning'}[charge._status]" ng-click='charge.details=!charge.details'>
+          <td>
+            <i class='fa fa-dollar'></i>
+            {[{ charge.amount/100 }]}
+          </td>
+          <td>
+            <i class='fa fa-calendar'></i>
+            {[{ charge.created.$date | date:'short' }]}
+          </td>
+          <td class='mono'>
+            <i class='fa fa-credit-card'></i>
+            **** **** **** {[{ charge.last_four }]}
+          </td>
+          <td>
+            {[{ charge.status }]}
+          </td>
+          <td>
+            <i class='fa' ng-class="{true: 'fa-caret-up', false: 'fa-caret-down'}[charge.details]"></i>
+          </td>
+        </tr>
+        <tr ng-show='charge.details'>
+          <td colspan='5'>Look at all the details</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <h4 ng-hide='charges'>No charges to show.</h4>
+</div>

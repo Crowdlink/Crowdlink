@@ -306,11 +306,6 @@ mainControllers.controller('accountController',
       $scope.view = $routeParams.subsection
     else
       $scope.view = 'general'
-
-    # update the profile url when the username changes
-    $scope.$watch('view', ->
-      $location.path("/account/" + $scope.view).replace()
-    )
 )
 
 # ProjectController============================================================

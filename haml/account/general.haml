@@ -1,0 +1,18 @@
+.col-md-9{"ng-show" => "view=='general'"}
+  %h3 Account Information
+  .panel.panel-default
+    %table.table
+      %tr
+        %th Username
+        %td{"ng-bind" => "user.username"}
+      %tr
+        %th Primary Email
+        %td
+          {[{user.primary_email.address}]}
+          %span.label{"ng-class" => "{true: 'label-success', false: 'label-danger'}[user.primary_email.verified]"}
+            %span{"ng-show" => "user.primary_email.verified"} Verified
+            %span{"ng-hide" => "user.primary_email.verified"} Un-Verified
+      %tr{"ng-show" => "user.gh_linked"}
+        %th Github Account
+        %td
+          {[{user.gh.login}]} {[{user.gh_token}]}
