@@ -92,9 +92,9 @@ user_anon = P(
               'disp_join']
      )).keys
 user_user = P(user_anon,
-                  ('action', ['vote',
-                              'watch']
-                   )).keys
+              ('action', ['vote',
+                          'watch']
+               )).keys
 user_owner = P(user_anon,
                user_user,
                ('edit', ['url_key',
@@ -102,7 +102,7 @@ user_owner = P(user_anon,
                          'desc']
                 ),
                ('view', ['home_join']
-               )).keys
+                )).keys
 
 user_acl = {'owner': user_owner,
             'anonymous': user_anon,
@@ -152,15 +152,34 @@ earmark_user = []
 earmark_sender = P(earmark_anon,
                    earmark_user,
                    ('edit', ['amount']
-                   ),
+                    ),
                    ('view', ['standard_join']
-                   )).keys
+                    )).keys
 earmark_reciever = P(earmark_anon,
                      earmark_user,
                      ('view', ['standard_join']
-                     )).keys
+                      )).keys
 
 earmark_acl = {'reciever': earmark_reciever,
                'sender': earmark_sender,
                'anonymous': earmark_anon,
                'user': earmark_user}
+
+
+# Mark
+mark_anon = []
+mark_user = []
+mark_sender = P(mark_anon,
+                mark_user,
+                ('edit', ['amount']
+                 ),
+                ('view', ['standard_join']
+                 )).keys
+mark_reciever = P(mark_anon,
+                  mark_user,
+                  ('view', ['standard_join']
+                   )).keys
+
+mark_acl = {'owner': mark_sender,
+            'anonymous': mark_anon,
+            'user': mark_user}

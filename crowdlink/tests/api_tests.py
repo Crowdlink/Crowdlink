@@ -17,7 +17,6 @@ class APITests(BaseTest):
                (Project, 'project'),
                (Solution, 'solution')]
         for cls, key in lst:
-            print "Voting for " + key
             obj = self.db.session.query(cls).first()
             res = self.json_put('/api/' + key,
                                 {'id': obj.id,
@@ -44,7 +43,6 @@ class APITests(BaseTest):
                (Solution, 'solution'),
                (User, 'user')]
         for cls, key in lst:
-            print "Subscribing for " + key
             obj = self.db.session.query(cls).first()
             res = self.json_put('/api/' + key,
                                 {'id': obj.id,
@@ -162,7 +160,8 @@ class APITests(BaseTest):
 
     def test_explicit_user_denied(self):
         """ ensure that anonymous users can't access user data"""
-        qs = {'id': 1,
+        id = User.query.filter_by(username='crowdlink').one().id
+        qs = {'id': id,
               'join_prof': 'settings_join'}
         res = self.json_get('/api/user', qs)
         pprint(res.json)
@@ -171,7 +170,8 @@ class APITests(BaseTest):
 
     def test_explicit_user(self):
         """ simple explicit id definition for user lookup """
-        data = {'id': 1,
+        id = User.query.filter_by(username='crowdlink').one().id
+        data = {'id': id,
               'join_prof': 'page_join'}
         res = self.json_get('/api/user', data).json
         pprint(res)
@@ -247,7 +247,7 @@ class APITests(BaseTest):
     def test_check_email(self):
         assert self.json_post(
             '/api/email/check',
-            {'value': 'support@crowdlink.com'}).json['taken']
+            {'value': 'admin@crowdlink.com'}).json['taken']
         assert self.json_post(
             '/api/email/check',
             {'value': 'dflgj@dsflkjg.com'}).json['taken'] is False

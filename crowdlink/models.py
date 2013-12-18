@@ -212,6 +212,31 @@ class Thing(base):
             earmark.clear()
 
 
+class HSTOREStringify(TypeDecorator):
+    impl = HSTORE
+    def process_bind_param(self, value, dialect):
+        if value:
+            return {key: str(val) for key, val in value.items()}
+        else:
+            return None
+
+    def process_result_value(self, value, dialect):
+        return value
+
+
+class JSONEncodedDict(TypeDecorator):
+    impl = TEXT
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            value = json.dumps(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            value = json.loads(value)
+        return value
+
+
 class EventJSON(TypeDecorator):
     """ Wraps a list of Event objects into a JSON encoded list """
 
@@ -770,6 +795,7 @@ class Email(base):
 class User(Thing, SubscribableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
     username = db.Column(db.String(32), unique=True)
+    admin = db.Column(db.Boolean, default=False)
 
     # User information
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

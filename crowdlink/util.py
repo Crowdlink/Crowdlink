@@ -82,13 +82,29 @@ def provision():
 
     from random import choice
     from flask import current_app
+    from flask.ext.login import login_user
 
     import time
 
     stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
     users = {}
 
-    # Create a simple project and user
+    # make an admin user, and set him as the current user
+    admin = User.create_user("admin", "testing", "admin@crowdlink.com")
+    admin.admin = True  # make them an admin
+    db.session.commit()
+    Email.activate_email('admin@crowdlink.com')
+    login_user(admin)
+
+    # make a bunch of testing users
+
+    # velma doesn't have a real username
+    #velma = User.create_user("", "testing", "velma@crowdlink.com")
+
+    # fred isn't activated, no email address verified
+    fred = User.create_user("fred", "testing", "fred@crowdlink.com")
+
+    # regular users...
     for username in ['scrappy', 'shaggy', 'scooby', 'daphne', 'crowdlink',
                      'barney', 'betty']:
         usr = User.create_user(username, "testing", username + "@crowdlink.com")
@@ -105,6 +121,7 @@ def provision():
     proj.save()
     proj.subscribe(user=usr)
 
+    # and some issue templates for the project
     issues_tmpl = [
 ('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.',
     ['test']),
@@ -115,6 +132,8 @@ def provision():
 ('Promote with donations', 'Instead of dontaing to the project, donate to a charity, yet earmark this donation towards a project or Improvement to show your support'),
 ('Google Analytics Hooks', 'Allow project maintainers to specify a Google Analytics Key and select from a range of events that they would like logged into their GA account'),
         ]
+
+    # add them to the database and keep track of useful information
     issues = []
     for data in issues_tmpl:
         # add some solutions to the issue
@@ -135,12 +154,6 @@ def provision():
                 creator=users['crowdlink'],
                 issue=issue).save()
 
-    # velma doesn't have a real username
-    #velma = User.create_user("", "testing", "velma@crowdlink.com")
-
-    # fred isn't activated, no email address verified
-    fred = User.create_user("fred", "testing", "fred@crowdlink.com")
-
     # Setup tons of test financial data
     ##########################################################################
     # put some money in a few accounts
@@ -148,20 +161,19 @@ def provision():
         for _ in xrange(3):
             amount = choice([5, 15, 20, 30, 50]) * 100
             Charge.create(stripe_card_token(), amount, users[name])
-            time.sleep(0.2)
+            time.sleep(0.02)  # try not to timeout stripe
 
     # earmark onto a few different issues with a few users
     for i in xrange(4):
         for name in ['shaggy', 'daphne']:
             user = users[name]
             amount = round(user.available_balance * (choice([5, 15, 20, 25]) / 100.0))
-            print user.available_balance
             Earmark.create(issues[i], amount, user)
 
     # now that we have some earmarks, mature some
     for i in xrange(3):
         for earmark in issues[i].earmarks:
-            earmark.matured = True
+            earmark.mature()
         db.session.commit()
 
     # mark our issue as completed

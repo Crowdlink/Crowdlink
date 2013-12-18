@@ -1,4 +1,4 @@
-from flask import Flask, current_app, jsonify
+from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager
 from flask.ext.restful import Api
@@ -7,6 +7,7 @@ from flask_oauthlib.client import OAuth
 from jinja2 import FileSystemLoader
 
 import os
+import logging
 
 
 root = os.path.abspath(os.path.dirname(__file__) + '/../')
@@ -51,6 +52,9 @@ def create_app(config='../application.cfg'):
     if app.config['DEBUG']:
         from flask_debugtoolbar import DebugToolbarExtension
         DebugToolbarExtension(app)
+        app.logger.handlers[0].setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s '
+            '[in %(filename)s:%(lineno)d]'))
 
     # register all our plugins
     db.init_app(app)
@@ -60,7 +64,7 @@ def create_app(config='../application.cfg'):
 
     # Route registration
     # =========================================================================
-    from . import api, views, models, monkey_patch
+    from . import api, views, models, monkey_patch, fin_models, log_models
     app.register_blueprint(api.api, url_prefix='/api')
     app.register_blueprint(views.main)
 

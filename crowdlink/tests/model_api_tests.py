@@ -15,10 +15,13 @@ class ModelAPITests(BaseTest):
         """ create some earmarks with our charged money. """
         first_issue = self.db.session.query(Issue).first()
         prev_amount = self.user.available_balance
-        amnt = self.user.available_balance*0.10
-        mark = Earmark.create(first_issue.id, amnt)
+        amnt = int(self.user.available_balance*0.10)
+        mark = Earmark.create(first_issue, amnt)
 
         self.db.session.refresh(self.user)
+        print self.user.available_balance
+        print prev_amount
+        print amnt
         assert self.user.available_balance == prev_amount - amnt
         assert mark.id > 0
         assert mark.user_id > 0

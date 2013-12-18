@@ -613,6 +613,9 @@ class RecipientAPI(BaseResource):
         stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
         user = self.get_user(js)
 
+        # ensure we're not getting passed tokens inconsistent with running mode
+        assert js['token']['livemode'] is current_app.config['STRIPE_LIVEMODE']
+
         # check to ensure they haven't created another recipient
         if Recipient.query.filter_by(user=user).count() > 0:
             return {'success': False,
@@ -662,6 +665,9 @@ class ChargeAPI(BaseResource):
         js = request.json_dict
         user = self.get_user(js)
         amount = js['amount']
+
+        # ensure we're not getting passed tokens inconsistent with running mode
+        assert js['token']['livemode'] is current_app.config['STRIPE_LIVEMODE']
 
         # check the amount they're trying to charge before running the charge
         # with stripe

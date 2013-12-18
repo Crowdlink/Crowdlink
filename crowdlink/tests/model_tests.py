@@ -1,23 +1,17 @@
-import crowdlink
-import json
-import datetime
-
-from flask.ext.login import current_user
-from crowdlink.tests import BaseTest, login_required, login_required_ctx
+from crowdlink.tests import BaseTest, login_required_ctx
 from crowdlink.models import Issue, Project, Solution, User
 from crowdlink.fin_models import Earmark
 from pprint import pprint
 
 
 class ModelTests(BaseTest):
-
+    @login_required_ctx
     def test_relationship_poly(self):
         """ does our polymorphic relationship work as expected? """
         lst = [Issue, Project, User, Solution]
         for obj in lst:
             obj_inst = self.db.session.query(obj).first()
-            earmark = Earmark(amount=1000,
-                              thing_id=obj_inst.id).save()
-            self.db.session.refresh(earmark)
-            pprint(earmark.thing.to_dict())
-            assert isinstance(earmark.thing, obj)
+            mark = Earmark.create(obj_inst, 1000)
+            self.db.session.refresh(mark)
+            pprint(mark.thing.to_dict())
+            assert isinstance(mark.thing, obj)
