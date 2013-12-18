@@ -45,11 +45,9 @@ class BaseMapper(object):
 
     # Access Control Methods
     # =========================================================================
-    def get_acl(self, user=None):
+    def get_acl(self, user=current_user):
         """ Generates an acl list for a specific user which defaults to the
         authed user """
-        if not user:
-            user = current_user
         roles = self.roles(user=user)
         allowed = set()
         for role in roles:
@@ -57,10 +55,8 @@ class BaseMapper(object):
 
         return allowed
 
-    def roles(self, user=None):
+    def roles(self, user=current_user):
         """ This should be overriden to use logic for determining roles """
-        if not user:
-            user = current_user
         return []
 
     def can(self, action):
@@ -182,9 +178,7 @@ class SubscribableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
 
-    def unsubscribe(self, user=None):
-        if user is None:
-            user = current_user
+    def unsubscribe(self, user=current_user):
         Subscription.query.filter_by(
             subscriber=user.get(),
             subscribee_id=self.id).delete()
@@ -222,9 +216,7 @@ class SubscribableMixin(object):
         return True
 
     @property
-    def subscribed(self, user=None):
-        if user is None:
-            user = current_user
+    def subscribed(self, user=current_user):
         if not user.is_anonymous():
             return bool(Subscription.query.filter_by(
                 subscriber=user.get(),
@@ -316,11 +308,8 @@ class EventJSON(TypeDecorator):
 
 class PrivateMixin(object):
     """ Common methods for objects that are private """
-    def roles(self, user=None):
+    def roles(self, user=current_user):
         """ Logic to determin what auth roles a user gets """
-        if not user:
-            user = current_user
-
         if self.user_id == getattr(user, 'id', None):
             return ['owner']
 

@@ -112,11 +112,8 @@ class Project(Thing, SubscribableMixin, VotableMixin):
     def issues(self):
         return Issue.query.filter_by(project=self)
 
-    def roles(self, user=None):
+    def roles(self, user=current_user):
         """ Logic to determin what auth roles a user gets """
-        if user is None:
-            user = current_user
-
         if self.maintainer == user:
             return ['maintainer']
 
@@ -243,11 +240,8 @@ class Issue(StatusMixin, Thing, SubscribableMixin, VotableMixin):
     def solutions(self):
         return Solution.query.filter_by(issue=self)
 
-    def roles(self, user=None):
+    def roles(self, user=current_user):
         """ Logic to determin what roles a person gets """
-        if not user:
-            user = current_user
-
         roles = []
 
         if self.project.maintainer == user:
@@ -368,11 +362,8 @@ class Solution(Thing, SubscribableMixin, VotableMixin):
                   'title',
                   'get_abs_url']
 
-    def roles(self, user=None):
+    def roles(self, user=current_user):
         """ Logic to determin what roles a person gets """
-        if not user:
-            user = current_user
-
         roles = []
 
         if self.project.maintainer == user:
@@ -504,11 +495,8 @@ class User(Thing, SubscribableMixin):
         return sum([m.remaining for m in Mark.query.filter(
             Mark.user == self and Mark.cleared is True)])
 
-    def roles(self, user=None):
+    def roles(self, user=current_user):
         """ Logic to determin what auth roles a user gets """
-        if not user:
-            user = current_user
-
         if self.id == getattr(user, 'id', None):
             return ['owner']
 
