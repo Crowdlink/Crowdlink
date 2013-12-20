@@ -12,7 +12,7 @@ class PaymentTests(BaseTest):
     @login_required
     def test_run_charge(self):
         # create a new token via the api. this is usually done via the JS side
-        stripe.api_key = self.app.config['STRIPE_SECRET_KEY']
+        stripe.api_key = self.app.config['stripe_secret_key']
         data = {'amount': 1500,
                 'token': stripe_card_token()}
         pprint(data)
@@ -28,7 +28,7 @@ class PaymentTests(BaseTest):
     @login_required
     def test_recipient_create(self):
         """ test recipeint creation """
-        stripe.api_key = self.app.config['STRIPE_SECRET_KEY']
+        stripe.api_key = self.app.config['stripe_secret_key']
         # run our recipient test
         data = {'name': 'John Doe',
                 'corporation': False,

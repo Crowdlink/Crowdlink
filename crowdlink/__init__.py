@@ -7,6 +7,7 @@ from flask_oauthlib.client import OAuth
 from jinja2 import FileSystemLoader
 
 import os
+import json
 import logging
 import cryptacular.bcrypt
 
@@ -21,27 +22,25 @@ crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 # OAuth configuration, must be outside function to be importable
 github = oauth.remote_app(
     'github',
-    app_key='GITHUB'
+    app_key='github'
 )
 
 
-def create_app(config='../application.cfg'):
+def create_app(config='/application.json'):
 
     # initialize our flask application
     app = Flask(__name__, static_folder='../static', static_url_path='/static')
 
     # set our template path and configs
     app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
-    app.config.from_pyfile(config)
-    app.config.update(
-        EMAIL_SERVER="localhost",
-        EMAIL_DEBUG=0,
-        EMAIL_USE_TLS=False,
-        EMAIL_PORT=25
-    )
-    app.config['GITHUB'] = dict(
-        consumer_key=app.config['GITHUB_CONSUMER_KEY'],
-        consumer_secret=app.config['GITHUB_CONSUMER_SECRET'],
+    config_vars = json.loads(file(root + config).read())
+    # merge the public and private keys
+    config_vars = dict(config_vars['public'].items() + config_vars['private'].items())
+    for key, val in config_vars.items():
+        app.config[key] = val
+    app.config['github'] = dict(
+        consumer_key=app.config['github_consumer_key'],
+        consumer_secret=app.config['github_consumer_secret'],
         request_token_params={'scope': 'user:email,repo'},
         base_url='https://api.github.com/',
         request_token_url=None,

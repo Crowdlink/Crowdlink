@@ -109,7 +109,7 @@ class Charge(Source, PrivateMixin, base):
         return self.StatusVals[self._status]
 
     def get_stripe_charge(self):
-        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+        stripe.api_key = current_app.config['stripe_secret_key']
         return stripe.Charge.retrieve(self.stripe_id)
 
     @classmethod
@@ -121,7 +121,7 @@ class Charge(Source, PrivateMixin, base):
         # API...
         setcontext(BasicContext)
         fee = int((Decimal(amount) *
-                  Decimal(current_app.config['STRIPE_TRANSFER_PERC'])) + 30)
+                  Decimal(current_app.config['stripe_transfer_perc'])) + 30)
         charge = cls(
             livemode=livemode,
             user=user,
@@ -474,7 +474,7 @@ class Earmark(StatusMixin, Sink, base):
 
         db.session.rollback()
         setcontext(BasicContext)
-        fee = Decimal(amount) * Decimal(current_app.config['TRANSFER_FEE'])
+        fee = Decimal(amount) * Decimal(current_app.config['transfer_fee'])
         mark = Earmark(
             amount=int(amount)-fee,
             fee=fee,

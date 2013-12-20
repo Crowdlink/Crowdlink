@@ -2,18 +2,20 @@
 %html{lang: "en", "ng-app" => "mainApp", "ng-controller" => "rootController"}
   %head
     %meta{content: "width=device-width, initial-scale=1.0", name: "viewport"}/
-    %link{href: "/static/lib/css/bootstrap.min.css", media: "screen", rel: "stylesheet"}/
-    %link{href: "/static/css/main.css", media: "screen", rel: "stylesheet"}/
-    %link{href: "/static/lib/css/font-awesome.min.css", rel: "stylesheet"}/
+    {% if production %}
+    %link{href: "{{ static_path }}css/common.min.css", media: "screen", rel: "stylesheet"}/
+    {% else %}
+    %link{href: "{{ static_path }}css/bootstrap.css", media: "screen", rel: "stylesheet"}/
+    %link{href: "{{ static_path }}css/main.css", media: "screen", rel: "stylesheet"}/
+    {% endif %}
+    %link{href: "//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css", rel: "stylesheet"}/
     %title{"ng-bind" => "_title"} Crowd Link
   %body
     .spinner-overlay.fade{"ng-show" => "loading"}
       %i.fa.fa-3x.fa-spin.fa-spinner
+    / CDN Based ==============================================================
     / Jquery
     %script{src: "//code.jquery.com/jquery-1.10.1.min.js"}
-    %script{src: "//malsup.github.com/jquery.form.js"}
-    / Yota
-    %script{src: "/static/lib/js/yota.js"}
     / Showdown
     %script{src: "//cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"}
     / Angular
@@ -22,31 +24,35 @@
     %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-route.min.js"}
     %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-sanitize.min.js"}
     %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-animate.min.js"}
-    / Noty notifications
-    %script{src: "/bower_components/noty/js/noty/jquery.noty.js"}
-    %script{src: "/static/js/noty_theme.js"}
-    %script{src: "/static/js/noty_topcenter.js"}
-    / Fusejs searching
-    %script{src: "/bower_components/fuse.js/fuse.js"}
     / Bootstrap
     %script{src: "//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"}
-    / Markitup Markdown editor
-    %script{src: "/static/lib/js/jquery.markitup.js", type: "text/javascript"}
     / Strip
     %script{src: "https://checkout.stripe.com/checkout.js", type: ""}
-    / My libs
-    %script{src: "/static/js/lib.js"}
-    %script{src: "/static/js/app.js"}
-    %script{src: "/static/js/controllers.js"}
-    %script{src: "/static/js/services.js"}
-    #wrap{"ng-init" => "init({{logged_in}}, '{{userid}}')"}
+    / Internally managed =====================================================
+    {% if production %}
+    %script{src: "{{ static_path }}js/common.min.js"}
+    {% else %}
+    / Noty notifications
+    %script{src: "/bower_components/noty/js/noty/jquery.noty.js"}
+    %script{src: "{{ static_path }}js/noty_theme.js"}
+    %script{src: "{{ static_path }}js/noty_topcenter.js"}
+    / Fusejs searching
+    %script{src: "/bower_components/fuse.js/fuse.js"}
+    / Markitup Markdown editor
+    %script{src: "{{ static_path }}lib/js/jquery.markitup.js", type: "text/javascript"}
+    / Internal libs
+    %script{src: "{{ static_path }}js/app.js"}
+    %script{src: "{{ static_path }}js/controllers.js"}
+    %script{src: "{{ static_path }}js/services.js"}
+    {% endif %}
+    {% raw %}#wrap{"ng-init" => "init({{logged_in}}, '{{userid}}')"}{% endraw %}
       .navbar.navbar-default.navbar-fixed-top
         .container.no-gutter
           %a.navbar-brand.logo{href: "#/home"}
             %span.hidden-xs
-              %img{border: "0", src: "/static/img/logo.jpg"}/
+              %img{border: "0", src: "{{ static_path }}img/logo.jpg"}/
             %span.visible-xs
-              %img{border: "0", src: "/static/img/logo_sm.jpg"}/
+              %img{border: "0", src: "{{ static_path }}img/logo_sm.jpg"}/
           %ul.nav.nav-pills.main-nav-pills
             %li{"ng-class" => "{true: 'active'}[location.path().lastIndexOf('/account', 0) === 0]", "ng-show" => "logged_in"}
               %a{href: "#/account"}

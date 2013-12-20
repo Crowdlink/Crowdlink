@@ -150,7 +150,7 @@ mainControllers.controller('rootController',
   $scope.logout = ->
     $http(
       method: 'GET'
-      url: window.api_path + 'logout'
+      url: '{{ api_path }}logout'
     ).success((data, status, headers) ->
       if data.access_denied
         $rootScope.logged_in = false
@@ -411,7 +411,7 @@ mainControllers.controller('newChargeController',
     $scope.pay = () ->
       # Open Checkout with further options
       handler.open
-        image: window.static_path + "/img/logo_stripe.png"
+        image: "{{ static_path }}img/logo_stripe.png"
         name: "Featurelet"
         description: "Credits ($" + $scope.actual_amt/100 + ")"
         amount: $scope.actual_amt

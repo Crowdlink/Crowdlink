@@ -6,21 +6,17 @@
       %a{href: "{[{project.get_abs_url}]}"} {[{ project.name }]}
     %li.active Settings
   .row{"ng-show" => "user.gh_linked"}
-    {% if sync_form %}
-    {{sync_form|safe}}
-    {% else %}
     .col-md-9
       %h3 GitHub Synchronization Details
       .panel.panel-default
         %table.table
           %tr
             %th Github Repository
-            %td {{project.gh_repo_path}}
+            %td {[{project.gh_repo_path}]}
           %tr
             %th Repo ID
-            %td.mono {{project.gh_repo_id}}
+            %td.mono {[{project.gh_repo_id}]}
           %tr
             %th Last Synced
             %td
-              {{project.gh_synced_at|date_ago}} ({{project.gh_synced_at|datetime}})
-    {%endif%}
+              {[{project.gh_synced_at|date_ago}]} ({[{project.gh_synced_at|datetime}]})

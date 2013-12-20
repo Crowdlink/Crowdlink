@@ -73,7 +73,7 @@ def catch_common(func, *args, **kwargs):
 def catch_stripe(func, *args, **kwargs):
     # catches the more generic stripe errors and logs them
     js = request.json_dict
-    stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+    stripe.api_key = current_app.config['stripe_secret_key']
     try:
         return func(*args, **kwargs)
 
@@ -568,7 +568,7 @@ class TransferAPI(BaseResource):
         """ Create a new transfer object with stripe, record the object locally
         """
         js = request.json_dict
-        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+        stripe.api_key = current_app.config['stripe_secret_key']
         user = self.get_user(js)
         # make the assumption that there's only one recipient they can pick for
         # now
@@ -610,11 +610,11 @@ class RecipientAPI(BaseResource):
     def post(self):
         """ Runs a request to stripe to create a new recipient from a token """
         js = request.json_dict
-        stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+        stripe.api_key = current_app.config['stripe_secret_key']
         user = self.get_user(js)
 
         # ensure we're not getting passed tokens inconsistent with running mode
-        assert js['token']['livemode'] is current_app.config['STRIPE_LIVEMODE']
+        assert js['token']['livemode'] is current_app.config['stripe_livemode']
 
         # check to ensure they haven't created another recipient
         if Recipient.query.filter_by(user=user).count() > 0:
@@ -667,7 +667,7 @@ class ChargeAPI(BaseResource):
         amount = js['amount']
 
         # ensure we're not getting passed tokens inconsistent with running mode
-        assert js['token']['livemode'] is current_app.config['STRIPE_LIVEMODE']
+        assert js['token']['livemode'] is current_app.config['stripe_livemode']
 
         # check the amount they're trying to charge before running the charge
         # with stripe

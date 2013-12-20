@@ -1,6 +1,7 @@
 # compiled assets
 static/css/*
 static/js/*
+processed*
 static/lib/css/bootstrap.min.css
 templates/*.html
 cover/**

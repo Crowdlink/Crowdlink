@@ -86,7 +86,7 @@ def provision():
 
     import time
 
-    stripe.api_key = current_app.config['STRIPE_SECRET_KEY']
+    stripe.api_key = current_app.config['stripe_secret_key']
     users = {}
 
     # make an admin user, and set him as the current user

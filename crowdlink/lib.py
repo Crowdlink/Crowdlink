@@ -22,8 +22,8 @@ email_cfg = {
 
 def send_email(to_addr, typ, **kwargs):
     conf = email_cfg[typ]
-    send_addr = current_app.config['EMAIL_SENDER']
-    send_name = current_app.config['EMAIL_SEND_NAME']
+    send_addr = current_app.config['email_sender']
+    send_name = current_app.config['email_send_name']
     msg = MIMEMultipart('alternative')
     msg['Subject'] = conf['subject']
     msg['From'] = "{0} <{1}>".format(send_name, send_addr)
@@ -36,16 +36,16 @@ def send_email(to_addr, typ, **kwargs):
                             'html'))
 
     try:
-        host = smtplib.SMTP(current_app.config['EMAIL_SERVER'],
-                            current_app.config['EMAIL_PORT'],
-                            current_app.config['EMAIL_EHLO'],
+        host = smtplib.SMTP(current_app.config['email_server'],
+                            current_app.config['email_port'],
+                            current_app.config['email_ehlo'],
                             timeout=2)
-        host.set_debuglevel(current_app.config['EMAIL_DEBUG'])
-        if current_app.config['EMAIL_USE_TLS']:
+        host.set_debuglevel(current_app.config['email_debug'])
+        if current_app.config['email_use_tls']:
             host.starttls()
         host.ehlo()
-        host.login(current_app.config['EMAIL_USERNAME'],
-                   current_app.config['EMAIL_PASSWORD'])
+        host.login(current_app.config['email_username'],
+                   current_app.config['email_password'])
         current_app.logger.info(host.sendmail(send_addr,
                                               to_addr,
                                               msg.as_string()))
