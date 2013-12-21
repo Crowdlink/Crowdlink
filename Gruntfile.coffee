@@ -168,8 +168,13 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-contrib-uglify')
   grunt.loadNpmTasks('grunt-contrib-cssmin')
 
-  grunt.registerTask "dev", ["shell:proc_coffee", "shell:proc_less", "shell:proc_haml", "shell:proc_sass",
-                                 "less", "haml", "compass", "coffee"]
+  grunt.registerTask "dev", ["shell:proc_coffee", "shell:proc_less",
+                             "shell:proc_haml", "shell:proc_sass",
+                             "less", "haml", "compass", "coffee"]
+  grunt.registerTask "prod", ["shell:proc_coffee", "shell:proc_less",
+                             "shell:proc_haml", "shell:proc_sass",
+                             "less", "haml", "compass", "coffee",
+                             "cssmin:all", "uglify:all"]
   grunt.registerTask "lint", ["shell:flake8", "coffeelint"]
   grunt.registerTask "flake8", ["shell:flake8"]
   grunt.registerTask "test", ["shell:test"]
