@@ -6,3 +6,4 @@ coverage
 selenium
 flake8
 pylint
+uwsgi
