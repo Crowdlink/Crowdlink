@@ -1,6 +1,6 @@
 mainServices = angular.module("mainServices", ["ngResource"])
 mainServices.factory("IssueService", ($resource) ->
-  $resource window.api_path + "issue", {},
+  $resource "{{ api_path }}issue", {},
     update:
       method: "PUT"
       timeout: 10000
@@ -14,7 +14,7 @@ mainServices.factory("IssueService", ($resource) ->
 )
 
 mainServices.factory("SolutionService", ($resource) ->
-  $resource window.api_path + "solution", {},
+  $resource "{{ api_path }}solution", {},
     update:
       method: "PUT"
       timeout: 10000
@@ -28,14 +28,14 @@ mainServices.factory("SolutionService", ($resource) ->
 )
 
 mainServices.factory("UserService", ($resource) ->
-  $resource window.api_path + "user", {},
+  $resource "{{ api_path }}user", {},
     login:
-      url: window.api_path + "login"
+      url: "login"
       method: "POST"
       timeout: 10000
       isArray: false
     register:
-      url: window.api_path + "register"
+      url: "register"
       method: "POST"
       timeout: 10000
     query:
@@ -44,7 +44,7 @@ mainServices.factory("UserService", ($resource) ->
 )
 
 mainServices.factory("ProjectService", ($resource) ->
-  $resource window.api_path + "project", {},
+  $resource "{{ api_path }}project", {},
     query:
       method: "GET"
       timeout: 10000
@@ -58,14 +58,14 @@ mainServices.factory("ProjectService", ($resource) ->
 )
 
 mainServices.factory("StripeService", ($resource) ->
-  $resource window.api_path + "charge", {},
+  $resource "{{ api_path }}charge", {},
     update:
       method: "POST"
       timeout: 10000
 )
 
 mainServices.factory("ChargeService", ($resource) ->
-  $resource window.api_path + "charge", {},
+  $resource "{{ api_path }}charge", {},
     query:
       method: "GET"
       timeout: 10000

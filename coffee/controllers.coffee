@@ -3,12 +3,6 @@ mainControllers = angular.module("mainControllers", [])
 # parentFormController ========================================================
 parentFormController = ($scope) ->
   $scope.error_report = (value) ->
-    if 'status' of value
-      if value.status == 0
-        $scope.errors = ["Unable to communicate with server", ]
-      else
-        $scope.errors = ["Unknown server side error.", ]
-
     if 'message' of value
       $scope.error_header =
         "A server side validation error occured, this should not occur."
@@ -20,8 +14,16 @@ parentFormController = ($scope) ->
       for idx of value.validation_errors
         capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
         $scope.errors.push(capped + value.validation_errors[idx])
-    else
-      $scope.errors = [$rootScope.strings.err_comm, ]
+
+    if 'status' of value
+      if value.status == 0
+        $scope.errors = ["Unable to communicate with server", ]
+      else if value.status == 500
+        $scope.errors = ["Internal server error, apparently our sites having some troubles...", ]
+      else if value.status == 403
+        $scope.errors = ["Permission denied. Likely we've made a mistake and let you try to do something you shouldn't be able to try.", ]
+      else if value.status == 404
+        $scope.errors = ["URL not found, client side sofware error.", ]
 
 # parentEditController ========================================================
 parentEditController = ($scope, $rootScope, $timeout, IssueService,

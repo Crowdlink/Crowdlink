@@ -14,7 +14,7 @@ bower_components/**
 *.swm
 .idea
 node_modules
-application.cfg
+application.json
 testing.cfg
 .cake_task_cache
 
