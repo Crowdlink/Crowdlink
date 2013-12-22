@@ -30,12 +30,12 @@ mainServices.factory("SolutionService", ($resource) ->
 mainServices.factory("UserService", ($resource) ->
   $resource "{{ api_path }}user", {},
     login:
-      url: "login"
+      url: "{{ api_path }}login"
       method: "POST"
       timeout: 10000
       isArray: false
     register:
-      url: "register"
+      url: "{{ api_path }}register"
       method: "POST"
       timeout: 10000
     query:
