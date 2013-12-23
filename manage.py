@@ -33,10 +33,10 @@ def provision():
     provision()
 
 
-@manager.command
-def test_email():
+@manager.option('-t', '--template', dest='template', default='test')
+def test_email(template=None):
     recipient = app.config['EMAIL_TEST_ADDR']
-    send_email(recipient, 'test')
+    send_email(recipient, template)
 
 
 @manager.command

@@ -141,6 +141,13 @@ module.exports = (grunt) ->
           stdout: true
           stderr: true
 
+    inlinecss:
+      main:
+        options:
+          removeStyleTags: false
+        files:
+          'assets/emailout/base.html': 'assets/email/base.html'
+
     watch:
       options:
         livereload: true
@@ -159,6 +166,9 @@ module.exports = (grunt) ->
       coffee:
         files: ['coffee/**/*.coffee']
         tasks: ['shell:proc_coffee', 'coffee:compile']
+      email:
+        files: ['assets/email/**/*.html']
+        tasks: ['inlinecss:main']
 
   grunt.loadNpmTasks('grunt-contrib-less')
   grunt.loadNpmTasks('grunt-contrib-watch')
@@ -170,6 +180,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-coffeelint')
   grunt.loadNpmTasks('grunt-contrib-uglify')
   grunt.loadNpmTasks('grunt-contrib-cssmin')
+  grunt.loadNpmTasks('grunt-inline-css')
 
   grunt.registerTask "dev", ["shell:proc_coffee", "shell:proc_less",
                              "shell:proc_haml", "shell:proc_sass",

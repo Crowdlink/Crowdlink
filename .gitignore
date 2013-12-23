@@ -6,6 +6,7 @@ static/lib/css/bootstrap.min.css
 templates/*.html
 cover/**
 bower_components/**
+assets/emailout/**
 
 *.py[cod]
 *.swp
