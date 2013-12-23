@@ -664,9 +664,17 @@
 /*<![CDATA[*/
 
 
-    .header-links, .footer-links {
+    .header-links {
       font-weight: bold;
+      font-size: 13px;
+    }
+
+    .footer-links {
       font-size: 11px;
+    }
+
+    .footer-links > a:visited, .footer-links > a:hover, .footer-links > a:active {
+      color: #5D6F7F !important;
     }
 
     .callout .wrapper {
@@ -681,11 +689,11 @@
     }
 
     .header {
-      border-bottom:solid #313131 1px;
+      border-bottom:solid #888 1px;
     }
 
     .footer {
-      border-top:solid #313131 1px;
+      border-top:solid #888 1px;
     }
 
     table.columns .text-pad {
@@ -736,6 +744,9 @@
         padding-top:15px !important;
         display:block;
     }
+    table.buttons {
+        margin-bottom:15px;
+    }
 
 
     @media only screen and (max-width: 600px) {
@@ -773,8 +784,8 @@
 
                           <td class="six sub-columns last" style=
                           "text-align:right; vertical-align:middle;"><span class=
-                          "header-links"><a href="#">Log-in</a> - <a href="#">Donate</a>
-                          - <a href="#">Kill people</a></span></td>
+                          "header-links"><a href="#">Log-in</a> &nbsp;-&nbsp; <a href="#">Donate</a>
+                          </span></td>
 
                           <td class="expander"></td>
                         </tr>
@@ -829,15 +840,15 @@
                   </tr>
                 </table>
 
-                <table class="row">
+                <table class="row buttons">
                   <tr>
                     <td class="wrapper">
-                      <table class="six columns">
+                      <table class="five columns">
                         <tr>
                           <td>
                             <table class="button custom-button">
                               <tr>
-                                <td><a href="#">adsf</a></td>
+                                <td><a href="#">No</a></td>
                               </tr>
                             </table>
                           </td>
@@ -848,12 +859,12 @@
                     </td>
 
                     <td class="wrapper last">
-                      <table class="six columns">
+                      <table class="five columns">
                         <tr>
                           <td>
                             <table class="button custom-button">
                               <tr>
-                                <td><a href="#">adsf</a></td>
+                                <td><a href="#">Yes</a></td>
                               </tr>
                             </table>
                           </td>
@@ -873,8 +884,8 @@
                           <td align="center">
                             <center>
                               <span class="footer-links" style=
-                              "text-align:center;"><a href="#">Terms</a> | <a href=
-                              "#">Privacy</a> | <a href="#">Unsubscribe</a></span>
+                              "text-align:center;"><a href="#">Terms</a> &nbsp;-&nbsp; <a href=
+                              "#">Privacy</a> &nbsp;-&nbsp; <a href="#">Unsubscribe</a></span>
                             </center>
                           </td>
 
