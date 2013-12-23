@@ -309,7 +309,7 @@ class Earmark(StatusMixin, Sink, base):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     # Person who sent the money
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', foreign_keys=[user_id])
+    user = db.relationship('User', backref='earmarks', foreign_keys=[user_id])
     # The object the earmark is assigned to
     thing_id = db.Column(db.Integer, db.ForeignKey('thing.id'), nullable=False)
     thing = db.relationship('Thing', backref='earmarks')
@@ -383,6 +383,20 @@ class Earmark(StatusMixin, Sink, base):
 
         # change the status to assigned
         self.status = 'Assigned'
+
+    def dispute(self, event_data=None):
+        """ Called when the Issue/Project it's attached to is being reported
+        in some way. Effectively freezes the Earmark. """
+        self.frozen = True
+        self.disputed = True
+        # make an event for it
+        log = self.log.create(
+            action='dispute',
+            item=self,
+            data=event_data
+        )
+        db.session.add(log)
+
 
     def close(self):
         """ Closes an earmark. This occures when a user cancels, the earmark

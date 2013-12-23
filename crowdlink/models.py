@@ -26,10 +26,10 @@ class Thing(base):
         'polymorphic_on': type
     }
 
-    def clear_earmarks(self):
-        """ """
-        for earmark in self.earmarks:
-            earmark.clear()
+    @property
+    def dispute_percentage(self):
+        return (self.earmarks.count() /
+                self.earmarks.filter(disputed=True).count())
 
 
 class Project(Thing, SubscribableMixin, VotableMixin):
@@ -438,6 +438,43 @@ class Email(base):
     @classmethod
     def activate_email(self, email):
         Email.query.filter_by(address=email).update({'verified': True})
+
+
+class Report(base, PrivateMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    user = db.relationship('User')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    thing_id = db.Column(db.String)
+    thing = db.Column(db.Integer, db.ForeignKey('thing.id'))
+    content = db.Column(db.String)
+
+    standard_join = ['id',
+                     'content',
+                     {'obj': 'user', 'join_prof': 'disp_join'},
+                     {'obj': 'thing', 'join_prof': 'disp_join'}]
+
+    @classmethod
+    def create(cls, thing, content, user=current_user):
+        db.session.rollback()
+
+        if thing.type in ['Project', 'Solution']:
+            current_app.logger.warn(
+                "Someone tried to report a Thing that was of unallowed type"
+                "\nThing ID: {}\nUser ID: {}"
+                .format(thing.id,
+                        user.id))
+            raise AttributeError
+
+        # if they're reporting an issue
+        report = cls(thing=thing,
+                     content=content,
+                     user=user)
+
+        # freeze any earmarks that are in place if they're disputing an Issue
+        if thing.type == "Issue":
+            db.session.flush()
+            user.earmarks.filter(Earmark.thing == thing
+                    ).one().dispute(event_data={'report_id': report.id})
 
 
 class User(Thing, SubscribableMixin):

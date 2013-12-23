@@ -448,20 +448,23 @@ class UserAPI(BaseResource):
     model = User
 
     @classmethod
-    def get_user(self, js):
+    def get_user(self, js, require=False):
         # accept either a username or id
         username = js.pop('username', None)
 
-        if username:
+        if username == "self":
+            if current_user.is_anonymous():  # error out, no user info avaiable
+                raise KeyError
+            return current_user.get()
+        elif username:
             return User.query.filter_by(username=username).one()
 
         # prefer an explicit id, but fallback to getting current
         userid = js.pop('id', None)
         if userid is None:
-            if current_user.is_anonymous():  # error out, no user info avaiable
-                raise KeyError
-            # just return the current user object
-            return current_user.get()
+            if require:
+                raise KeyError('user')
+            return None
 
         return User.query.filter_by(id=userid).one()
 
