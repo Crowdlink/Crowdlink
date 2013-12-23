@@ -4,6 +4,8 @@ static/js/*
 processed*
 static/lib/css/bootstrap.min.css
 templates/*.html
+templates/account/*.html
+templates/events/*.html
 cover/**
 bower_components/**
 assets/emailout/**
