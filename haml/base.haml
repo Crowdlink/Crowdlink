@@ -29,7 +29,7 @@
     / Strip
     %script{src: "https://checkout.stripe.com/checkout.js", type: ""}
     / Internally managed =====================================================
-    {% if production %}
+    {% if production and production == True %}
     %script{src: "{{ static_path }}js/common.min.js"}
     {% else %}
     / Noty notifications
@@ -45,7 +45,7 @@
     %script{src: "{{ static_path }}js/controllers.js"}
     %script{src: "{{ static_path }}js/services.js"}
     {% endif %}
-    {% raw %}#wrap{"ng-init" => "init({{logged_in}}, '{{userid}}')"}{% endraw %}
+    {% raw %}#wrap{"ng-init" => "init({{logged_in}}, '{{user | tojson | urlencode}}')"}{% endraw %}
       .navbar.navbar-default.navbar-fixed-top
         .container.no-gutter
           %a.navbar-brand.logo{href: "#/home"}

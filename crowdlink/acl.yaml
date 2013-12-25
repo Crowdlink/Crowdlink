@@ -1,0 +1,187 @@
+# Base class
+base_private:
+    virtual: true
+    anonymous: []
+    user:
+        class:
+            - create
+    owner:
+        view:
+            - standard_join
+
+solution:
+    anonymous:
+        view:
+            - standard_join
+            - page_join
+            - disp_join
+    user:
+        inherit: anonymous
+        edit:
+            - vote_status
+            - subscribed
+        class:
+            - create
+    maintainer:
+        inherit:
+            - anonymous
+            - user
+        edit:
+            - url_key
+            - title
+            - desc
+    admin:
+        inherit:
+            - anonymous
+            - user
+            - maintainer
+        class:
+            - create_other
+
+user:
+    anonymous:
+        view:
+            - standard_join
+            - page_join
+            - disp_join
+    user:
+        inherit: anonymous
+        edit:
+            - vote_status
+            - subscribed
+        class:
+            - create
+    owner:
+        inherit:
+            - anonymous
+            - user
+        edit:
+            - url_key
+        view:
+            - home_join
+    admin:
+        inherit:
+            - anonymous
+            - user
+            - owner
+        class:
+            - create_other
+project:
+    anonymous:
+        view:
+            - page_join
+            - issue_page_join
+            - disp_join
+    user:
+        inherit: anonymous
+        action:
+            - add_issue
+        edit:
+            - vote_status
+            - subscribed
+        class:
+            - create
+    maintainer:
+        inherit:
+            - anonymous
+            - user
+        edit:
+            - name
+            - website
+    admin:
+        inherit:
+            - anonymous
+            - user
+            - maintainer
+        class:
+            - create_other
+issue:
+    anonymous:
+        view:
+            - standard_join
+            - page_join
+            - brief_join
+            - disp_join
+    user:
+        inherit: anonymous
+        action:
+            - add_solution
+        edit:
+            - vote_status
+            - subscribed
+        class:
+            - create
+    maintainer:
+        inherit:
+            - anonymous
+            - user
+        edit:
+            - url_key
+            - _status
+            - title
+            - desc
+    creator:
+        inherit: maintainer
+    admin:
+        inherit:
+            - anonymous
+            - user
+            - maintainer
+        class:
+            - create_other
+
+charge:
+    inherit: base_private
+    owner:
+        action:
+            - add_earmark
+    admin:
+        view:
+            - standard_join
+
+mark:
+    user:
+        class:
+            - create
+    sender:
+        view:
+            - standard_join
+    reciever:
+        view:
+            - standard_join
+    admin:
+        inherit:
+            - sender
+
+earmark:
+    user:
+        class:
+            - create
+    sender:
+        view:
+            - standard_join
+        action:
+            - increase_amount
+    reciever:
+        view:
+            - standard_join
+    admin:
+        inherit:
+            - reciever
+
+transfer:
+    user:
+        class:
+            - create
+    inherit: base_private
+    admin:
+        inherit:
+            - owner
+        class:
+            - create_other
+
+recipient:
+    inherit: base_private
+    admin:
+        inherit:
+            - owner

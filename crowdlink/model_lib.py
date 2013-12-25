@@ -45,33 +45,45 @@ class BaseMapper(object):
 
     # Access Control Methods
     # =========================================================================
-    def get_acl(self, user=current_user):
-        """ Generates an acl list for a specific user which defaults to the
-        authed user """
-        roles = self.roles(user=user)
-        allowed = set()
-        for role in roles:
-            allowed |= set(self.acl.get(role, []))
-
-        return allowed
-
     def roles(self, user=current_user):
-        """ This should be overriden to use logic for determining roles """
+        """ This should be overriden to use logic for determining roles on an
+        instance of the class """
         return []
 
     def can(self, action):
-        """ Can the user perform the action needed? """
-        current_app.logger.debug((self.roles(), action, self.user_acl))
+        """ Can the user perform the action needed on this object instance? """
+        current_app.logger.debug((action, self.user_acl))
         return action in self.user_acl
 
+    @classmethod
+    def can_cls(cls, action):
+        """ Can the user perform the action needed on this class (non inst
+        specific)? """
+        roles = current_user.global_roles()
+        acl = cls._role_mix(roles)
+        current_app.logger.debug((roles, acl, action))
+        return action in acl
+
+    @classmethod
+    def _role_mix(cls, roles):
+        allowed = set()
+        for role in roles:
+            allowed |= cls.acl.get(role, set())
+        return allowed
+
     @property
-    def user_acl(self):
+    def user_acl(self, user=current_user):
         """ a lazy loaded acl list for the current user """
         # Run an extra check to ensure we don't hand out an acl list for the
         # wrong user. Possibly un-neccesary, I'm paranoid
-        if not hasattr(self, '_user_acl') or self._user_acl[0] != current_user:
-            self._user_acl = (current_user, self.get_acl())
-        return self._user_acl[1]
+        roles = []
+        inst_roles = self.roles(user=user)
+        if isinstance(inst_roles, list):  # allow either str or list
+            roles += inst_roles
+        elif inst_roles != None:
+            roles.append(inst_roles)
+        roles += current_user.global_roles()
+        return self._role_mix(roles)
 
     def save(self, *exc_catch):
         """ Automatically adds object to global session and catches exception
@@ -178,49 +190,51 @@ class SubscribableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
 
-    def unsubscribe(self, user=current_user):
-        Subscription.query.filter_by(
-            subscriber=user.get(),
-            subscribee_id=self.id).delete()
-        # remove all events that originate from the source they're
-        # unsubscribing
-        user.events = [e for e in user.events if not e.originates(self.id)]
-
-        current_app.logger.debug(
-            ("Unsubscribing on {} as user "
-             "{}").format(self.__class__.__name__, user.username))
-        return True
-
-    def subscribe(self, user=current_user):
-        current_app.logger.debug("Subscribing on {} as user {}"
-            .format(self.__class__.__name__, user.username))
-        sub = Subscription(subscriber=user.get(),
-                           subscribee_id=self.id)
-        # since they're subscribing, add the last ten events from the
-        # source to their events
-        i = 0
-        for event in self.public_events:
-            # only deliver 10
-            if i == 10:
-                break
-            if event.sendable(user):
-                user.events = user.events + [event]
-                i += 1
-
-        # sort the list
-        user.events = sorted(user.events, key=lambda x: x.time)
-
-        # save the new subscription object along with the modified events in
-        # one go. events won't get added if already subscribed...
-        sub.save(sqlalchemy.exc.IntegrityError)
-        return True
-
     @property
     def subscribed(self, user=current_user):
         if not user.is_anonymous():
             return bool(Subscription.query.filter_by(
                 subscriber=user.get(),
                 subscribee_id=self.id).first())
+
+    @subscribed.setter
+    def subscribed(self, val, user=current_user):
+        if val:
+            current_app.logger.debug(
+                "Subscribing on {} as user {}"
+                .format(self.__class__.__name__, user.username))
+            sub = Subscription(subscriber=user.get(),
+                               subscribee_id=self.id)
+            # since they're subscribing, add the last ten events from the
+            # source to their events
+            i = 0
+            for event in self.public_events:
+                # only deliver 10
+                if i == 10:
+                    break
+                if event.sendable(user):
+                    user.events = user.events + [event]
+                    i += 1
+
+            # sort the list
+            user.events = sorted(user.events, key=lambda x: x.time)
+
+            # save the new subscription object along with the modified events in
+            # one go. events won't get added if already subscribed...
+            sub.save(sqlalchemy.exc.IntegrityError)
+            return True
+        else:
+            Subscription.query.filter_by(
+                subscriber=user.get(),
+                subscribee_id=self.id).delete()
+            # remove all events that originate from the source they're
+            # unsubscribing
+            user.events = [e for e in user.events if not e.originates(self.id)]
+
+            current_app.logger.debug(
+                "Unsubscribing on {} as user {}"
+                .format(self.__class__.__name__, user.username))
+            return True
 
     @property
     def subscribers(self):
@@ -231,8 +245,16 @@ class VotableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
 
-    def set_vote(self, vote):
-        # XXX: Really needs error catching
+    @property
+    def vote_status(self):
+        if not current_user.is_anonymous():
+            return bool(Vote.query.filter_by(voter=current_user.get(),
+                                             votee_id=self.id).first())
+
+    @vote_status.setter
+    def vote_status(self, vote):
+        print "testing"
+        # XXX: TODO: Really needs error catching
         if not vote:  # unvote
             Vote.query.filter_by(voter=current_user.get(),
                                  votee_id=self.id).delete()
@@ -248,12 +270,6 @@ class VotableMixin(object):
             vote.save(sqlalchemy.exc.IntegrityError)
             return True
         return "already_set"
-
-    @property
-    def vote_status(self):
-        if not current_user.is_anonymous():
-            return bool(Vote.query.filter_by(voter=current_user.get(),
-                                             votee_id=self.id).first())
 
 
 class HSTOREStringify(TypeDecorator):

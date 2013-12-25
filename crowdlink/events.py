@@ -71,8 +71,6 @@ class Event(BaseMapper):
                     "Unkown object type given to send_event {}".format(
                         type(arg)))
 
-        db.session.commit()
-
 
 class IssueNotif(Event):
     template = "events/issue.html"

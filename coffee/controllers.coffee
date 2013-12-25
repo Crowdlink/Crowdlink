@@ -3,17 +3,15 @@ mainControllers = angular.module("mainControllers", [])
 # parentFormController ========================================================
 parentFormController = ($scope) ->
   $scope.error_report = (value) ->
-    if 'message' of value
-      $scope.error_header =
-        "A server side validation error occured, this should not occur."
-      $scope.errors = [value.message, ]
-    else if 'validation_errors' of value
+    if 'validation_errors' of value
       $scope.errors = []
       $scope.error_header =
         "A server side validation error occured, this should not occur."
       for idx of value.validation_errors
         capped = idx.charAt(0).toUpperCase() + idx.slice(1) + ": "
         $scope.errors.push(capped + value.validation_errors[idx])
+    else if 'message' of value
+      $scope.errors = [value.message, ]
 
     if 'status' of value
       if value.status == 0
@@ -24,6 +22,10 @@ parentFormController = ($scope) ->
         $scope.errors = ["Permission denied. Likely we've made a mistake and let you try to do something you shouldn't be able to try.", ]
       else if value.status == 404
         $scope.errors = ["URL not found, client side sofware error.", ]
+      else if value.status == 400
+        $scope.errors = ["Client side syntax error, this is a mistake on our part. Sorry about this..", ]
+      else
+        $scope.errors = ["Unkown error communicating with server", ]
 
 # parentEditController ========================================================
 parentEditController = ($scope, $rootScope, $timeout, IssueService,
@@ -95,19 +97,12 @@ ProjectService, SolutionService) ->
 mainControllers.controller('rootController',
 ($scope, $location, $rootScope, $http, UserService)->
 
-  $scope.init = (logged_in, user_id) ->
+  $scope.init = (logged_in, user) ->
     $rootScope.logged_in = logged_in
     $rootScope.user = {}
     $rootScope.title = ""
     if logged_in
-      UserService.query(
-        id: user_id
-      ,(value) ->
-        if 'success' of value and value.success
-          $rootScope.user = value.user
-        else
-          $rootScope.noty_error value
-      , $scope.logout)  # logout the user if there was an error accessing it
+        $rootScope.user = JSON.parse(decodeURIComponent(user))
 
   $rootScope.noty_error = (response) ->
     options =
@@ -202,13 +197,18 @@ mainControllers.controller('solutionController',
     $injector.invoke(parentEditController, this, {$scope: $scope})
     $scope.init = () ->
       SolutionService.query(
-        id: $routeParams.id
+        __filter_by:
+          url_key: $routeParams.url_key
+          issue_url_key: $routeParams.iurl_key
+          project_url_key: $routeParams.purl_key
+          project_maintainer_username: $routeParams.username
+        __one: true
         join_prof: "page_join"
       ,(value) ->
         $timeout ->
-          $scope.sol = value
+          $scope.sol = value.objects[0]
           $scope.prev =
-            sol: $.extend({}, value)
+            sol: $.extend({}, value.objects[0])
           $timeout ->
             $rootScope.loading = false
           , 200
@@ -251,16 +251,16 @@ mainControllers.controller('issueController',
   $injector.invoke(parentEditController, this, {$scope: $scope})
   $scope.init = () ->
     IssueService.query(
-      username: $routeParams.username
-      purl_key: $routeParams.purl_key
-      url_key: $routeParams.url_key
+      __filter_by:
+        project_maintainer_username: $routeParams.username
+        project_url_key: $routeParams.purl_key
+        url_key: $routeParams.url_key
       join_prof: "page_join"
-      solution_join_prof: "page_join"
     ,(value) ->
       $timeout ->
-        $scope.issue = value.issue
+        $scope.issue = value.objects[0]
         $scope.prev =
-          issue: $.extend({}, value.issue)
+          issue: $.extend({}, value.objects[0])
         $timeout ->
           $rootScope.loading = false
         , 200
@@ -316,15 +316,15 @@ mainControllers.controller('projectController',
 
   $injector.invoke(parentEditController, this, {$scope: $scope})
   ProjectService.query(
-    username: $routeParams.username
-    url_key: $routeParams.url_key
-    issue_join_prof: 'brief_join'
+    __filter_by:
+      maintainer_username: $routeParams.username
+      url_key: $routeParams.url_key
     join_prof: 'page_join'
   , (value, headers) -> # Function to be run when function returns
     if 'success' of value and value.success
-      $scope.project = value
+      $scope.project = value.objects[0]
       $scope.prev =
-        project: $.extend({}, value)
+        project: $.extend({}, value.objects[0])
       $timeout ->
         $rootScope.loading = false
       , 200
@@ -517,7 +517,7 @@ mainControllers.controller('newProjController',
       name: $scope.ptitle
       url_key: $scope.url_key
       website: $scope.website
-      description: $scope.description
+      desc: $scope.description
     ,(value) ->
       if 'success' of value and value.success
         $location.path("/" + $rootScope.user.username +
@@ -528,20 +528,21 @@ mainControllers.controller('newProjController',
 )
 
 # newIssueController ==========================================================
-mainControllers.controller('newissueController',
+mainControllers.controller('newIssueController',
 ($scope, $rootScope, $routeParams, $location, $injector, ProjectService,
 IssueService)->
 
   $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.init = () ->
     $rootScope.title = "New Issue"
-    ProjectService.query(
-      username: $routeParams.username
-      url_key: $routeParams.url_key
-      issue_join_prof: 'brief_join'
+    IssueService.query(
+      __filter_by:
+        project_maintainer_username: $routeParams.username
+        project_url_key: $routeParams.url_key
+      join_prof: 'brief_join'
     , (value) -> # Function to be run when function returns
       if 'success' of value and value.success
-        $scope.issues = value.issues
+        $scope.issues = value.objects
       else
         $rootScope.noty_error value
     , $rootScope.noty_error)
@@ -549,15 +550,14 @@ IssueService)->
     $scope.error_header = ""
     $scope.errors = []
     IssueService.create(
-      username: $routeParams.username
-      purl_key: $routeParams.url_key
-      description: $scope.description
+      project_url_key: $routeParams.url_key
+      project_maintainer_username: $routeParams.username
+      desc: $scope.description
       title: $scope.title
     ,(value) ->
       if 'success' of value and value.success
-        $location.path("/" + $routeParams.username +
-                       "/" + $routeParams.url_key +
-                       "/" + value.url_key).replace()
+        issue = value.objects[0]
+        $location.path(issue.get_abs_url)
       else
         $scope.error_report(value)
     , $scope.error_report)
@@ -571,14 +571,15 @@ SolutionService)->
   $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.init = () ->
     $rootScope.title = "New Issue"
-    IssueService.query(
-      username: $routeParams.username
-      purl_key: $routeParams.purl_key
-      url_key: $routeParams.url_key
-      solution_join_prof: 'disp_join'
+    SolutionService.query(
+      __filter_by:
+          project_maintainer_username: $routeParams.username
+          project_url_key: $routeParams.purl_key
+          issue_url_key: $routeParams.url_key
+      join_prof: 'disp_join'
     , (value) ->
-      if 'success' not of value
-        $scope.sols = value.solutions
+      if 'success' of value and value.success
+        $scope.sols = value.objects
       else
         if 'message' of value
           text = " #{value.message}"
@@ -590,14 +591,15 @@ SolutionService)->
     $scope.error_header = ""
     $scope.errors = []
     SolutionService.create(
-      username: $routeParams.username
-      purl_key: $routeParams.purl_key
-      url_key: $routeParams.url_key
-      description: $scope.description
+      project_maintainer_username: $routeParams.username
+      project_url_key: $routeParams.purl_key
+      issue_url_key: $routeParams.url_key
+      desc: $scope.desc
       title: $scope.title
     ,(value) ->
       if 'success' of value and value.success
-        $location.path("/s/" + value.id + "/" + value.url_key).replace()
+        sol = value.objects[0]
+        $location.path(sol.get_abs_url)
       else
         $scope.error_report(value)
     , $scope.error_report)
@@ -610,11 +612,16 @@ mainControllers.controller('projectSettingsController',
   $scope.init = () ->
     $rootScope.title = "Project Settings"
     ProjectService.query(
-      username: $routeParams.username
-      url_key: $routeParams.url_key
+      __filter_by:
+        maintainer_username: $routeParams.username
+        url_key: $routeParams.url_key
+      __one: true
       join_prof: 'page_join'
     ,(value) ->
-      $scope.project = value[0]
+      if 'success' of value and value.success
+        $scope.project = value.objects[0]
+      else
+        $rootScope.noty_error value
     , $rootScope.noty_error)
 )
 
@@ -628,7 +635,7 @@ mainControllers.controller('homeController',
       id: $rootScope.user.id
       join_prof: "home_join"
     ,(value) ->
-      $scope.huser = value.user
+      $scope.huser = value.objects[0]
     , $rootScope.noty_error)
 )
 

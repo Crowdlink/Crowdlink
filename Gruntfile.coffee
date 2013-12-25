@@ -162,7 +162,7 @@ module.exports = (grunt) ->
         files: ['**/*.scss']
         tasks: ['shell:proc_sass', 'compass']
       dev_server:
-        files: ['**/*.py', '/*.json']
+        files: ['**/*.py', '*.ini', '*.json']
         tasks: ['shell:reload']
       coffee:
         files: ['coffee/**/*.coffee']
@@ -174,7 +174,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-contrib-less')
   grunt.loadNpmTasks('grunt-contrib-watch')
   grunt.loadNpmTasks('grunt-contrib-haml')
-  grunt.loadNpmTasks('grunt-contrib-jshint')
   grunt.loadNpmTasks('grunt-contrib-compass')
   grunt.loadNpmTasks('grunt-contrib-coffee')
   grunt.loadNpmTasks('grunt-shell')

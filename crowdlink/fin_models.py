@@ -6,7 +6,7 @@ from enum import Enum
 from decimal import Decimal, setcontext, BasicContext
 
 from . import db
-from .acl import charge_acl, earmark_acl, recipient_acl, transfer_acl
+from .acl import acl
 from .model_lib import base, PrivateMixin, StatusMixin
 from .exc import FundingException
 
@@ -102,7 +102,7 @@ class Charge(Source, PrivateMixin, base):
                      'created_at',
                      '-stripe_created_at']
 
-    acl = charge_acl
+    acl = acl['charge']
 
     @property
     def status(self):
@@ -229,7 +229,7 @@ class Transfer(Sink, PrivateMixin, base):
                      'amount',
                      '-stripe_created_at']
 
-    acl = transfer_acl
+    acl = acl['transfer']
 
     @property
     def status(self):
@@ -321,7 +321,7 @@ class Earmark(StatusMixin, Sink, base):
                      'created_at',
                      '-stripe_created_at']
 
-    acl = earmark_acl
+    acl = acl['earmark']
 
     def mature(self, event_data=None):
         """ Sets the mature toggle on the Earmark, making it available for
@@ -467,15 +467,10 @@ class Earmark(StatusMixin, Sink, base):
 
         for mark in self.marks:
             if mark.user_id == user_id:
-                return ['reciever']
+                return 'reciever'
 
         if self.user_id == getattr(user, 'id', None):
-            return ['sender']
-
-        if user.is_anonymous():
-            return ['anonymous']
-        else:
-            return ['user']
+            return 'sender'
 
     @classmethod
     def create(cls, thing, amount, user=current_user):
@@ -567,7 +562,7 @@ class Recipient(PrivateMixin, base):
                      'created_at',
                      '-stripe_created_at']
 
-    acl = recipient_acl
+    acl = acl['recipient']
 
     def clear(self):
         """ Pushes pending funds on through to the recipeint. Doesn't commit

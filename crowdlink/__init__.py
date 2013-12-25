@@ -63,6 +63,17 @@ def create_app(config='/application.json'):
     oauth.init_app(app)
     api_restful = Api(app)
 
+    # Setup the anonymous user to register a single role
+    class AnonymousUser(object):
+        id = -100
+        def is_anonymous(self):
+            return True
+        def roles(self):
+            return ['anonymous']
+        def is_authenticated(self):
+            return False
+    lm.anonymous_user = AnonymousUser
+
     # Route registration
     # =========================================================================
     from . import api, views, models, monkey_patch, fin_models, log_models

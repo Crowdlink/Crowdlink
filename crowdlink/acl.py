@@ -1,185 +1,113 @@
-from .util import flatten
+import yaml
+from . import root
 
 
-class P(object):
-    keys = []
-
-    def __init__(self, *args):
-        self.keys = []
-        for arg in args:
-            if isinstance(arg, P):
-                self.keys += arg.keys
-            elif isinstance(arg, tuple):
-                self.keys += flatten(arg)
-            elif isinstance(arg, list):
-                self.keys += arg
+def flatten(tpl):
+    """ Makes a list of values prefixed by the first value of a tuple """
+    if isinstance(tpl, tuple) or isinstance(tpl, list):
+        keys = []
+        for key in tpl[1:]:
+            if isinstance(key, basestring):
+                keys += [key]
             else:
-                self.keys.append(arg)
+                raise Exception("Type of list element must be scalar string")
+        return [tpl[0] + "_" + x for x in keys]
+    else:
+        return tpl
 
 
-# Issues
-issue_anon = P(
-    ('view', ['standard_join',
-              'page_join',
-              'brief_join',
-              'disp_join']
-     )
-).keys
-issue_user = P(issue_anon,
-               ('action', ['vote',
-                'add_solution',
-                'watch']
-                )).keys
-issue_maintainer = P(issue_anon, issue_user,
-                     ('edit', ['url_key',
-                               '_status',
-                               'title',
-                               'desc']
-                      )).keys
-issue_creator = issue_maintainer
-
-issue_acl = {'maintainer': issue_maintainer,
-             'anonymous': issue_anon,
-             'user': issue_user,
-             'creator': issue_creator}
-
-# Project
-project_anon = P(
-    ('view', ['standard_join',
-              'page_join',
-              'issue_page_join',
-              'disp_join']
-     )).keys
-project_user = P(project_anon,
-                 ('action', ['vote',
-                             'add_issue',
-                             'watch']
-                  )).keys
-project_maintainer = P(project_anon, project_user,
-                       ('edit', ['name',
-                                 'website']
-                        )).keys
-
-project_acl = {'maintainer': project_maintainer,
-               'anonymous': project_anon,
-               'user': project_user}
-
-# Solution
-solution_anon = P(
-    ('view', ['standard_join',
-              'page_join',
-              'disp_join']
-     )).keys
-solution_user = P(solution_anon,
-                  ('action', ['vote',
-                              'watch']
-                   )).keys
-solution_maintainer = P(solution_anon,
-                        solution_user,
-                        ('edit', ['url_key',
-                                  'title',
-                                  'desc']
-                         )).keys
-
-solution_acl = {'maintainer': solution_maintainer,
-                'anonymous': solution_anon,
-                'user': solution_user}
-
-# User
-user_anon = P(
-    ('view', ['standard_join',
-              'page_join',
-              'disp_join']
-     )).keys
-user_user = P(user_anon,
-              ('action', ['vote',
-                          'watch']
-               )).keys
-user_owner = P(user_anon,
-               user_user,
-               ('edit', ['url_key',
-                         'title',
-                         'desc']
-                ),
-               ('view', ['home_join']
-                )).keys
-
-user_acl = {'owner': user_owner,
-            'anonymous': user_anon,
-            'user': user_user}
-
-# Charge
-charge_anon = []
-charge_user = []
-charge_owner = P(charge_anon,
-                 charge_user,
-                 ('view', ['standard_join']),
-                 ('action', ['add_earmark'])
-                 ).keys
-
-charge_acl = {'owner': charge_owner,
-              'anonymous': charge_anon,
-              'user': charge_user}
-
-# Transfer
-transfer_anon = []
-transfer_user = []
-transfer_owner = P(transfer_anon,
-                   transfer_user,
-                   ('view', ['standard_join']),
-                   ).keys
-
-transfer_acl = {'owner': transfer_owner,
-                'anonymous': transfer_anon,
-                'user': transfer_user}
-
-# Recipient
-recipient_anon = []
-recipient_user = []
-recipient_owner = P(recipient_anon,
-                    recipient_user,
-                    ('view', ['standard_join']),
-                    ).keys
-
-recipient_acl = {'owner': recipient_owner,
-                 'anonymous': recipient_anon,
-                 'user': recipient_user}
+def inherit_dict(*args):
+    """ Joines together multiple dictionaries left to right """
+    ret = {}
+    for arg in args:
+        ret.update(arg)
+    return ret
 
 
-# Earmark
-earmark_anon = []
-earmark_user = []
-earmark_sender = P(earmark_anon,
-                   earmark_user,
-                   ('edit', ['amount']
-                    ),
-                   ('view', ['standard_join']
-                    )).keys
-earmark_reciever = P(earmark_anon,
-                     earmark_user,
-                     ('view', ['standard_join']
-                      )).keys
-
-earmark_acl = {'reciever': earmark_reciever,
-               'sender': earmark_sender,
-               'anonymous': earmark_anon,
-               'user': earmark_user}
+def inherit_lst(*args):
+    """ Joines together multiple lists left to right """
+    ret = []
+    for arg in args:
+        for val in arg:
+            if val not in ret:
+                ret.append(val)
+    return ret
 
 
-# Mark
-mark_anon = []
-mark_user = []
-mark_sender = P(mark_anon,
-                mark_user,
-                ('edit', ['amount']
-                 ),
-                ('view', ['standard_join']
-                 )).keys
-mark_reciever = P(mark_anon,
-                  mark_user,
-                  ('view', ['standard_join']
-                   )).keys
+acl_yaml = yaml.load(file(root + '/crowdlink/acl.yaml').read())
+acl = {}
+# do a run to compile all dictionaries into lists and merge the lists to
+# createa a role list of keys
+for typ, roles in acl_yaml.iteritems():
+    acl.setdefault(typ, {})  # set the key to a dict
+    for role, keys in roles.iteritems():
+        if role in ['inherit', 'virtual']:  # skip inherit commands
+            continue
+        acl[typ].setdefault(role, set())
+        if isinstance(keys, list):
+            acl[typ][role] |= set(keys)
+        elif isinstance(keys, dict):
+            for key, val in keys.iteritems():
+                if key == "inherit":  # skip inheritence clauses, handled later
+                    continue
+                if isinstance(val, list):
+                    acl[typ][role] |= set(flatten(tuple([key] + val)))
+                elif isinstance(val, dict):
+                    raise Exception("Nested dictionaries are currently not "
+                                    "supported")
+                else:
+                    acl[typ][role].add(val)
 
-mark_acl = {'owner': mark_sender,
-            'anonymous': mark_anon,
-            'user': mark_user}
+def compile(typ, stack, compiled=[]):
+    """ Compiles a specific type, but calls itself recursively to compile it's
+    own dependencies. Detects inheritence loops by checking the stack.
+    Intentionally keeps a common memory compiled list """
+    if typ in compiled:
+        return
+
+    for role, keys in acl_yaml[typ].iteritems():
+        if role == 'inherit':
+            if not isinstance(keys, list):  # allow single entry, or list
+                keys = [keys]
+            for inh_type in keys:
+                # run inheritence from another type
+                if inh_type not in acl_yaml:
+                    raise KeyError(
+                        "Unable to inherit from type {} for type {}, doesn't exist"
+                        .format(inh_type, typ))
+                if inh_type in stack:
+                    raise Exception(
+                        "Looping inheritence detected! Type {0} tried to "
+                        "inherit from type {1} which was called to compile {0}!"
+                        .format(typ, inh_type))
+                if inh_type not in compiled:
+                    compile(inh_type, stack + [inh_type])
+                for inh_role in acl[inh_type]:
+                    acl[typ].setdefault(inh_role, set())
+                    acl[typ][inh_role] |= acl[inh_type][inh_role]
+
+    for role, keys in acl_yaml[typ].iteritems():
+        if isinstance(keys, dict):
+            for key, val in keys.iteritems():
+                if key == "inherit":
+                    if not isinstance(val, list):  # allow single entry or list
+                        val = [val]
+                    for inh in val:
+                        try:
+                            acl[typ][role] |= acl[typ][inh]
+                        except KeyError:
+                            print acl[typ]
+                            raise KeyError(
+                                "Unable to inherit from role {} for role {} on type {}"
+                                .format(inh, role, typ))
+    compiled.append(typ)
+
+
+for typ in acl_yaml:
+    compile(typ, [typ])
+
+# inheritence pass. Allows a type to inherit from another type
+for typ, roles in acl_yaml.iteritems():
+    for role, keys in roles.iteritems():
+        if role == 'virtual':  # remove virtual types
+            del acl[typ]

@@ -58,27 +58,27 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/404", {templateUrl: "templates/error.html", controller: "errorController"}
   ).when("/500", {templateUrl: "templates/error.html", controller: "errorController"}
   # Primary object views
-  ).when("/s/:id/:url_key/",
-    templateUrl: "templates/solution.html"
-    controller: "solutionController"
   ).when("/:username/:url_key",
     templateUrl: "templates/project.html"
     controller: "projectController"
-  ).when("/:username/:purl_key/:url_key",
-    templateUrl: "templates/issue.html"
-    controller: "issueController"
   ).when("/:username/:url_key/new_issue",
     templateUrl: "templates/new_issue.html"
-    controller: "newissueController"
-    resolve: resolver('user')
-  ).when("/:username/:purl_key/:url_key/new_solution",
-    templateUrl: "templates/new_solution.html"
-    controller: "newSolutionController"
+    controller: "newIssueController"
     resolve: resolver('user')
   ).when("/:username/:url_key/psettings",
     templateUrl: "templates/psettings.html"
     controller: "projectSettingsController"
     resolve: resolver('user')
+  ).when("/:username/:purl_key/:url_key",
+    templateUrl: "templates/issue.html"
+    controller: "issueController"
+  ).when("/:username/:purl_key/:url_key/new_solution",
+    templateUrl: "templates/new_solution.html"
+    controller: "newSolutionController"
+    resolve: resolver('user')
+  ).when("/:username/:purl_key/:iurl_key/:url_key",
+    templateUrl: "templates/solution.html"
+    controller: "solutionController"
   ).when("/tos",
     templateUrl: "templates/tos.html"
   # user profile

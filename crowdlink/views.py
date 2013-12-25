@@ -3,6 +3,7 @@ from flask.ext.login import current_user
 
 from . import root, lm, github
 from .models import User
+from .api_base import get_joined
 
 import sqlalchemy
 import os
@@ -73,7 +74,7 @@ def github_auth(resp):
 @main.route("/", methods=['GET', 'POST'])
 def angular_root():
     logged_in = "true" if current_user.is_authenticated() else "false"
-    id = current_user.id if current_user.is_authenticated() else "undefined"
+    user = get_joined(current_user) if current_user.is_authenticated() else "undefined"
     return render_template('base.html',
                            logged_in=logged_in,
-                           userid=id)
+                           user=user)
