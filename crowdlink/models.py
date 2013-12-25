@@ -5,7 +5,7 @@ from enum import Enum
 
 from . import db, github, crypt
 from .model_lib import (base, SubscribableMixin, VotableMixin, EventJSON,
-                        StatusMixin)
+                        StatusMixin, PrivateMixin)
 from .fin_models import Mark
 from .util import inherit_lst
 from .acl import issue_acl, project_acl, solution_acl, user_acl
@@ -442,8 +442,8 @@ class Email(base):
 
 class Report(base, PrivateMixin):
     id = db.Column(db.Integer, primary_key=True)
-    user = db.relationship('User')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', foreign_keys=[user_id])
     thing_id = db.Column(db.String)
     thing = db.Column(db.Integer, db.ForeignKey('thing.id'))
     content = db.Column(db.String)

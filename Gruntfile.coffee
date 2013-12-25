@@ -57,6 +57,7 @@ module.exports = (grunt) ->
           "templates/events/issue.html": "processed/haml/events/issue.haml"
           "templates/events/comment.html": "processed/haml/events/comment.haml"
           "templates/events/fallback.html": "processed/haml/events/fallback.haml"
+          "templates/tos.html": "processed/haml/tos.haml"
 
     coffee:
       compile:

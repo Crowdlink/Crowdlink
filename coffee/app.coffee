@@ -79,6 +79,8 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
     templateUrl: "templates/psettings.html"
     controller: "projectSettingsController"
     resolve: resolver('user')
+  ).when("/tos",
+    templateUrl: "templates/tos.html"
   # user profile
   ).when("/:username",
     templateUrl: "templates/profile.html"

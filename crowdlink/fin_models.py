@@ -309,7 +309,7 @@ class Earmark(StatusMixin, Sink, base):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     # Person who sent the money
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    user = db.relationship('User', backref='earmarks', foreign_keys=[user_id])
+    user = db.relationship('User', foreign_keys=[user_id])
     # The object the earmark is assigned to
     thing_id = db.Column(db.Integer, db.ForeignKey('thing.id'), nullable=False)
     thing = db.relationship('Thing', backref='earmarks')
