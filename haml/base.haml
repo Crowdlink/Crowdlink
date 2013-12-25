@@ -75,8 +75,12 @@
                 %i.fa.fa-sign-in.fa-large
                 %span.hidden-xs Login
       .container.main-cont.fade{"ng-view" => ""}
-    
-    / %div{id: "footer navbar-default navbar"}
-    /  .container
-    /    %p.text-muted{style: "margin:20px 0px;"}
-    /      &copy; Copyright 2013 by me.
+
+  %div{id: "footer navbar-default navbar"}
+    .container
+      %p.text-muted{style: "margin:20px 0px;text-align:center;"}
+        %a{href: "/#/tos", style: "color:#99A2C1;"} TOS
+        \&nbsp;-&nbsp;
+        %a{href: "/#/privacy", style: "color:#99A2C1;"} Privacy Policy
+        %br
+          &copy; Copyright 2014 Crowdlink
