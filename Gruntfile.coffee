@@ -59,6 +59,7 @@ module.exports = (grunt) ->
           "templates/events/comment.html": "processed/haml/events/comment.haml"
           "templates/events/fallback.html": "processed/haml/events/fallback.haml"
           "templates/tos.html": "processed/haml/tos.haml"
+          "templates/help_modal.html": "processed/haml/help_modal.haml"
           "templates/dir/drop_toggle.html": "processed/haml/dir/drop_toggle.haml"
 
     coffee:
@@ -117,6 +118,8 @@ module.exports = (grunt) ->
         command: './util/preprocess.py less less -v'
       proc_sass:
         command: './util/preprocess.py scss scss -v'
+      compile_yaml:
+        command: 'yaml2json ./assets/help/faq.yaml > ./assets/help/faq.json'
 
     inlinecss:
       main:
@@ -164,6 +167,9 @@ module.exports = (grunt) ->
       email:
         files: ['assets/email/**/*.html']
         tasks: ['inlinecss:main']
+      yaml:
+        files: ['assets/help/**/*.yaml']
+        tasks: ['shell:compile_yaml']
 
   grunt.loadNpmTasks('grunt-contrib-less')    # compiled bootstrap
   grunt.loadNpmTasks('grunt-contrib-watch')   # watches for changes

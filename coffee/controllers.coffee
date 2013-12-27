@@ -101,7 +101,7 @@ ProjectService, SolutionService) ->
 
 # RootController ==============================================================
 mainControllers.controller('rootController',
-($scope, $location, $rootScope, $http, UserService)->
+($scope, $location, $rootScope, $http, $modal, UserService, helpModalController)->
 
   $scope.init = (logged_in, user) ->
     $rootScope.logged_in = logged_in
@@ -149,6 +149,12 @@ mainControllers.controller('rootController',
         noty $.extend(options,
           text: "An unknown server side error occured"
         )
+
+  $scope.help = ->
+    modalInstance = $modal.open(
+      templateUrl: "templates/help_modal.html"
+      controller: helpModalController
+    )
 
   $scope.logout = ->
     $http(
@@ -680,4 +686,14 @@ mainControllers.controller('errorController', ($scope, $rootScope, $location)->
         long: "Our apologies, we seem to have goofed. This error has been " +
               "logged on the server side."
         err: "500"
+)
+
+# helpModalController =======================================================
+mainControllers.controller('helpModalController', ($scope, $rootScope, $http)->
+  $scope.init = () ->
+    $rootScope.loading = true
+    $http.get('assets/help/faq.json').success((data) ->
+      $scope.help = data
+      $rootScope.loading = false
+    )
 )
