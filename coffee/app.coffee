@@ -206,7 +206,7 @@ mainApp.directive "btfMarkdown", ->
 mainApp.directive "markItUp", ->
   restrict: "A"
   link: (scope, element, attrs) ->
-    new_settings = $.extend(mySettings,
+    new_settings = $.extend(window.mySettings,
       afterInsert: ->
         scope.$apply(
           element.trigger('input')

@@ -51,7 +51,7 @@
         "ng-show" => "issue.user_acl.edit_desc", "ng-hide" => "editing.issue.desc"}
         Edit
       .row.well.well-lg.center-margin
-        .row.col-lg-11{"ng-show" => "editing.issue.desc"}
+        .row.col-lg-12{"ng-show" => "editing.issue.desc"}
           %textarea{"mark-it-up" => "", "ng-model" => "issue.desc"}
           %span.btn.btn-info{"ng-click" => "save('issue.desc')", "ng-disabled" => "saving.issue.desc"}
             %i.fa.fa-save{"ng-hide" => "saving.issue.desc"}

@@ -35,7 +35,11 @@ for root, _, filenames in os.walk(args.folder):
         outfile = os.path.join(folder, filename)
         infile = os.path.join(rel_root, filename)
 
-        if os.path.getctime(infile) > os.path.getctime(outfile):
+        try:
+            tm = os.path.getctime(outfile)
+        except OSError:
+            tm = 0
+        if os.path.getctime(infile) > tm:
             try:
                 open(outfile, 'w').write(
                     env.get_template(infile).render(**env_vars).encode('utf-8'))

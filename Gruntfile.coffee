@@ -20,6 +20,7 @@ module.exports = (grunt) ->
                                       'static/js/services.js',
                                       'bower_components/noty/js/noty/jquery.noty.js',
                                       'static/js/noty_theme.js',
+                                      'static/js/miu.js',
                                       'static/js/noty_topcenter.js']
 
     cssmin:
@@ -68,6 +69,7 @@ module.exports = (grunt) ->
           "static/js/services.js": "processed/coffee/services.coffee"
           "static/js/noty_theme.js": "processed/coffee/noty_theme.coffee"
           "static/js/noty_topcenter.js": "processed/coffee/noty_topcenter.coffee"
+          "static/js/miu.js": "processed/coffee/miu.coffee"
 
     compass:
       development:
