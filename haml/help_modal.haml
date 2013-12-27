@@ -1,0 +1,22 @@
+.modal-dialog{"ng-init" => "init()", style: "width:900px;"}
+  .modal-content
+    .modal-header
+      %button.close{"aria-hidden" => "true", "ng-click" => "close()", type: "button"} ×
+      %h4.modal-title FAQ
+
+
+    .modal-body
+      .container
+        .col-md-3
+          %div{"ng-repeat" => "cat in cats"}
+            %h5 {[{ cat['name'] }]}
+            %ul.nav.nav-pills.nav-stacked
+              %li{"ng-class" => "{true: 'active'}[curr_topic==topics[topic]]", "ng-repeat" => "topic in cat['keys']"}
+                %a{"ng-click" => "update(topics[topic])", style: "font-size:14px;"} {[{ topics[topic]['title'] }]}
+        .col-md-9
+          %div
+            %h4 {[{ curr_topic['title'] }]}
+            %span{"ng-bind-html" => "curr_topic['body']"}
+
+    .modal-footer
+      %button.btn.btn-warning{"ng-click" => "close()"} Close

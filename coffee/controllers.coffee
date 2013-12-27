@@ -101,7 +101,7 @@ ProjectService, SolutionService) ->
 
 # RootController ==============================================================
 mainControllers.controller('rootController',
-($scope, $location, $rootScope, $http, UserService)->
+($scope, $location, $rootScope, $http, $modal, UserService)->
 
   $scope.init = (logged_in, user) ->
     $rootScope.logged_in = logged_in
@@ -149,6 +149,15 @@ mainControllers.controller('rootController',
         noty $.extend(options,
           text: "An unknown server side error occured"
         )
+
+  $scope.help = (view='what_is') ->
+    modalInstance = $modal.open(
+      templateUrl: "templates/help_modal.html"
+      controller: "helpModalController"
+      resolve:
+        topic: ->
+          view
+    )
 
   $scope.logout = ->
     $http(
@@ -696,4 +705,22 @@ mainControllers.controller('errorController', ($scope, $rootScope, $location)->
         long: "Our apologies, we seem to have goofed. This error has been " +
               "logged on the server side."
         err: "500"
+)
+
+# helpModalController =======================================================
+mainControllers.controller('helpModalController', ($sce, $scope, $modalInstance, $rootScope, $http, topic) ->
+  $scope.init = () ->
+    $rootScope.loading = true
+    $http.get('assets/help/faq.json').success((data) ->
+      $scope.cats = data['categories']
+      $scope.topics = data['topics']
+      for c_topic, vals of $scope.topics
+        $scope.topics[c_topic]['body'] = $sce.trustAsHtml($scope.topics[c_topic]['body'])
+      $rootScope.loading = false
+      $scope.curr_topic = $scope.topics[topic]
+    )
+  $scope.close = ->
+    $modalInstance.dismiss "close"
+  $scope.update = (new_topic) ->
+    return $scope.curr_topic = new_topic
 )
