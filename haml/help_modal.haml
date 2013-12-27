@@ -1,5 +1,8 @@
-.row
-  %br/
-  %br/
-  %br/
-  %h1 Testing
+.modal-dialog{"ng-init" => "init()"}
+  .modal-content
+    .modal-body
+      %div{"ng-repeat" => "(cat_title, keys) in cats"}
+        %h2 {[{ cat_title }]}
+        %div{"ng-repeat" => "topic in keys"}
+          %h4 {[{ topics[topic]['title'] }]}
+          %span{"ng-bind-html" => "topics[topic]['body']"}

@@ -101,7 +101,7 @@ ProjectService, SolutionService) ->
 
 # RootController ==============================================================
 mainControllers.controller('rootController',
-($scope, $location, $rootScope, $http, $modal, UserService, helpModalController)->
+($scope, $location, $rootScope, $http, $modal, UserService)->
 
   $scope.init = (logged_in, user) ->
     $rootScope.logged_in = logged_in
@@ -153,7 +153,7 @@ mainControllers.controller('rootController',
   $scope.help = ->
     modalInstance = $modal.open(
       templateUrl: "templates/help_modal.html"
-      controller: helpModalController
+      controller: "helpModalController"
     )
 
   $scope.logout = ->
@@ -689,11 +689,14 @@ mainControllers.controller('errorController', ($scope, $rootScope, $location)->
 )
 
 # helpModalController =======================================================
-mainControllers.controller('helpModalController', ($scope, $rootScope, $http)->
+mainControllers.controller('helpModalController', ($sce, $scope, $rootScope, $http)->
   $scope.init = () ->
     $rootScope.loading = true
     $http.get('assets/help/faq.json').success((data) ->
-      $scope.help = data
+      $scope.cats = data['categories']
+      $scope.topics = data['topics']
+      for topic, vals of $scope.topics
+        $scope.topics[topic]['body'] = $sce.trustAsHtml($scope.topics[topic]['body'])
       $rootScope.loading = false
     )
 )

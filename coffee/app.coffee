@@ -5,7 +5,7 @@ mainApp = angular.module("mainApp",
    'mainFilters',
    'ngRoute',
    'ngAnimate',
-   'ui.bootstrap.dropdownToggle']
+   'ui.bootstrap']
 )
 # Avoid collision with Jinja templates
 mainApp.config ($interpolateProvider) ->
