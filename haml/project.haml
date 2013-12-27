@@ -33,6 +33,7 @@
         "ng-click" => "swap_save('project.vote_status')"}
         %i{on: "fa-minus-circle", off: "fa-plus-circle"}
         .in-button{off: "Vote", on: "Unvote"}
+      %report-dropdown{"var" => "project.report_status", "reasons" => "['Spam', 'Fraudulent']"}
       %a.button.active{:href => "\#{[{project.get_abs_url}]}new_issue"}
         %i.fa.fa-large.fa-plus
         Add an Issue

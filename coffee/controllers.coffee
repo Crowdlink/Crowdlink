@@ -34,15 +34,21 @@ ProjectService, SolutionService) ->
   $scope.toggle = (s) ->
     $scope.$eval("prev.#{s} = #{s}; editing.#{s} = !editing.#{s}")
 
-  $scope.swap_save = (s) ->
+  $scope.update = (s, new_val) ->
     val = $scope.$eval(s)  # pull out the value
     frag = s.split('.').pop()  # get the attribute name
     extra_data = {}
-    extra_data[frag] = !val  # build a data dictionary for save
+    extra_data[frag] = new_val  # build a data dictionary for save
     $scope.save(s, extra_data, ->
-      # only swap the value after save complete
-      $scope.$eval("#{s} = !#{s}")
+      # only change after the value after save completes
+      if typeof new_val == "boolean"
+        $scope.$eval("#{s} = #{new_val}")
+      else
+        $scope.$eval("#{s} = '#{new_val}'")
     )
+
+  $scope.swap_save = (s) ->
+    $scope.update(s, !$scope.$eval(s))
 
   $scope.save = (s, extra_data={}, callback) ->
     object = s.split('.')
@@ -275,9 +281,10 @@ mainControllers.controller('issueController',
       issue:
         title: false
         desc: false
-        close_reason: false
         status: false
+        vote_status: false
         subscribed: false
+        report_status: false
 
   $scope.$watch('issue.title',(val) ->
     if val

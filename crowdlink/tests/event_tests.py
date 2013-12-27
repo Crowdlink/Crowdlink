@@ -11,7 +11,7 @@ from pprint import pprint
 
 class EventTests(BaseTest):
 
-    @login_required_ctx
+    @login_required_ctx()
     def test_basic_send(self):
         """ cam we send a basic notification? """
         issue = self.db.session.query(Issue).first()
@@ -23,7 +23,7 @@ class EventTests(BaseTest):
         assert issue.project.public_events[-1].iname == issue.title
         assert issue.creator.public_events[-1].iname == issue.title
 
-    @login_required_ctx
+    @login_required_ctx()
     def test_dupl_deliv(self):
         issue = self.db.session.query(Issue).first()
         # subscribe our logged in user to the project and the user who made the
@@ -42,7 +42,7 @@ class EventTests(BaseTest):
         assert self.user.events[-1].iname == issue.title
         assert self.user.public_events[-1].iname == issue.title
 
-    @login_required_ctx
+    @login_required_ctx()
     def test_unsubscribe_redeliver(self):
         # clear the users events for easier testing
         project = self.db.session.query(Project).first()
@@ -57,7 +57,7 @@ class EventTests(BaseTest):
         # the user should now have several events
         assert len(current_user.events) > 1
 
-    @login_required_ctx
+    @login_required_ctx()
     def test_subscribe_undeliver(self):
         # clear the users events for easier testing
         assert len(current_user.events) > 0

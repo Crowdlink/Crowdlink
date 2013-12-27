@@ -1,120 +1,143 @@
 # Base class
 base_private:
     virtual: true
+    # global context roles
     anonymous: []
     user:
         class:
             - create
+    # Object context roles
     owner:
         view:
             - standard_join
 
 solution:
+    # global context roles
     anonymous:
         view:
             - standard_join
             - page_join
             - disp_join
-    user:
+    noactive_user:
         inherit: anonymous
         edit:
-            - vote_status
             - subscribed
+    usernameless:
+        inherit: noactive_user
+    user:
+        inherit: noactive_user
+        edit:
+            - report_status
+            - vote_status
         class:
             - create
+    admin:
+        inherit: maintainer
+        class:
+            - create_other
+
+    # Object context roles
     maintainer:
-        inherit:
-            - anonymous
-            - user
+        inherit: user
         edit:
             - url_key
             - title
             - desc
-    admin:
-        inherit:
-            - anonymous
-            - user
-            - maintainer
-        class:
-            - create_other
+    creator:
+        inherit: maintainer
 
 user:
+    # global context roles
     anonymous:
         view:
             - standard_join
             - page_join
             - disp_join
+        class: create
+    noactive_user:
+        view:
+            - standard_join
+            - page_join
+            - disp_join
+        edit:
+            - subscribed
+    usernameless:
+        inherit: noactive_user
     user:
-        inherit: anonymous
+        inherit: noactive_user
         edit:
             - vote_status
-            - subscribed
-        class:
-            - create
-    owner:
-        inherit:
-            - anonymous
-            - user
-        edit:
-            - url_key
-        view:
-            - home_join
+            - report_status
     admin:
-        inherit:
-            - anonymous
-            - user
-            - owner
-        class:
-            - create_other
+        inherit: owner
+        class: create_other
+    # Object context roles
+    owner:
+        inherit: user
+        edit: url_key
+        view: home_join
 project:
+    # global context roles
     anonymous:
         view:
             - page_join
             - issue_page_join
             - disp_join
-    user:
+    noactive_user:
         inherit: anonymous
-        action:
-            - add_issue
+        edit: subscribed
+    usernameless:
+        inherit: noactive_user
+    user:
+        inherit: noactive_user
+        action: add_issue
         edit:
+            - report_status
             - vote_status
-            - subscribed
-        class:
-            - create
+        class: create
+    admin:
+        inherit: maintainer
+        class: create_other
+    # Object context roles
     maintainer:
-        inherit:
-            - anonymous
-            - user
+        inherit: user
         edit:
             - name
             - website
-    admin:
-        inherit:
-            - anonymous
-            - user
-            - maintainer
-        class:
-            - create_other
 issue:
+    # global context roles
     anonymous:
         view:
             - standard_join
             - page_join
             - brief_join
             - disp_join
-    user:
+    noactive_user:
         inherit: anonymous
+        edit:
+            - subscribed
+    usernameless:
+        inherit: noactive_user
+    user:
+        inherit: noactive_user
         action:
             - add_solution
         edit:
+            - report_status
             - vote_status
             - subscribed
         class:
             - create
-    maintainer:
+    admin:
         inherit:
             - anonymous
             - user
+            - maintainer
+        class:
+            - create_other
+    # Object context roles
+    maintainer:
+        inherit: user
         edit:
             - url_key
             - _status
@@ -122,41 +145,36 @@ issue:
             - desc
     creator:
         inherit: maintainer
-    admin:
-        inherit:
-            - anonymous
-            - user
-            - maintainer
-        class:
-            - create_other
 
 charge:
     inherit: base_private
+    # global context roles
+    admin:
+        view:
+            - standard_join
+    # Object context roles
     owner:
         action:
             - add_earmark
-    admin:
-        view:
-            - standard_join
 
 mark:
+    # global context roles
     user:
-        class:
-            - create
+        class: create
     sender:
-        view:
-            - standard_join
-    reciever:
-        view:
-            - standard_join
+        view: standard_join
     admin:
-        inherit:
-            - sender
+        inherit: sender
+    reciever:
+        inherit: sender
 
 earmark:
+    # global context roles
     user:
         class:
             - create
+    admin:
+        inherit: reciever
     sender:
         view:
             - standard_join
@@ -165,23 +183,19 @@ earmark:
     reciever:
         view:
             - standard_join
-    admin:
-        inherit:
-            - reciever
 
 transfer:
+    inherit: base_private
+    # global context roles
     user:
         class:
             - create
-    inherit: base_private
     admin:
-        inherit:
-            - owner
+        inherit: owner
         class:
             - create_other
 
 recipient:
     inherit: base_private
     admin:
-        inherit:
-            - owner
+        inherit: owner

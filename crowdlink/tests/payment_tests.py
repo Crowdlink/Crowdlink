@@ -9,7 +9,7 @@ from pprint import pprint
 class PaymentTests(BaseTest):
     # Charge api
     # =========================================================================
-    @login_required
+    @login_required()
     def test_run_charge(self):
         # create a new token via the api. this is usually done via the JS side
         stripe.api_key = self.app.config['stripe_secret_key']
@@ -25,7 +25,7 @@ class PaymentTests(BaseTest):
 
     # Recipeint api
     # =========================================================================
-    @login_required
+    @login_required()
     def test_recipient_create(self):
         """ test recipeint creation """
         stripe.api_key = self.app.config['stripe_secret_key']
@@ -44,7 +44,7 @@ class PaymentTests(BaseTest):
 
     # Transfer api
     # =========================================================================
-    @login_required
+    @login_required()
     def test_transfer_create(self):
         """ can we make a new transfer? """
         """

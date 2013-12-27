@@ -10,7 +10,7 @@ from flask.ext.login import current_user
 
 
 class APITests(BaseTest):
-    @login_required
+    @login_required()
     def test_voting(self):
         """ can i vote on an issue/project/solution? """
         lst = [(Issue, 'issue'),
@@ -35,7 +35,7 @@ class APITests(BaseTest):
                                 'vote_status': False}).json
             assert res['success']
 
-    @login_required
+    @login_required()
     def test_subscribe(self):
         """ can i subscribe to an issue/project/user/solution? """
         lst = [(Issue, 'issue'),
@@ -183,7 +183,7 @@ class APITests(BaseTest):
         assert user['username']
         assert type(user['public_events']) == list
 
-    @login_required
+    @login_required()
     def test_user_page(self):
         """ page_join user test """
         qs = {'join_prof': 'page_join'}
@@ -193,7 +193,7 @@ class APITests(BaseTest):
         assert res['success']
         assert type(user['public_events']) == list
 
-    @login_required
+    @login_required()
     def test_user_home(self):
         """ home_join user test """
         qs = {'join_prof': 'home_join'}
@@ -206,7 +206,7 @@ class APITests(BaseTest):
     # Earmark api
     # =========================================================================
     """
-    @login_required
+    @login_required()
     def test_earmark_create(self):
         current_user.available_balance = 10000
         current_user.save()
@@ -253,7 +253,7 @@ class APITests(BaseTest):
             {'value': 'dflgj@dsflkjg.com'}).json['taken'] is False
         self.assert400(self.json_post('/api/email/check', {}))
 
-    @login_required
+    @login_required()
     def test_check_purl_key(self):
         assert self.json_post(
             '/api/purl_key/check',

@@ -44,7 +44,7 @@ a.col {
   color: #fff;
   text-shadow: 0 1px 1px rgba(0,0,0,.2);
   background-color:#86C1E9;
-  border:1px solid #3498db;
+  border:1px solid lighten($brand-info, 5%);
   margin: 0px 3px;
   display: inline-block;
   &:active, &.active {
@@ -55,11 +55,23 @@ a.col {
     text-decoration: none;
     color: #fff;
   }
+  .caret {
+    border-top-color: #fff;
+  }
+
+  &.danger {
+    background-image: linear-gradient(lighten($brand-danger, 8%),$brand-danger 60%,darken($brand-danger, 4%));
+    background-repeat: no-repeat;
+    border:1px solid $brand-danger;
+  }
 
   .in-button {
       width:60px;
       display: inline-block;
       text-align:center;
+  }
+  &.disabled .in-button {
+    width: 72px;
   }
   i {
     width:14px;

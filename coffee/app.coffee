@@ -4,7 +4,8 @@ mainApp = angular.module("mainApp",
    'mainControllers',
    'mainFilters',
    'ngRoute',
-   'ngAnimate']
+   'ngAnimate',
+   'ui.bootstrap.dropdownToggle']
 )
 # Avoid collision with Jinja templates
 mainApp.config ($interpolateProvider) ->
@@ -318,4 +319,45 @@ mainApp.directive "toggleButton", ["$http", "$timeout", ($http, $compile) ->
 
 
     scope.$watch(attr,update)
+]
+
+mainApp.directive "reportDropdown", ["$http", "$timeout", ($http, $compile) ->
+  templateUrl: "templates/dir/drop_toggle.html"
+  restrict: "E"
+  link: (scope, elem, attrs, ctrl) ->
+    attr = attrs.var
+    reasons = attrs.reasons
+    icon = elem.find('i')
+    text = elem.find('.in-button')
+    button = elem.find('.button')
+    scope.$watch('saving.' + attr, (val) ->
+      if val
+        icon.removeClass()
+        icon.addClass('fa fa-spin fa-spinner')
+      else
+        update(scope.$eval(attr))
+    )
+    update = (val) ->
+      scope.attr_val = scope.$eval(attr)
+      if not val
+        icon.removeClass()
+        icon.addClass('fa fa-ban')
+        button.removeClass('active danger')
+        text.html('Report')
+      else
+        icon.removeClass()
+        if val == "Spam"
+          icon.addClass('fa fa-trash-o')
+        else if val == "Fraudulent"
+          icon.addClass('fa fa-warning')
+        else
+          icon.addClass('fa fa-trash-o')
+        button.addClass('danger active')
+        text.html(val)
+
+    scope.$watch(reasons, (val) ->
+      scope.reasons = val
+    )
+    scope.attr = attr
+    scope.$watch(attr, update)
 ]

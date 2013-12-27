@@ -129,7 +129,10 @@ class BaseMapper(object):
             elif isinstance(attr, datetime):
                 attr = calendar.timegm(attr.utctimetuple()) * 1000
             # don't convert bool or int to str
-            elif isinstance(attr, bool) or isinstance(attr, int) or attr is None:
+            elif (isinstance(attr, bool) or
+                  isinstance(attr, int) or
+                  attr is None or
+                  isinstance(attr, list)):
                 pass
             # convert set (user_acl list) to a dictionary for easy conditionals
             elif isinstance(attr, set):
@@ -160,6 +163,19 @@ base = declarative_base(cls=BaseMapper,
                         name='Model')
 base.query = _QueryProperty(db)
 db.Model = base
+
+
+class Report(base):
+    """ associative table for voting on things """
+    reporter_id = db.Column(
+        db.Integer, db.ForeignKey("user.id"), primary_key=True)
+    reporter = db.relationship('User', foreign_keys=[reporter_id])
+
+    reportee_id = db.Column(
+        db.Integer, db.ForeignKey("thing.id"), primary_key=True)
+    reportee = db.relationship('Thing')
+
+    reason = db.Column(db.String(255))
 
 
 class Vote(base):
@@ -198,7 +214,10 @@ class SubscribableMixin(object):
                 subscribee_id=self.id).first())
 
     @subscribed.setter
-    def subscribed(self, val, user=current_user):
+    def subscribed(self, val):
+        self.set_subscribed(val)
+
+    def set_subscribed(self, val, user=current_user):
         if val:
             current_app.logger.debug(
                 "Subscribing on {} as user {}"
@@ -241,6 +260,45 @@ class SubscribableMixin(object):
         return Subscription.query.filter_by(subscribee_id=self.id)
 
 
+class ReportableMixin(object):
+    """ Allows user local getters and setters for reporting things """
+
+    @property
+    def report_status(self):
+        if not current_user.is_anonymous():
+            report = Report.query.filter_by(reporter=current_user.get(),
+                                            reportee=self).first()
+            if report:
+                return report.reason
+            else:
+                return False
+        else:
+            return None
+
+    @report_status.setter
+    def report_status(self, reason):
+        self.set_report_status(reason)
+
+    def set_report_status(self, reason, user=current_user):
+        # XXX: TODO: Really needs error catching
+        if not reason:  # unreport
+            Report.query.filter_by(reporter=current_user.get(),
+                                   reportee=self).delete()
+            current_app.logger.debug(
+                ("Unreporting on {} as user "
+                 "{}").format(self.__class__.__name__, current_user.username))
+            return True
+        else:  # report them, update reason if needed
+            current_app.logger.debug(
+                ("Voting on {} as user "
+                 "{}").format(self.__class__.__name__, current_user.username))
+            report = Report(reporter_id=current_user.get().id,
+                            reportee_id=self.id,
+                            reason=reason)
+            db.session.merge(report)
+            return True
+
+
 class VotableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
     uniqueness of user by hand through these checks """
@@ -249,15 +307,17 @@ class VotableMixin(object):
     def vote_status(self):
         if not current_user.is_anonymous():
             return bool(Vote.query.filter_by(voter=current_user.get(),
-                                             votee_id=self.id).first())
+                                             votee=self).first())
 
     @vote_status.setter
     def vote_status(self, vote):
-        print "testing"
+        self.set_vote_status(vote)
+
+    def set_vote_status(self, vote, user=current_user):
         # XXX: TODO: Really needs error catching
         if not vote:  # unvote
             Vote.query.filter_by(voter=current_user.get(),
-                                 votee_id=self.id).delete()
+                                 votee=self).delete()
             current_app.logger.debug(
                 ("Unvoting on {} as user "
                  "{}").format(self.__class__.__name__, current_user.username))
@@ -269,7 +329,6 @@ class VotableMixin(object):
             vote = Vote(voter=current_user.get(), votee_id=self.id)
             vote.save(sqlalchemy.exc.IntegrityError)
             return True
-        return "already_set"
 
 
 class HSTOREStringify(TypeDecorator):

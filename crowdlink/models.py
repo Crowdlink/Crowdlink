@@ -5,8 +5,8 @@ from enum import Enum
 
 from . import db, github, crypt
 from .model_lib import (base, SubscribableMixin, VotableMixin, EventJSON,
-                        StatusMixin, PrivateMixin)
-from .fin_models import Mark
+                        StatusMixin, PrivateMixin, ReportableMixin)
+from .fin_models import Mark, Earmark
 from .util import inherit_lst
 from .acl import acl
 
@@ -32,7 +32,7 @@ class Thing(base):
                 self.earmarks.filter(disputed=True).count())
 
 
-class Project(Thing, SubscribableMixin, VotableMixin):
+class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     """ This class is a composite of thing and project tables """
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -50,7 +50,7 @@ class Project(Thing, SubscribableMixin, VotableMixin):
     votes = db.Column(db.Integer, default=0)
 
     # Event log
-    public_events = db.Column(EventJSON)
+    public_events = db.Column(EventJSON, default=list)
 
     # Github Syncronization information
     gh_repo_id = db.Column(db.Integer, default=-1)
@@ -81,6 +81,7 @@ class Project(Thing, SubscribableMixin, VotableMixin):
     standard_join = ['get_abs_url',
                      'maintainer',
                      'user_acl',
+                     'report_status',
                      'created_at',
                      'maintainer_username',
                      'id',
@@ -162,7 +163,8 @@ class Project(Thing, SubscribableMixin, VotableMixin):
         current_app.logger.debug("Desynchronized repository")
 
 
-class Issue(StatusMixin, Thing, SubscribableMixin, VotableMixin):
+class Issue(
+        StatusMixin, Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
 
     StatusVals = Enum('Completed', 'Discussion', 'Selected', 'Other')
@@ -177,7 +179,7 @@ class Issue(StatusMixin, Thing, SubscribableMixin, VotableMixin):
     votes = db.Column(db.Integer, default=0)
 
     # Event log
-    public_events = db.Column(EventJSON)
+    public_events = db.Column(EventJSON, default=list)
 
     # our project relationship and keys
     url_key = db.Column(db.String, unique=True)
@@ -202,6 +204,7 @@ class Issue(StatusMixin, Thing, SubscribableMixin, VotableMixin):
     standard_join = ['get_abs_url',
                      'title',
                      'vote_status',
+                     'report_status',
                      'status',
                      'subscribed',
                      'user_acl',
@@ -287,7 +290,8 @@ class Issue(StatusMixin, Thing, SubscribableMixin, VotableMixin):
         return issue
 
 
-class Solution(Thing, SubscribableMixin, VotableMixin, StatusMixin):
+class Solution(
+        Thing, SubscribableMixin, VotableMixin, StatusMixin, ReportableMixin):
     """ A composite of the solution table and the thing table.
 
     Solutions are attributes of Issues that can be voted on, commented on etc
@@ -304,7 +308,7 @@ class Solution(Thing, SubscribableMixin, VotableMixin, StatusMixin):
     votes = db.Column(db.Integer, default=0)
 
     # Event log
-    public_events = db.Column(EventJSON)
+    public_events = db.Column(EventJSON, default=list)
 
     # our project relationship and all keys
     url_key = db.Column(db.String, unique=True)
@@ -333,6 +337,7 @@ class Solution(Thing, SubscribableMixin, VotableMixin, StatusMixin):
     acl = acl['solution']
     standard_join = ['get_abs_url',
                      'title',
+                     'report_status',
                      'subscribed',
                      'user_acl',
                      'created_at',
@@ -405,7 +410,7 @@ class Email(base):
         Email.query.filter_by(address=email).update({'verified': True})
 
 
-class Report(base, PrivateMixin):
+class Dispute(base, PrivateMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', foreign_keys=[user_id])
@@ -442,7 +447,7 @@ class Report(base, PrivateMixin):
                     ).one().dispute(event_data={'report_id': report.id})
 
 
-class User(Thing, SubscribableMixin):
+class User(Thing, SubscribableMixin, ReportableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
     username = db.Column(db.String(32), unique=True)
     admin = db.Column(db.Boolean, default=False)
@@ -453,8 +458,8 @@ class User(Thing, SubscribableMixin):
     gh_token = db.Column(db.String, unique=True)
 
     # Event information
-    public_events = db.Column(EventJSON)
-    events = db.Column(EventJSON)
+    public_events = db.Column(EventJSON, default=list)
+    events = db.Column(EventJSON, default=list)
     __mapper_args__ = {'polymorphic_identity': 'User'}
 
     # financial placeholders
@@ -596,7 +601,9 @@ class User(Thing, SubscribableMixin):
     def create(cls, username, password, email_address):
         user = cls(username=username)
         user.password = password
-        Email(address=email_address, user=user, primary=True)
+        db.session.add(user)
+        email = Email(address=email_address, user=user, primary=True)
+        db.session.add(email)
         return user
 
     @classmethod

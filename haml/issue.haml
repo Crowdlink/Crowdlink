@@ -38,10 +38,7 @@
           %a.button.active{:href => "\#{[{issue.get_abs_url}]}/new_solution"}
             %i.fa.fa-large.fa-plus
             \ Add a Solution
-          .btn-group-vertical{"ng-show" => "issue.open"}
-            %label.btn{"ng-class" => "{true: 'active btn-info', false: 'btn-default'}[issue.close_reason==reason]", "ng-repeat" => "reason in issue.close_reason"}
-              %input.hide{"ng-model" => "issue.close_reason", "ng-value" => "reason", type: "radio"}/
-              {[{ val }]}
+          %report-dropdown{"var" => "issue.report_status", "reasons" => "['Spam', 'Fraudulent']"}
       .col-md-4.no-gutter
     %br/
     .row

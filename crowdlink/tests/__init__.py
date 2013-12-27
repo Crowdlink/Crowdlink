@@ -35,11 +35,12 @@ def login_required(username='crowdlink', password='testing'):
 def login_required_ctx(username='crowdlink', password='testing'):
     """ Decorator for loggin in the user under a request context. Helpful for
     testing """
-    def login_required_ctx(func, self, *args, **kwargs):
+    def login_required_ctx(f, *args, **kwargs):
+        self = args[0]
         self.user = self.db.session.query(User).filter_by(username=username).one()
         login_user(self.user)
         try:
-            func(self)
+            f(self)
         except AssertionError:
             self.db.session.rollback()
             logout_user()

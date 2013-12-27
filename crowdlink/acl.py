@@ -2,20 +2,6 @@ import yaml
 from . import root
 
 
-def flatten(tpl):
-    """ Makes a list of values prefixed by the first value of a tuple """
-    if isinstance(tpl, tuple) or isinstance(tpl, list):
-        keys = []
-        for key in tpl[1:]:
-            if isinstance(key, basestring):
-                keys += [key]
-            else:
-                raise Exception("Type of list element must be scalar string")
-        return [tpl[0] + "_" + x for x in keys]
-    else:
-        return tpl
-
-
 def inherit_dict(*args):
     """ Joines together multiple dictionaries left to right """
     ret = {}
@@ -50,13 +36,12 @@ for typ, roles in acl_yaml.iteritems():
             for key, val in keys.iteritems():
                 if key == "inherit":  # skip inheritence clauses, handled later
                     continue
-                if isinstance(val, list):
-                    acl[typ][role] |= set(flatten(tuple([key] + val)))
-                elif isinstance(val, dict):
-                    raise Exception("Nested dictionaries are currently not "
-                                    "supported")
+                if isinstance(val, list):  # if its a list, prepend
+                    acl[typ][role] |= set([key + "_" + v for v in val])
+                elif isinstance(val, basestring):
+                    acl[typ][role].add(key + "_" + val)
                 else:
-                    acl[typ][role].add(val)
+                    raise Exception("Type {} not supported".format(type(val)))
 
 def compile(typ, stack, compiled=[]):
     """ Compiles a specific type, but calls itself recursively to compile it's

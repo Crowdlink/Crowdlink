@@ -3,6 +3,7 @@ import fnmatch
 import os
 import json
 import argparse
+import time
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -31,12 +32,18 @@ for root, _, filenames in os.walk(args.folder):
         if args.verbose:
             print "Created " + folder
     for filename in fnmatch.filter(filenames, '*.' + args.filetype):
-        processed = os.path.join(folder, filename)
-        try:
-            open(processed, 'w').write(
-                env.get_template(os.path.join(rel_root, filename)).render(**env_vars).encode('utf-8'))
-        except Exception:
-            print "Error parsing file " + processed
-            raise
-        if args.verbose:
-            print "Parsed " + processed
+        outfile = os.path.join(folder, filename)
+        infile = os.path.join(rel_root, filename)
+
+        if os.path.getctime(infile) > os.path.getctime(outfile):
+            try:
+                open(outfile, 'w').write(
+                    env.get_template(infile).render(**env_vars).encode('utf-8'))
+            except Exception:
+                print "Error parsing file " + outfile
+                raise
+            if args.verbose:
+                print "Parsed " + outfile
+        else:
+            if args.verbose:
+                print "Not changed " + outfile

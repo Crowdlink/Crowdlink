@@ -76,7 +76,7 @@ def inherit_lst(*args):
 
 def provision():
     from crowdlink.util import stripe_card_token
-    from crowdlink import db
+    from crowdlink import db, root
     from crowdlink.models import Email, User, Project, Issue, Solution
     from crowdlink.fin_models import Charge, Earmark
 
@@ -84,75 +84,86 @@ def provision():
     from flask import current_app
     from flask.ext.login import login_user
 
+    import yaml
     import time
 
     stripe.api_key = current_app.config['stripe_secret_key']
     users = {}
 
     # make an admin user, and set him as the current user
-    admin = User.create_user("admin", "testing", "admin@crowdlink.com")
+    admin = User.create("admin", "testing", "admin@crowdlink.io")
     admin.admin = True  # make them an admin
     db.session.commit()
-    Email.activate_email('admin@crowdlink.com')
+    Email.activate_email('admin@crowdlink.io')
     login_user(admin)
 
     # make a bunch of testing users
 
     # velma doesn't have a real username
-    #velma = User.create_user("", "testing", "velma@crowdlink.com")
+    velma = User.create(None, "testing", "velma@crowdlink.io")
+    users['velma'] = velma
 
     # fred isn't activated, no email address verified
-    fred = User.create_user("fred", "testing", "fred@crowdlink.com")
+    fred = User.create("fred", "testing", "fred@crowdlink.io")
+    users['fred'] = fred
+    db.session.commit()
 
     # regular users...
     for username in ['scrappy', 'shaggy', 'scooby', 'daphne', 'crowdlink',
                      'barney', 'betty']:
-        usr = User.create_user(username, "testing", username + "@crowdlink.com")
-        Email.activate_email(username + '@crowdlink.com')
+        usr = User.create(username, "testing", username + "@crowdlink.io")
+        db.session.commit()
+        Email.activate_email(username + '@crowdlink.io')
         users[username] = usr
 
+    pdata = yaml.load(file(root + '/assets/provision.yaml'))
+
     # Create the project for crowdlink
-    proj = Project(
-        maintainer=users['crowdlink'],
-        name='crowdlink',
-        website="http://crowdlink.com",
-        url_key='crowdlink',
-        desc="A platform for user feedback")
-    proj.save()
-    proj.subscribe(user=usr)
+    projects = {}
+    for project in pdata['projects']:
+        # create a sweet new project...
+        proj = Project(
+            maintainer=users[project['maintainer']],
+            name=project['name'],
+            website=project['website'],
+            url_key=project['url_key'],
+            desc=project['desc']).save()
+        curr_proj = {'obj': proj}
+        projects[proj.url_key] = curr_proj
 
-    # and some issue templates for the project
-    issues_tmpl = [
-('Graphing of Improvement popularity', 'Generate simple d3 graphs that show how many votes an Improvement has recieved since its creation. Current thought was a on day to day basis.',
-    ['test']),
-('Change log for Improvements', 'Like gists on Github, show a historical revision log for an Improvements descriptions'),
-('Hot sorting metric for Improvements', 'Periodically re-calculate a "hot" value for various improvements based on how quickly they\'ve recieved votes over time. Similar to reddit, or other websites trending function'),
-('Allow revoking of Github synchronization via crowdlink', 'Currently, desynchronizing can only be done via Github.'),
-('Approval option for Improvements', 'Similar function to a lot of mailing lists, Improvements would be by default hidden until approved by a project maintainer. Perhaps a user could be put on an approved list as well, allowing their suggestions to be auto-approved.'),
-('Promote with donations', 'Instead of dontaing to the project, donate to a charity, yet earmark this donation towards a project or Improvement to show your support'),
-('Google Analytics Hooks', 'Allow project maintainers to specify a Google Analytics Key and select from a range of events that they would like logged into their GA account'),
-        ]
+        # subscribe some users if requested in config
+        if 'subscribers' in project:
+            for sub in project['subscribers']:
+                proj.set_subscribed(True, user=users[sub])
 
-    # add them to the database and keep track of useful information
+        # Add out issues to the database
+        curr_proj['issues'] = {}
+        for issue in project.get('issues', []):
+            # add some solutions to the issue
+            new_issue = Issue.create(
+                user=users[issue.get('creator', proj.maintainer.username)],
+                title=issue['title'],
+                desc=issue.get('desc'),
+                project=proj).save()
+
+            curr_issue = {'obj': new_issue}
+            curr_proj['issues'][issue.get('key', new_issue.url_key)] = curr_issue
+
+            # add solution to the db if they are listed
+            curr_issue['solutions'] = {}
+            for sol_tmpl in issue.get('solutions', []):
+                sol = Solution.create(
+                    title=sol_tmpl['title'],
+                    user=users['crowdlink'],
+                    issue=new_issue,
+                    desc=sol_tmpl.get('desc')).save()
+                curr_issue['solutions'][sol_tmpl.get('key', sol.url_key)] = (
+                    {'obj': sol})
+
+    # get a list of issues to potentially earmark
     issues = []
-    for data in issues_tmpl:
-        # add some solutions to the issue
-        if len(data) > 2:
-            title, desc, solutions = data
-        else:
-            title, desc = data
-        issue = Issue(
-            creator=usr,
-            title=title,
-            desc=desc)
-        proj.add_issue(issue, users['crowdlink'])
-        issues.append(issue)
-
-        for sol in solutions:
-            sol = Solution(
-                title=sol,
-                creator=users['crowdlink'],
-                issue=issue).save()
+    for p in projects.values():
+        issues += [issue['obj'] for issue in p['issues'].values()]
 
     # Setup tons of test financial data
     ##########################################################################

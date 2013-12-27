@@ -1,0 +1,50 @@
+projects:
+    - name: Crowdlink
+      maintainer: crowdlink
+      website: http://crowdlink.io
+      url_key: crowdlink
+      desc: A platform for user feedback
+      subscribers:
+          - crowdlink
+          - scrappy
+      issues:
+          - title: Graphing of Improvement popularity
+            desc: |
+                Generate simple d3 graphs that show how many votes an
+                Improvement has recieved since its creation. Current thought
+                was a on day to day basis.
+            key: pop
+            solutions:
+                - title: Testing
+                  desc: This is a simple test
+          - title: Change log for Improvements
+            desc: |
+                Like gists on Github, show a historical revision log for an
+                Improvements descriptions.
+            key: change_log
+          - title: Hot sorting metric for Improvements
+            desc: |
+                Periodically re-calculate a "hot" value for various
+                improvements based on how quickly they've recieved votes over
+                time. Similar to reddit, or other websites trending function
+            key: hot_sort
+          - title: Allow revoking of Github synchronization via crowdlink
+            desc: Currently, desynchronizing can only be done via Github.
+            key: revoke
+          - title: Approval option for Improvements
+            desc: |
+                Similar function to a lot of mailing lists, Improvements
+                would be by default hidden until approved by a project
+                maintainer.  Perhaps a user could be put on an approved list
+                as well, allowing their suggestions to be auto-approved.
+            key: approval
+          - title: Promote with donations
+            desc: |
+                Instead of dontaing to the project, donate to a charity, yet
+                earmark this donation towards a project or Improvement to
+                show your support
+          - title: Google Analytics Hooks
+            desc: |
+                Allow project maintainers to specify a Google Analytics Key
+                and select from a range of events that they would like logged
+                into their GA account

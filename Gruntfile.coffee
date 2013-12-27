@@ -58,9 +58,10 @@ module.exports = (grunt) ->
           "templates/events/comment.html": "processed/haml/events/comment.haml"
           "templates/events/fallback.html": "processed/haml/events/fallback.haml"
           "templates/tos.html": "processed/haml/tos.haml"
+          "templates/dir/drop_toggle.html": "processed/haml/dir/drop_toggle.haml"
 
     coffee:
-      compile:
+      default:
         files:
           "static/js/app.js": "processed/coffee/app.coffee"
           "static/js/controllers.js": "processed/coffee/controllers.coffee"
@@ -89,58 +90,31 @@ module.exports = (grunt) ->
           "static/lib/css/bootstrap.min.css": "less/bootstrap/bootstrap.less"
 
     shell:
+      options:
+        stdout: true
+        stderr: true
       reload:
         command: 'uwsgi --stop uwsgi.pid; sleep 1.5; uwsgi --ini uwsgi.ini'
-        options:
-          stdout: true
-          stderr: true
       clean:
         command: 'find . -name "*.pyc" -delete; find . -name "*.swo" -delete; find . -name "*.swp" -delete; echo "" > uwsgi.log'
       flake8:
         command: 'flake8 ./'
-        options:
-          stdout: true
-          stderr: true
       new_flake8:
         command: 'git diff HEAD -U0 | flake8 --diff'
-        options:
-          stdout: true
-          stderr: true
       jshint:
         command: 'coffee-jshint coffee/*.coffee'
-        options:
-          stdout: true
-          stderr: true
       test:
         command: 'nosetests crowdlink.tests.api_tests crowdlink.tests.model_tests crowdlink.tests.event_tests --with-cover --cover-package=crowdlink -v'
-        options:
-          stdout: true
-          stderr: true
       testall:
         command: 'nosetests --with-cover --cover-package=crowdlink --cover-html -v'
-        options:
-          stdout: true
-          stderr: true
       proc_coffee:
         command: './util/preprocess.py coffee coffee -v'
-        options:
-          stdout: true
-          stderr: true
       proc_haml:
         command: './util/preprocess.py haml haml -v'
-        options:
-          stdout: true
-          stderr: true
       proc_less:
         command: './util/preprocess.py less less -v'
-        options:
-          stdout: true
-          stderr: true
       proc_sass:
         command: './util/preprocess.py scss scss -v'
-        options:
-          stdout: true
-          stderr: true
 
     inlinecss:
       main:
@@ -150,37 +124,56 @@ module.exports = (grunt) ->
           'assets/emailout/base.html': 'assets/email/base.html'
 
     watch:
-      options:
-        livereload: true
-      bootstrap:
-        files: ['**/*.less']
-        tasks: ['shell:proc_less', 'less:development']
+      less_pre:
+        files: ['less/**/*.less']
+        tasks: ['shell:proc_less']
+      less:
+        files: ['processed/less/**/*.less']
+        tasks: ['less:development']
+        options:
+          livereload: true
+      haml_pre:
+        files: ['haml/**/*.haml']
+        tasks: ['shell:proc_haml']
       haml:
-        files: ['**/*.haml']
-        tasks: ['shell:proc_haml', 'haml']
+        files: ['processed/haml/**/*.haml']
+        tasks: ['newer:haml']
+        options:
+          livereload: true
+      compass_pre:
+        files: ['scss/**/*.scss']
+        tasks: ['shell:proc_sass']
       compass:
-        files: ['**/*.scss']
-        tasks: ['shell:proc_sass', 'compass']
+        files: ['processed/scss/**/*.scss']
+        tasks: ['compass']
+        options:
+          livereload: true
       dev_server:
         files: ['**/*.py', '*.ini', '*.json']
         tasks: ['shell:reload']
-      coffee:
+      coffee_pre:
         files: ['coffee/**/*.coffee']
-        tasks: ['shell:proc_coffee', 'coffee:compile']
+        tasks: ['shell:proc_coffee']
+      coffee:
+        files: ['processed/coffee/**/*.coffee']
+        tasks: ['newer:coffee']
+        options:
+          livereload: true
       email:
         files: ['assets/email/**/*.html']
         tasks: ['inlinecss:main']
 
-  grunt.loadNpmTasks('grunt-contrib-less')
-  grunt.loadNpmTasks('grunt-contrib-watch')
-  grunt.loadNpmTasks('grunt-contrib-haml')
-  grunt.loadNpmTasks('grunt-contrib-compass')
-  grunt.loadNpmTasks('grunt-contrib-coffee')
-  grunt.loadNpmTasks('grunt-shell')
-  grunt.loadNpmTasks('grunt-coffeelint')
-  grunt.loadNpmTasks('grunt-contrib-uglify')
-  grunt.loadNpmTasks('grunt-contrib-cssmin')
-  grunt.loadNpmTasks('grunt-inline-css')
+  grunt.loadNpmTasks('grunt-contrib-less')    # compiled bootstrap
+  grunt.loadNpmTasks('grunt-contrib-watch')   # watches for changes
+  grunt.loadNpmTasks('grunt-contrib-haml')    # compiles our haml
+  grunt.loadNpmTasks('grunt-contrib-compass') # compiles our compass
+  grunt.loadNpmTasks('grunt-contrib-coffee')  # compiles our js
+  grunt.loadNpmTasks('grunt-shell')           # runs utility commands
+  grunt.loadNpmTasks('grunt-coffeelint')      # lints our coffeescript
+  grunt.loadNpmTasks('grunt-contrib-uglify')  # combines js files and minifies
+  grunt.loadNpmTasks('grunt-contrib-cssmin')  # minifies css files
+  grunt.loadNpmTasks('grunt-inline-css')      # used for inlining email temps
+  grunt.loadNpmTasks('grunt-newer')           # only compiles newer files
 
   grunt.registerTask "dev", ["shell:proc_coffee", "shell:proc_less",
                              "shell:proc_haml", "shell:proc_sass",

@@ -3,7 +3,7 @@ from flask.ext.login import (login_required, logout_user, current_user,
                              login_user)
 
 from .api_base import API, get_joined
-from .models import User, Project, Issue, Solution, Email, Report
+from .models import User, Project, Issue, Solution, Email, Dispute
 from .fin_models import Earmark, Recipient, Transfer, Charge
 
 import valideer
@@ -208,5 +208,5 @@ class EarmarkAPI(API):
     model = Earmark
 
 
-class ReportAPI(API):
-    model = Report
+class DisputeAPI(API):
+    model = Dispute
