@@ -1,7 +1,9 @@
 .col-md-9{"ng-controller" => "newChargeController", "ng-show" => "view=='add_credit'", style: "padding:30px;"}
-  .alert.fade.in{class: "alert-{[{result.type}]}", "ng-show" => "result.show"}
-    %a.close{"data-dismiss" => "alert", href: "#"} ×
-    {[{ result.text }]}
+  .alert-danger.alert.fade{"ng-show" => "errors"}
+    %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+    %span{"ng-show" => "error_header"} {[{ error_header }]}
+    %ul{"ng-show" => "errors.length > 1"}
+      %li{"ng-repeat" => "error in errors"} {[{error}]}
   %form.form-horizontal{name: "charge_form", novalidate: "", role: "form"}
     .form-group
       %h4 Select an amount to pay

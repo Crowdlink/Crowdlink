@@ -89,6 +89,7 @@ class Charge(Source, PrivateMixin, base):
     livemode = db.Column(db.Boolean, nullable=False)
     stripe_id = db.Column(db.String, unique=True, nullable=False)
     stripe_created_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_four = db.Column(db.Integer)
     stripe_fee = db.Column(db.Integer,
                            CheckConstraint('stripe_fee>0'),
@@ -116,6 +117,7 @@ class Charge(Source, PrivateMixin, base):
     def create(cls, token, amount, user=current_user, event_data=None):
         card = token['id']
         livemode = token['livemode']
+        stripe.api_key = current_app.config['stripe_secret_key']
 
         # calculate stripes fee and remove it. Wish they included it in their
         # API...

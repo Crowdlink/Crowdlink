@@ -75,7 +75,15 @@
               %a{href: "#/login"}
                 %i.fa.fa-sign-in.fa-large
                 %span.hidden-xs Login
-      .container.main-cont.fade{"ng-view" => ""}
+      .container.main-cont
+        %div{"ng-show" => "messages.length > 0"}
+          %br
+        .alert.fade{"ng-repeat" => "message in messages", "ng-class" => "message['class']"}
+          %span{"ng-bind" => "message['header']"}
+          %span{"ng-bind" => "message['message']"}
+          %ul{"ng-show" => "'messages' in message"}
+            %li{"ng-repeat" => "m in message['messages']", "ng-bind" => "m"}
+        .fade{"ng-view" => ""}
 
   %div{id: "footer navbar-default navbar"}
     .container

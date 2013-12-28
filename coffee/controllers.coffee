@@ -101,7 +101,7 @@ ProjectService, SolutionService) ->
 
 # RootController ==============================================================
 mainControllers.controller('rootController',
-($scope, $location, $rootScope, $http, $modal, UserService)->
+($scope, $location, $rootScope, $http, $modal, $timeout, UserService)->
 
   $scope.root_init = (logged_in, user) ->
     $rootScope.logged_in = logged_in
@@ -110,6 +110,7 @@ mainControllers.controller('rootController',
       $rootScope.user = JSON.parse(decodeURIComponent(user))
     else
       $rootScope.user = {}
+    $rootScope.flash = []
 
   $rootScope.noty_error = (response) ->
     options =
@@ -193,8 +194,21 @@ mainControllers.controller('rootController',
 
   $rootScope.location = $location
   $rootScope.$on('$locationChangeStart', (event, next, current) ->
+    $rootScope.loading = true
+  )
+  $rootScope.$on('$locationChangeSuccess', (event, next, current) ->
+    $rootScope.loading = false
+    # Swap our pending flash events to display for two seconds when the route
+    # is changed
+    if $rootScope.flash.length > 0
+      $rootScope.messages = $rootScope.flash.slice 0
+      $rootScope.flash = []
+      $timeout( ->
+        $rootScope.messages = []
+      , 2000)
   )
   $rootScope.$on('$routeChangeError', (event, current, previous, rejection) ->
+    $rootScope.loading = false
     if 'status' of rejection
       st = rejection.status
       if st == 400
@@ -353,17 +367,20 @@ mainControllers.controller('projectController',
 )
 
 # NewChargeController ============================================================
-mainControllers.controller('newChargeController', ($scope, ChargeService)->
+mainControllers.controller('newChargeController', ($scope, $rootScope,
+$injector, ChargeService, $location)->
 
+  $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.options = [500, 1000, 2500, 5000]
   $scope.amount = $scope.options[0]
   $scope.result =
     text: ""
     type: ""
     show: false
-  window.handler = StripeCheckout.configure
-    token: $scope.recv_token
-    key: ""
+  $scope.handler = StripeCheckout.configure
+    token: (token, args) ->
+      $scope.recv_token(token, args)
+    key: "{{ stripe_public_key }}"
 
   reload_custom = ->
     if $scope.amount == false
@@ -381,20 +398,23 @@ mainControllers.controller('newChargeController', ($scope, ChargeService)->
   )
 
   $scope.recv_token = (token, args) ->
-    ChargeService.post(
+    ChargeService.create(
       token: token
       amount: $scope.actual_amt
-      userid: $scope.user.id
     ,(value) -> # Function to be run when function returns
-      $scope.result =
-        text: "You're card has been successfully charged"
-        type: "success"
-        show: true
-    , $rootScope.noty_error)
+      if 'success' of value and value.success
+        $rootScope.flash.push
+          message: "Successfully charged your card for
+          $#{$scope.actual_amt /100}. You can now contibute to other projects."
+          class: 'alert-success'
+        $location.path("/account/charges")
+      else
+        $scope.error_report(value)
+    , $scope.error_report)
 
   $scope.pay = () ->
     # Open Checkout with further options
-    handler.open
+    $scope.handler.open
       image: "{{ static_path }}img/logo_stripe.png"
       name: "Featurelet"
       description: "Credits ($" + $scope.actual_amt/100 + ")"
@@ -404,14 +424,16 @@ mainControllers.controller('newChargeController', ($scope, ChargeService)->
 # ChargeController =======================================================
 mainControllers.controller('chargeController',
 ($scope, $rootScope, ChargeService)->
-
-  $scope.init = () ->
-    ChargeService.query({}, (value) ->
-      $scope.charges = value.charges
-      if $scope.charges
-        for charge in $scope.charges
-          charge.details = false
-    , $rootScope.noty_error)
+  ChargeService.query(
+    __filter_by:
+      user_id: $rootScope.user.id
+    __order_by: '["created_at"]'
+  , (value) ->
+    $scope.charges = value.objects
+    if $scope.charges
+      for charge in $scope.charges
+        charge.details = false
+  , $rootScope.noty_error)
 )
 
 # ProfileController ===========================================================

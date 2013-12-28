@@ -71,7 +71,8 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
       login: login_resolver('user')
       acc_user: (UserService, $rootScope) ->
         UserService.query(
-          username: $rootScope.user.username
+          __filter_by:
+            username: $rootScope.user.username
           join_prof: "settings_join").$promise
   # Error Pages
   ).when("/errors/:error",

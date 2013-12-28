@@ -108,6 +108,9 @@ class API(MethodView):
                 ret = jsonify_status_code(500, "Internal Server error")
 
         # catch syntax errors and re-raise them
+        except ValueError as e:
+            ret = jsonify_status_code(400, e.message)
+        # catch syntax errors and re-raise them
         except SyntaxError as e:
             ret = jsonify_status_code(400, e.message)
 
@@ -173,7 +176,7 @@ class API(MethodView):
         """ This function should parse the current parameters to gain parent
         information for properly running can_cls on the model this API wraps
         """
-        return False
+        return self.model.can_cls(action)
 
     def get(self):
         """ Retrieve an object from the database """
@@ -321,7 +324,7 @@ class API(MethodView):
         order_by = self.params.pop('__order_by', None)
         try:
             if order_by:
-                for key in order_by:
+                for key in json.loads(order_by):
                     if key.startswith('-'):
                         base = getattr(self.model, key[1:]).desc()
                     else:
@@ -330,7 +333,7 @@ class API(MethodView):
         except AttributeError:
             raise SyntaxError(
                 'Order_by operator "{}" accessed invalid field on '
-                'model {}'.format(op, self.model.__class__.__name__))
+                'model {}'.format(key, self.model.__class__.__name__))
 
         filter_by = self.params.pop('__filter_by', None)
         if filter_by:

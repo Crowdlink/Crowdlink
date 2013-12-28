@@ -15,10 +15,10 @@
             {[{ charge.amount/100 }]}
           %td
             %i.fa.fa-calendar
-            {[{ charge.created.$date | date:'short' }]}
+            {[{ charge.created_at | date:'short' }]}
           %td.mono
             %i.fa.fa-credit-card
-            **** **** **** {[{ charge.last_four }]}
+            {[{ charge.last_four }]}
           %td
             {[{ charge.status }]}
           %td
