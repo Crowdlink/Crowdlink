@@ -29,7 +29,7 @@ parentFormController = ($scope) ->
 
 # parentEditController ========================================================
 parentEditController = ($scope, $rootScope, $timeout, IssueService,
-ProjectService, SolutionService) ->
+ProjectService, SolutionService, UserService) ->
 
   $scope.toggle = (s) ->
     $scope.$eval("prev.#{s} = #{s}; editing.#{s} = !editing.#{s}")
@@ -67,6 +67,8 @@ ProjectService, SolutionService) ->
       service = ProjectService
     else if cls == 'Solution'
       service = SolutionService
+    else if cls == 'User'
+      service = UserService
 
     service.update(
       $.extend(data, extra_data)
@@ -438,17 +440,12 @@ mainControllers.controller('chargeController',
 
 # ProfileController ===========================================================
 mainControllers.controller('profileController',
-($scope, $rootScope, $routeParams, UserService)->
-
-  $scope.init = () ->
-    if $routeParams.username == $oootScope.user.username
-      $scope.prof_user = $rootScope.user
-    else
-      UserService.query(
-        username: $routeParams.username
-      ,(value) ->
-        $scope.prof_user = value
-      , $rootScope.noty_error)
+($scope, $rootScope, $routeParams, prof_user, $injector)->
+  $injector.invoke(parentEditController, this, {$scope: $scope})
+  $scope.prof_user = prof_user.objects[0]
+  $scope.build_data = (frag) ->
+    data =
+      id: $scope.prof_user.id
 )
 
 # LoginController =============================================================

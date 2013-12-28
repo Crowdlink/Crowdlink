@@ -9,6 +9,7 @@ templates/events/*.html
 cover/**
 bower_components/**
 assets/emailout/**
+assets/help/*.json
 
 *.py[cod]
 *.swp

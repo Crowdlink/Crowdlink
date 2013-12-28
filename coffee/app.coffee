@@ -154,6 +154,13 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   ).when("/:username",
     templateUrl: "templates/profile.html"
     controller: "profileController"
+    resolve:
+      prof_user: (UserService, $route) ->
+        UserService.query(
+          __filter_by:
+            username: $route.current.params.username
+          join_prof: 'page_join'
+          __one: true).$promise
   ).otherwise(
     redirectTo: "/404"
   )

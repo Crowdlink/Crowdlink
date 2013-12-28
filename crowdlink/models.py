@@ -574,7 +574,8 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                               'join_prof': 'disp_join'}])
 
     page_join = inherit_lst(standard_join,
-                            [{'obj': 'public_events'}])
+                            [{'obj': 'public_events'},
+                              'subscribed'])
 
     settings_join = inherit_lst(standard_join,
                                 [{'obj': 'primary_email'}])

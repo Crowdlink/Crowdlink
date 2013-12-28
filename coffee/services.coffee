@@ -41,6 +41,9 @@ mainServices.factory("UserService", ($resource) ->
     query:
       method: "GET"
       isArray: false
+    update:
+      method: "PUT"
+      isArray: false
 )
 
 mainServices.factory("ProjectService", ($resource) ->
