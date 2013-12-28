@@ -4,15 +4,15 @@
     %table.table
       %tr
         %th Username
-        %td{"ng-bind" => "user.username"}
+        %td{"ng-bind" => "acc_user.username"}
       %tr
         %th Primary Email
         %td
-          {[{user.primary_email.address}]}
-          %span.label{"ng-class" => "{true: 'label-success', false: 'label-danger'}[user.primary_email.verified]"}
-            %span{"ng-show" => "user.primary_email.verified"} Verified
-            %span{"ng-hide" => "user.primary_email.verified"} Un-Verified
-      %tr{"ng-show" => "user.gh_linked"}
+          {[{acc_user.primary_email.address}]}
+          %span.label{"ng-class" => "{true: 'label-success', false: 'label-danger'}[acc_user.primary_email.verified]"}
+            %span{"ng-show" => "acc_user.primary_email.verified"} Verified
+            %span{"ng-hide" => "acc_user.primary_email.verified"} Un-Verified
+      %tr{"ng-show" => "acc_user.gh_linked"}
         %th Github Account
         %td
-          {[{user.gh.login}]} {[{user.gh_token}]}
+          {[{acc_user.gh.login}]} {[{acc_user.gh_token}]}

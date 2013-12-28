@@ -467,10 +467,12 @@ class Earmark(StatusMixin, Sink, base):
 
         for mark in self.marks:
             if mark.user_id == user_id:
-                return 'reciever'
+                return ['mark_reciever']
 
-        if self.user_id == getattr(user, 'id', None):
-            return 'sender'
+        if self.user_id == user_id:
+            return ['sender']
+
+        return []
 
     @classmethod
     def create(cls, thing, amount, user=current_user):

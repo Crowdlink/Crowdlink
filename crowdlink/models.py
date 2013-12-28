@@ -115,6 +115,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     def roles(self, user=current_user):
         if self.maintainer == user:
             return ['maintainer']
+        return []
 
     @property
     def get_dur_url(self):
@@ -576,7 +577,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                             [{'obj': 'public_events'}])
 
     settings_join = inherit_lst(standard_join,
-                                {'obj': 'primary_email'})
+                                [{'obj': 'primary_email'}])
 
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
@@ -591,8 +592,9 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             Mark.user == self and Mark.cleared is True)])
 
     def roles(self, user=current_user):
-        if self == user:
+        if self.id == getattr(user, 'id', None):
             return ['owner']
+        return []
 
     @property
     def get_dur_url(self):

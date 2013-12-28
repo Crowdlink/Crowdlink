@@ -46,7 +46,7 @@
     %script{src: "{{ static_path }}js/controllers.js"}
     %script{src: "{{ static_path }}js/services.js"}
     {% endif %}
-    {% raw %}#wrap{"ng-init" => "init({{logged_in}}, '{{user | tojson | urlencode}}')"}{% endraw %}
+    {% raw %}#wrap{"ng-init" => "root_init({{logged_in}}, '{{user | tojson | urlencode}}')"}{% endraw %}
       .navbar.navbar-default.navbar-fixed-top
         .container.no-gutter
           %a.navbar-brand.logo{href: "#/home"}

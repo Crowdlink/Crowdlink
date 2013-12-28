@@ -70,7 +70,9 @@ user:
     owner:
         inherit: user
         edit: url_key
-        view: home_join
+        view:
+            - home_join
+            - settings_join
 project:
     # global context roles
     anonymous:
