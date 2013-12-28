@@ -252,7 +252,7 @@ mainControllers.controller('solutionController',
 
 # IssueController =============================================================
 mainControllers.controller('issueController',
-($scope, $routeParams, $rootScope, IssueService, $injector, $timeout)->
+($scope, $routeParams, $rootScope, IssueService, $injector, $timeout, CommentService) ->
 
   $injector.invoke(parentEditController, this, {$scope: $scope})
   $scope.init = () ->
@@ -263,14 +263,17 @@ mainControllers.controller('issueController',
         url_key: $routeParams.url_key
       join_prof: "page_join"
     ,(value) ->
-      $timeout ->
-        $scope.issue = value.objects[0]
-        $scope.prev =
-          issue: $.extend({}, value.objects[0])
+      if 'success' of value and value.success
         $timeout ->
-          $rootScope.loading = false
-        , 200
-      , 500
+          $scope.issue = value.objects[0]
+          $scope.prev =
+            issue: $.extend({}, value.objects[0])
+          $timeout ->
+            $rootScope.loading = false
+          , 200
+        , 500
+      else
+        $rootScope.noty_error value
     , $rootScope.noty_error)
     $rootScope.loading = true
     $scope.editing =
@@ -292,6 +295,19 @@ mainControllers.controller('issueController',
     else
       $rootScope.title = "Issue"
   )
+
+  $scope.comment = (message, object) ->
+    CommentService.create(
+      message: message
+      thing_id: object.id
+    ,(value) ->
+      if 'success' of value and value.success
+        $timeout ->
+          object.comments.push(value.objects[0])
+        , 500
+      else
+        $rootScope.noty_error value
+    , $rootScope.noty_error)
 
   $scope.build_data = (frag) ->
     data =

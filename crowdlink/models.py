@@ -1,6 +1,6 @@
 from flask import session, current_app, flash
 from flask.ext.login import current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 
 from . import db, github, crypt
@@ -15,6 +15,7 @@ import re
 import werkzeug
 import urllib
 import hashlib
+import os
 
 
 # our parent table for issues, projects, solutions and users
@@ -113,7 +114,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
 
     def roles(self, user=current_user):
         if self.maintainer == user:
-            return 'maintainer'
+            return ['maintainer']
 
     @property
     def get_dur_url(self):
@@ -132,6 +133,8 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                       website=website,
                       desc=desc,
                       maintainer=user)
+
+        db.session.add(project)
 
         # TODO: XXX: Needs an event to be distributed here
         return project
@@ -198,6 +201,17 @@ class Issue(
         foreign_keys='[Issue.project_url_key, Issue.project_maintainer_username]',
         backref='issues')
     creator = db.relationship('User', foreign_keys='Issue.creator_id')
+
+    comments = db.relationship(
+        'Comment',
+        order_by='Comment.created_at',
+        primaryjoin='Comment.thing_id == Thing.id and Comment.banned == False and Comment.hidden == False')
+
+    hidden_comments = db.relationship(
+        'Comment',
+        order_by='Comment.created_at',
+        primaryjoin='Comment.thing_id == Thing.id and Comment.banned == False')
+
     __mapper_args__ = {'polymorphic_identity': 'Issue'}
 
     acl = acl['issue']
@@ -216,6 +230,7 @@ class Issue(
                             ['get_project_abs_url',
                              {'obj': 'project', 'join_prof': 'issue_page_join'},
                              {'obj': 'solutions', 'join_prof': 'standard_join'},
+                             {'obj': 'comments', 'join_prof': 'standard_join'},
                              'StatusVals']
                             )
 
@@ -230,11 +245,14 @@ class Issue(
                   'join_prof': 'disp_join'}]
 
     def roles(self, user=current_user):
-        if self.project.maintainer == user:
-            return 'maintainer'
-
+        roles = Issue.p_roles(project=self.project, user=user)
         if self.creator == user:
-            return 'creator'
+            roles.append('creator')
+        return roles
+
+    @classmethod
+    def p_roles(cls, project=None, user=current_user):
+        return cls._inherit_roles(project=project, user=user)
 
     @property
     def get_dur_url(self):
@@ -258,12 +276,6 @@ class Issue(
             self.url_key = re.sub(
                 '[^0-9a-zA-Z]', '-', self.title[:100]).lower()
 
-    def add_comment(self, user, body):
-        # Send the actual comment to the Issue event queue
-        #c = Comment(user=user.id, body=body)
-        #c.distribute(self)
-        pass
-
     def gh_desync(self, flatten=False):
         """ Used to disconnect an Issue from github. Really just a trickle down
         call from de-syncing the project, but nicer to keep the logic in
@@ -283,6 +295,7 @@ class Issue(
                     project=project,
                     creator=user.get())
         issue.create_key()
+        db.session.add(issue)
 
         # send a notification to all subscribers
         events.IssueNotif.generate(issue)
@@ -357,11 +370,14 @@ class Solution(
                  'get_abs_url']
 
     def roles(self, user=current_user):
-        if self.project.maintainer == user:
-            return 'maintainer'
-
+        roles = Solution.p_roles(issue=self.issue)
         if self.creator == user or 'maintainer':
-            return 'creator'
+            roles.append('creator')
+        return roles
+
+    @classmethod
+    def p_roles(cls, issue=None, user=current_user):
+        return cls._inherit_roles(issue=issue, user=user)
 
     @property
     def get_dur_url(self):
@@ -388,12 +404,50 @@ class Solution(
                   issue=issue,
                   creator=user.get())
         sol.create_key()
+        db.session.add(sol)
 
         # send a notification to all subscribers
         #events.IssueNotif.generate(issue)
         # TODO: Add event for solution creation
 
         return sol
+
+
+class Comment(base):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user = db.relationship('User', foreign_keys=[user_id])
+    message = db.Column(db.String, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    thing_id = db.Column(db.Integer, db.ForeignKey('thing.id'), nullable=False)
+    thing = db.relationship('Thing')
+    hidden = db.Column(db.Boolean, default=False)
+    banned = db.Column(db.Boolean, default=False)
+
+    acl = acl['comment']
+
+    @classmethod
+    def p_roles(cls, thing=None, user=current_user):
+        return cls._inherit_roles(thing=thing, user=user)
+
+    def roles(self, user=current_user):
+        roles = Comment.p_roles(thing=self.thing)
+        if user == self.user:
+            roles += ['creator']
+        return roles
+
+    standard_join = [{'obj': 'user', 'join_prof': 'disp_join'},
+                     'message',
+                     'created_at']
+
+    @classmethod
+    def create(self, message, thing, user=current_user):
+        comment = Comment(message=message,
+                          thing=thing,
+                          user=user)
+        db.session.add(comment)
+        # TODO: XXX: Add event for comment creation here
+        return comment
 
 
 class Email(base):
@@ -404,18 +458,51 @@ class Email(base):
     address = db.Column(db.String, primary_key=True)
     verified = db.Column(db.Boolean, default=False, nullable=False)
     primary = db.Column(db.Boolean, nullable=False)
+    activate_hash = db.Column(db.String)
+    hash_gen = db.Column(db.DateTime)
 
     @classmethod
-    def activate_email(self, email):
-        Email.query.filter_by(address=email).update({'verified': True})
+    def activate_email(self, email, activate_hash="", force=False):
+        if force:
+            return bool(Email.query
+                        .filter_by(address=email)
+                        .update({'verified': True}))
+        else:
+            day_ago = datetime.utcnow() - timedelta(days=1)
+            return bool(Email.query
+                        .filter_by(address=email, activate_hash=activate_hash)
+                        .filter(Email.hash_gen > day_ago)
+                        .update({'verified': True, 'hash_gen': None, 'activate_hash': None}))
+
+    @classmethod
+    def create(cls, address, user):
+        inst = cls(address=address,
+                   user=user)
+
+        db.session.add(inst)
+
+    def send_activation(self):
+        """ Regenerates activation hashes and time markers and commits the
+        change.  If the commit action is successful, an email will be sent to
+        the user """
+        self.activate_hash = hashlib.sha256(os.urandom(10)).hexdigest()
+        self.hash_gen = datetime.utcnow()
+
+        db.session.commit()
+
+        return send_email(
+            self.address,
+            'confirm',
+            activate_hash=self.activate_hash,
+            user_id=self.user_id)
 
 
 class Dispute(base, PrivateMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', foreign_keys=[user_id])
-    thing_id = db.Column(db.String)
-    thing = db.Column(db.Integer, db.ForeignKey('thing.id'))
+    thing_id = db.Column(db.Integer, db.ForeignKey('thing.id'))
+    thing = db.relationship('Thing', backref='disputes')
     content = db.Column(db.String)
 
     standard_join = ['id',
@@ -505,7 +592,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
 
     def roles(self, user=current_user):
         if self == user:
-            return 'owner'
+            return ['owner']
 
     @property
     def get_dur_url(self):
@@ -642,3 +729,4 @@ class User(Thing, SubscribableMixin, ReportableMixin):
         return self
 
 from . import events as events
+from .lib import send_email

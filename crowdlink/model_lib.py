@@ -47,44 +47,57 @@ class BaseMapper(object):
     # =========================================================================
     def roles(self, user=current_user):
         """ This should be overriden to use logic for determining roles on an
-        instance of the class """
+        instance of the class. This should include inheriting parent roles from
+        p_roles function. """
         return []
 
-    def can(self, action):
-        """ Can the user perform the action needed on this object instance? """
-        current_app.logger.debug((action, self.user_acl))
-        return action in self.user_acl
+    @classmethod
+    def p_roles(self):
+        """ Determines roles to be gained from parent objects. Usually uses the
+        _inherit_roles helper function to prefix all parent roles with their
+        class name """
+        return []
+
+    def can(self, action, user=current_user):
+        """ Can the user perform the action needed on this object instance?
+        Checks for the desired key in a list of allowed action keys. """
+        keys = self.user_acl(user=user)
+        current_app.logger.debug((keys, action))
+        return action in keys
 
     @classmethod
-    def can_cls(cls, action):
-        """ Can the user perform the action needed on this class (non inst
-        specific)? """
-        roles = current_user.global_roles()
-        acl = cls._role_mix(roles)
-        current_app.logger.debug((roles, acl, action))
-        return action in acl
+    def can_cls(cls, action, user=current_user, **parents):
+        """ Similar to can, except does not include instance specific roles.
+        Intended to be used to determine if pre-creation events can occur, such
+        as create or create_other. Requires the data on parents to be passed in
+        via keyword arguments to determine parent roles"""
+        return action in cls._role_mix(cls.p_roles(**parents) + user.roles())
+
+    def user_acl(self, user=current_user):
+        """ A list of access keys the user has with context to the current
+        object """
+        roles = self.roles(user=user) + user.global_roles()
+        return self._role_mix(roles)
 
     @classmethod
     def _role_mix(cls, roles):
+        """ A utility that takes a list of roles and returns a set of allowed
+        actions that was determined by those roles """
         allowed = set()
         for role in roles:
             allowed |= cls.acl.get(role, set())
         return allowed
 
-    @property
-    def user_acl(self, user=current_user):
-        """ a lazy loaded acl list for the current user """
-        # Run an extra check to ensure we don't hand out an acl list for the
-        # wrong user. Possibly un-neccesary, I'm paranoid
-        roles = []
-        inst_roles = self.roles(user=user)
-        if isinstance(inst_roles, list):  # allow either str or list
-            roles += inst_roles
-        elif inst_roles != None:
-            roles.append(inst_roles)
-        roles += current_user.global_roles()
-        return self._role_mix(roles)
+    @classmethod
+    def _inherit_roles(cls, user=current_user, **kwargs):
+        """ a utility method that prefixes the roles of parents """
+        r = []
+        for prefix, obj in kwargs.items():
+            r += [prefix + "_" + i for i in obj.roles(user=user)]
+        return r
 
+    # Convenience methods
+    # =========================================================================
     def save(self, *exc_catch):
         """ Automatically adds object to global session and catches exception
         types silently that are given as args. """
@@ -114,6 +127,16 @@ class BaseMapper(object):
         dct = {}
         for key in args:
             attr = getattr(self, key)
+            # if it's a callable function call it, then do the parsing below
+            if callable(attr):
+                try:
+                    attr = attr()
+                except TypeError:
+                    current_app.logger.warn(
+                        ("{} callable requires argument on obj "
+                         "{}").format(str(attr), self.__class__.__name__))
+                    continue
+
             # If it's being joined this way, just use the id
             if isinstance(attr, BaseMapper):
                 try:
@@ -123,12 +146,12 @@ class BaseMapper(object):
                         ("{} object join doesn't have an id on obj "
                          "{}").format(str(attr), self.__class__.__name__))
             # convert an enum to a dict for easy parsing
-            if isinstance(attr, Enum):
+            elif isinstance(attr, Enum):
                 attr = dict({str(x): x.index for x in attr})
             # convert datetime to seconds since epoch, much more universal
             elif isinstance(attr, datetime):
                 attr = calendar.timegm(attr.utctimetuple()) * 1000
-            # don't convert bool or int to str
+            # don't convert these common types to strings
             elif (isinstance(attr, bool) or
                   isinstance(attr, int) or
                   attr is None or
@@ -137,16 +160,9 @@ class BaseMapper(object):
             # convert set (user_acl list) to a dictionary for easy conditionals
             elif isinstance(attr, set):
                 attr = {x: True for x in attr}
-            # try to fetch callables properly
-            elif callable(attr):
-                try:
-                    attr = attr()
-                except TypeError:
-                    current_app.logger.warn(
-                        ("{} callable requires argument on obj "
-                         "{}").format(str(attr), self.__class__.__name__))
-            else:
+            else:  # if we don't know what it is, stringify it
                 attr = str(attr)
+
             dct[key] = attr
 
         if raw:

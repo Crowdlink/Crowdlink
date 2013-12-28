@@ -94,7 +94,7 @@ def provision():
     admin = User.create("admin", "testing", "admin@crowdlink.io")
     admin.admin = True  # make them an admin
     db.session.commit()
-    Email.activate_email('admin@crowdlink.io')
+    assert Email.activate_email('admin@crowdlink.io', force=True)
     login_user(admin)
 
     # make a bunch of testing users
@@ -113,7 +113,7 @@ def provision():
                      'barney', 'betty']:
         usr = User.create(username, "testing", username + "@crowdlink.io")
         db.session.commit()
-        Email.activate_email(username + '@crowdlink.io')
+        assert Email.activate_email(username + '@crowdlink.io', force=True)
         users[username] = usr
 
     pdata = yaml.load(file(root + '/assets/provision.yaml'))

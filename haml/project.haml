@@ -49,7 +49,7 @@
     / /input-group
     %table.table.table-hover
       %tbody
-        %tr{"ng-repeat" => "issue in project.issues | filter:filter"}
+        %tr.fade{"ng-repeat" => "issue in project.issues | filter:filter"}
           %td.fit-width
             %a.btn.btn-xs{"ng-class" => "{'btn-success': issue.vote_status, 'btn-info': !issue.vote_status}",
               "ng-click" => "vote(issue)"}

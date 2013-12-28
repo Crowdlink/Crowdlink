@@ -57,6 +57,20 @@ mainServices.factory("ProjectService", ($resource) ->
       timeout: 10000
 )
 
+mainServices.factory("CommentService", ($resource) ->
+  $resource "{{ api_path }}comment", {},
+    query:
+      method: "GET"
+      timeout: 10000
+      isArray: false
+    update:
+      method: "PUT"
+      timeout: 10000
+    create:
+      method: "POST"
+      timeout: 10000
+)
+
 mainServices.factory("StripeService", ($resource) ->
   $resource "{{ api_path }}charge", {},
     update:

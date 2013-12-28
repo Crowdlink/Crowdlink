@@ -91,7 +91,7 @@ class IssueNotif(Event):
         user = issue.creator
         project = issue.project
         notif = cls(
-            time=datetime.datetime.now(),
+            time=datetime.datetime.utcnow(),
             uname=user.username,
             user_p=user.get_dur_url,
             pname=project.name,

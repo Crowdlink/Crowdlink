@@ -4,12 +4,10 @@ base_private:
     # global context roles
     anonymous: []
     user:
-        class:
-            - create
+        class: create
     # Object context roles
     owner:
-        view:
-            - standard_join
+        view: standard_join
 
 solution:
     # global context roles
@@ -20,8 +18,7 @@ solution:
             - disp_join
     noactive_user:
         inherit: anonymous
-        edit:
-            - subscribed
+        edit: subscribed
     usernameless:
         inherit: noactive_user
     user:
@@ -29,22 +26,21 @@ solution:
         edit:
             - report_status
             - vote_status
-        class:
-            - create
+        class: create
     admin:
-        inherit: maintainer
-        class:
-            - create_other
+        inherit: issue_project_maintainer
+        class: create_other
 
     # Object context roles
-    maintainer:
+    issue_project_maintainer:
         inherit: user
         edit:
             - url_key
             - title
             - desc
+    issue_creator:
     creator:
-        inherit: maintainer
+        inherit: issue_project_maintainer
 
 user:
     # global context roles
@@ -59,8 +55,7 @@ user:
             - standard_join
             - page_join
             - disp_join
-        edit:
-            - subscribed
+        edit: subscribed
     usernameless:
         inherit: noactive_user
     user:
@@ -90,7 +85,6 @@ project:
         inherit: noactive_user
     user:
         inherit: noactive_user
-        action: add_issue
         edit:
             - report_status
             - vote_status
@@ -114,29 +108,21 @@ issue:
             - disp_join
     noactive_user:
         inherit: anonymous
-        edit:
-            - subscribed
+        edit: subscribed
     usernameless:
         inherit: noactive_user
     user:
         inherit: noactive_user
-        action:
-            - add_solution
         edit:
             - report_status
             - vote_status
             - subscribed
-        class:
-            - create
+        class: create
     admin:
-        inherit:
-            - anonymous
-            - user
-            - maintainer
-        class:
-            - create_other
+        inherit: project_maintainer
+        class: create_other
     # Object context roles
-    maintainer:
+    project_maintainer:
         inherit: user
         edit:
             - url_key
@@ -144,18 +130,38 @@ issue:
             - title
             - desc
     creator:
-        inherit: maintainer
+        inherit: project_maintainer
+
+comment:
+    # global context roles
+    anonymous:
+        view: standard_join
+    noactive_user:
+        inherit: anonymous
+    usernameless:
+        inherit: noactive_user
+    user:
+        inherit: noactive_user
+        class: create
+    admin:
+        inherit: thing_project_maintainer
+        class: create_other
+        edit: banned
+    # Object context roles
+    thing_project_maintainer:
+        inherit: user
+        edit: hidden
+    creator:
+        inherit: thing_project_maintainer
 
 charge:
     inherit: base_private
     # global context roles
     admin:
-        view:
-            - standard_join
+        view: standard_join
     # Object context roles
     owner:
-        action:
-            - add_earmark
+        action: add_earmark
 
 mark:
     # global context roles
@@ -171,29 +177,23 @@ mark:
 earmark:
     # global context roles
     user:
-        class:
-            - create
+        class: create
     admin:
         inherit: reciever
     sender:
-        view:
-            - standard_join
-        action:
-            - increase_amount
+        view: standard_join
+        action: increase_amount
     reciever:
-        view:
-            - standard_join
+        view: standard_join
 
 transfer:
     inherit: base_private
     # global context roles
     user:
-        class:
-            - create
+        class: create
     admin:
         inherit: owner
-        class:
-            - create_other
+        class: create_other
 
 recipient:
     inherit: base_private

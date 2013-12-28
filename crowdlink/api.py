@@ -2,8 +2,9 @@ from flask import Blueprint, request, current_app, jsonify
 from flask.ext.login import (login_required, logout_user, current_user,
                              login_user)
 
-from .api_base import API, get_joined
-from .models import User, Project, Issue, Solution, Email, Dispute
+from .api_base import API, get_joined, jsonify_status_code
+from .models import (User, Project, Issue, Solution, Email, Dispute, Comment,
+                     Thing)
 from .fin_models import Earmark, Recipient, Transfer, Charge
 
 import valideer
@@ -74,14 +75,12 @@ def check_catch(func, *args, **kwargs):
     try:
         ret = func(*args, **kwargs)
     except KeyError:
-        return incorrect_syntax()
+        return jsonify_status_code(400, "Required arguments were missing")
     except sqlalchemy.orm.exc.NoResultFound:
-        return jsonify(taken=False)
+        return jsonify(taken=False, success=True)
     else:
         if ret is None:
-            return jsonify(taken=True)
-
-    return jsonify(), 500
+            return jsonify(taken=True, success=True)
 
 
 @api.route("/user/check", methods=['POST'])
@@ -167,6 +166,9 @@ class IssueAPI(API):
 
         self.params['project'] = project
 
+    def can_cls(self, action):
+        return self.model.can_cls(action, project=self.params['project'])
+
 
 class SolutionAPI(API):
     model = Solution
@@ -191,6 +193,9 @@ class SolutionAPI(API):
 
         self.params['issue'] = issue
 
+    def can_cls(self, action):
+        return self.model.can_cls(action, issue=self.params['issue'])
+
 
 class TransferAPI(API):
     model = Transfer
@@ -210,3 +215,22 @@ class EarmarkAPI(API):
 
 class DisputeAPI(API):
     model = Dispute
+
+
+class CommentAPI(API):
+    model = Comment
+    def create_hook(self):
+        # do logic to pick out the parent from the database based on parent
+        # keys
+        tid = self.params.pop('thing_id', None)
+        # try this method first, most common
+        if tid:
+            thing = Thing.query.filter(Thing.id == tid).one()
+        else:
+            raise SyntaxError(
+                    "Unable to identify parent Thing from information given")
+
+        self.params['thing'] = thing
+
+    def can_cls(self, action):
+        return self.model.can_cls(action, thing=self.params['thing'])

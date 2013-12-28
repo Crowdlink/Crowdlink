@@ -88,5 +88,6 @@ def create_app(config='/application.json'):
     api_restful.add_resource(api.EarmarkAPI, '/api/earmark')
     api_restful.add_resource(api.RecipientAPI, '/api/recipient')
     api_restful.add_resource(api.TransferAPI, '/api/transfer')
+    api_restful.add_resource(api.CommentAPI, '/api/comment')
 
     return app

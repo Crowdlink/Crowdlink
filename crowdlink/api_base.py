@@ -169,6 +169,12 @@ class API(MethodView):
             return self.model.query.filter(self.pkey == pkey).one()
         return False
 
+    def can_cls(self, action):
+        """ This function should parse the current parameters to gain parent
+        information for properly running can_cls on the model this API wraps
+        """
+        return False
+
     def get(self):
         """ Retrieve an object from the database """
         self.params = request.dict_args
@@ -194,23 +200,21 @@ class API(MethodView):
         if not self.params:
             abort(400)
         # check to ensure the user can create for others if requested
-        username = self.params.get('username', None)
-        userid = self.params.get('user_id', None)
+        username = self.params.pop('username', None)
+        userid = self.params.pop('user_id', None)
         if userid or username:
-            assert self.model.can_cls('class_create_other')
             query = self.model.query
             if userid:
                 query = query.filter_by(id=userid)
             if username:
                 query = query.filter_by(username=username)
             self.params['user'] = query.one()
+            self.create_hook()
+            assert self.can_cls('class_create_other', params=self.params)
         else:
-            assert self.model.can_cls('class_create')
             self.params['user'] = current_user.get()
-
-        # A hook to run permission checks/preprocessing on this creation that
-        # are specific to the model
-        self.create_hook()
+            self.create_hook()
+            assert self.can_cls('class_create')
 
         model = getattr(self.model, self.create_method)(**self.params)
 
