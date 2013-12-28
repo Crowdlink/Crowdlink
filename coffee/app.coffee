@@ -74,10 +74,9 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
           username: $rootScope.user.username
           join_prof: "settings_join").$promise
   # Error Pages
-  ).when("/400", {templateUrl: "templates/error.html", controller: "errorController"}
-  ).when("/403", {templateUrl: "templates/error.html", controller: "errorController"}
-  ).when("/404", {templateUrl: "templates/error.html", controller: "errorController"}
-  ).when("/500", {templateUrl: "templates/error.html", controller: "errorController"}
+  ).when("/errors/:error",
+    templateUrl: "templates/error.html"
+    controller: "errorController"
   # Primary object views
   ).when("/:username/:url_key",
     templateUrl: "templates/project.html"

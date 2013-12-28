@@ -238,7 +238,7 @@ class Transfer(Sink, PrivateMixin, base):
     @classmethod
     def create(cls, amount, recipient, user=current_user):
         if (recipient.user != user or  # Make sure it's going to them
-           total < user.available_marks or  # Ensure they have enough marks
+           amount > user.available_marks or  # Ensure they have enough marks
            user.available_balance < amount):  # ensure the marks are available
             current_app.logger.warn(
                 "Create Transfer was called with invalid pre-conditions"

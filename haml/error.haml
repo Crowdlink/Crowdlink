@@ -2,7 +2,7 @@
   %h1.pull-left.brand
     %i.fa.fa-exclamation
   %h1{style: "position:relative; top:-5px; padding-left:50px; font-size:46pt;"}
-    {[{ vals.err }]}
-    %small - {[{ vals.txt }]}
+    {[{ err }]}
+    %small - {[{ error_data[err]['txt'] }]}
   .clearfix
-  %p {[{ vals.long }]}
+  %p {[{ error_data[err]['long'] }]}

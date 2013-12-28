@@ -198,13 +198,13 @@ mainControllers.controller('rootController',
     if 'status' of rejection
       st = rejection.status
       if st == 400
-        $location.path("/400").replace()
+        $location.path("/errors/400").replace()
       else if st == 403
-        $location.path("/403").replace()
+        $location.path("/errors/403").replace()
       else if st == 500
-        $location.path("/500").replace()
+        $location.path("/errors/500").replace()
       else if st == 404
-        $location.path("/404").replace()
+        $location.path("/errors/404").replace()
     curr_path = $location.path()
     if rejection == "login"
       $location.path("/login").search("redirect=" + curr_path).replace()
@@ -581,38 +581,29 @@ mainControllers.controller('frontPageController',
 )
 
 # errorController =======================================================
-mainControllers.controller('errorController', ($scope, $rootScope, $location)->
-
-  $scope.init = () ->
-    $rootScope.title = ""
-    err = $location.path().replace('/', '')
-    if err == "403"
-      $scope.vals =
-        txt: "Access Denied"
-        long: "You do not have the proper permissions to access the resource" +
-              "you requested. This could be an error on our part and if so, " +
-              "sorry about that."
-        err: "403"
-    else if err == "404"
-      $scope.vals =
-        txt: "Resource not found"
-        long: "The resource that you attempted to access could not be found" +
-              ". This could be an error on our part and if so, sorry about " +
-              "that."
-        err: "404"
-    else if err == "400"
-      $scope.vals =
-        txt: "Incorrect Request Format"
-        long: "Our apologies, we seem to have goofed. This error is likely a" +
-              " mistake in our client side code, hopefully we'll have this " +
-              "fixed soon."
-        err: "400"
-    else
-      $scope.vals =
-        txt: "Internal Server Error"
-        long: "Our apologies, we seem to have goofed. This error has been " +
-              "logged on the server side."
-        err: "500"
+mainControllers.controller('errorController', ($scope, $routeParams, $rootScope)->
+  $scope.err = $routeParams.error
+  $scope.error_data =
+    "400":
+      txt: "Incorrect Request Format"
+      long: "Our apologies, we seem to have goofed. This error is likely a
+        mistake in our client side code, hopefully we'll have this
+        fixed soon."
+    "500":
+      txt: "Internal Server Error"
+      long: "Our apologies, we seem to have goofed. This error has been
+        logged on the server side."
+    "404":
+      txt: "Resource not found"
+      long: "The resource that you attempted to access could not be found.
+        This could be an error on our part and if so, sorry about
+        that."
+    "403":
+      txt: "Access Denied"
+      long: "You do not have the proper permissions to access the resource
+        you requested. This could be an error on our part and if so,
+        sorry about that."
+  $rootScope.title = $scope.error_data[$scope.err]['txt']
 )
 
 # helpModalController =======================================================
