@@ -4,11 +4,8 @@
   %h5.media-heading.col-lg-9
     %a{href: "\#{[{event.user_p}]}"}
       {[{ event.uname }]}
-    created the issue
-    %a{href: "\#{[{event.issue_p}]}"}{[{event.iname}]}
-    on
-    %a{href: "\#{[{event.proj_p}]}"} {[{event.pname}]}
+    created a new project called
 
   .col-lg-3
     .pull-right.text-muted {[{event.time | date_ago}]}
-
+    %a{href: "\#{[{event.proj_p}]}"} {[{event.pname}]}

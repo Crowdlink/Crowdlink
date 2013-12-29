@@ -3,7 +3,8 @@
     .col
       %h3 Your feed
       %div{"ng-repeat" => "event in huser.events"}
-        %span{"ng-include" => "'templates/' + event.template"}
+        %div.media{"ng-include" => "'templates/' + event.template"}
+        %hr
       %span{"ng-show" => "huser.events.length == 0"}
         There's nothing to see here right now... Start watching projects or users to monitor their progress.
   .col-md-4.no-gutter

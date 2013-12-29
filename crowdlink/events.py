@@ -1,6 +1,7 @@
 from . import db
 from .model_lib import BaseMapper
 from .models import User
+from .util import trunc
 
 from sqlalchemy.orm import joinedload
 from flask import current_app
@@ -29,6 +30,8 @@ class Event(BaseMapper):
 
     def send_event(self, *args):
         """ A method that handles event disitribution """
+        # ensure everything is flushed to the db before potentially trying to distribute events to it
+        db.session.flush()
         # keep a list of places that have been delivered to to prevent
         # duplicate messages
         delivered = []
@@ -59,7 +62,11 @@ class Event(BaseMapper):
                     # removed later (hiding public things...)
                     if isinstance(obj, User):
                         self.origin = obj.id
-                    new = getattr(arg[0], arg[1]) + [self]
+                    try:
+                        new = getattr(arg[0], arg[1]) + [self]
+                    except TypeError:
+                        raise AttributeError("Invalid object passed in for event distribution, found obj {} which has "
+                                             "not attr {}".format(arg[0], arg[1]))
                     setattr(arg[0], arg[1], new)
                     #current_app.logger.debug(
                     #    "Sending event to object {} event queue for notif "
@@ -102,4 +109,108 @@ class IssueNotif(Event):
         notif.send_event((user, 'public_events'),
                          (project, 'public_events'),
                          project.subscribers,
+                         user.subscribers)
+
+
+class NewSolNotif(Event):
+    template = "events/new_sol.html"
+    standard_join = [
+        '__dont_mongo',
+        'time',
+        'template',
+        'uname',
+        'user_p',
+        'pname',
+        'proj_p',
+        'iname',
+        'issue_p',
+        'sname',
+        'sol_p'
+    ]
+
+    @classmethod
+    def generate(cls, new_sol):
+        user = new_sol.creator
+        issue = new_sol.issue
+        project = new_sol.project
+        notif = cls(
+            time=datetime.datetime.utcnow(),
+            uname=user.username,
+            user_p=user.get_dur_url,
+            pname=project.name,
+            proj_p=project.get_dur_url,
+            iname=issue.title,
+            issue_p=issue.get_dur_url,
+            sname=new_sol.title,
+            sol_p=new_sol.get_dur_url)
+
+        notif.send_event((user, 'public_events'),
+                         (issue, 'public_events'),
+                         issue.subscribers,
+                         user.subscribers)
+
+
+class NewCommentNotif(Event):
+    template = "events/new_comm.html"
+    standard_join = [
+        '__dont_mongo',
+        'time',
+        'template',
+        'uname',
+        'user_p',
+        'tname',
+        'thing_p',
+        'comm_p',
+        'message'
+    ]
+
+    @classmethod
+    def generate(cls, new_comm):
+        user = new_comm.user
+        parent = new_comm.thing
+        notif = cls(
+            time=datetime.datetime.utcnow(),
+            uname=user.username,
+            user_p=user.get_dur_url,
+            tname=parent.title,
+            thing_p=parent.get_dur_url,
+            comm_p=new_comm.get_dur_url,
+            message=trunc(new_comm.message))
+
+
+        if parent.type == 'Issue':
+            # potentially add notifications to the project
+            notif.send_event((user, 'public_events'),
+                             parent.subscribers,
+                             user.subscribers)
+        elif parent.type == 'Solution':
+            notif.send_event((user, 'public_events'),
+                             parent.subscribers,
+                             user.subscribers)
+
+
+class NewProjNotif(Event):
+    template = "events/new_proj.html"
+    standard_join = [
+        '__dont_mongo',
+        'time',
+        'template',
+        'uname',
+        'user_p',
+        'pname',
+        'proj_p'
+    ]
+
+    @classmethod
+    def generate(cls, new_proj):
+        user = new_proj.maintainer
+        notif = cls(
+            time=datetime.datetime.utcnow(),
+            uname=user.username,
+            user_p=user.get_dur_url,
+            pname=new_proj.name,
+            proj_p=new_proj.get_dur_url)
+
+        notif.send_event((user, 'public_events'),
+                        (new_proj, 'public_events'),
                          user.subscribers)

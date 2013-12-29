@@ -75,6 +75,7 @@
               %a{href: "#/login"}
                 %i.fa.fa-sign-in.fa-large
                 %span.hidden-xs Login
+
       .container.main-cont
         %div{"ng-show" => "messages.length > 0"}
           %br
@@ -85,13 +86,13 @@
             %li{"ng-repeat" => "m in message['messages']", "ng-bind" => "m"}
         .fade{"ng-view" => ""}
 
-  %div{id: "footer navbar-default navbar"}
-    .container
-      %p.text-muted{style: "margin:20px 0px;text-align:center;"}
-        %a{"ng-click" => "help()", style: "color:#99A2C1;"} Help
-        \&nbsp;-&nbsp;
-        %a{href: "/#/tos", style: "color:#99A2C1;"} TOS
-        \&nbsp;-&nbsp;
-        %a{href: "/#/privacy", style: "color:#99A2C1;"} Privacy Policy
-        %br
-          &copy; Copyright 2014 Crowdlink
+        %div.col-lg-4.col-lg-offset-4
+          %p.text-muted{style: "margin:20px 0px;text-align:center;"}
+            %a{"ng-click" => "help()", style: "color:#99A2C1;"} Help
+            \&nbsp;-&nbsp;
+            %a{href: "/#/tos", style: "color:#99A2C1;"} TOS
+            \&nbsp;-&nbsp;
+            %a{href: "/#/privacy", style: "color:#99A2C1;"} Privacy Policy
+            %br
+            &copy; Copyright 2014 Crowdlink
+        .col-lg-4

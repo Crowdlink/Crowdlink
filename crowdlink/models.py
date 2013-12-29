@@ -137,7 +137,10 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
 
         db.session.add(project)
 
-        # TODO: XXX: Needs an event to be distributed here
+
+        # send a notification to all subscribers
+        events.NewProjNotif.generate(project)
+
         return project
 
     # Github Synchronization Logic
@@ -403,13 +406,13 @@ class Solution(
         sol = cls(title=title,
                   desc=desc,
                   issue=issue,
+                  project=issue.project,
                   creator=user.get())
         sol.create_key()
         db.session.add(sol)
 
         # send a notification to all subscribers
-        #events.IssueNotif.generate(issue)
-        # TODO: Add event for solution creation
+        events.NewSolNotif.generate(sol)
 
         return sol
 
@@ -425,7 +428,12 @@ class Comment(base):
     hidden = db.Column(db.Boolean, default=False)
     banned = db.Column(db.Boolean, default=False)
 
+
     acl = acl['comment']
+
+    @property
+    def get_dur_url(self):
+        return "{parent_url}/{id}".format(id=self.id, parent_url=self.thing.get_dur_url)
 
     @classmethod
     def p_roles(cls, thing=None, user=current_user):
@@ -447,7 +455,10 @@ class Comment(base):
                           thing=thing,
                           user=user)
         db.session.add(comment)
-        # TODO: XXX: Add event for comment creation here
+
+        # send a notification to all subscribers
+        events.NewCommentNotif.generate(comment)
+
         return comment
 
 
