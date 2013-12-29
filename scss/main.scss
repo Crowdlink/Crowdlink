@@ -6,13 +6,27 @@ $default-text-shadow-color: rgba(black, 0.4);
 $default-text-shadow-blur: 2px;
 $default-text-shadow-v-offset: 2px;
 
-$footer-height:         62px; 
+$footer-height:         62px;
 $brand-primary:         #2C3E50;
 $brand-success:         #1A9958;
 $brand-warning:         #F39C12;
 $brand-danger:          #E74C3C;
 $brand-info:            #3498DB;
 $img-lib-url: "/static/lib/img/";
+
+.help {
+  color:$brand-warning;
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.muted-link {
+  color:#99A2C1;
+  &:hover {
+    cursor: pointer;
+  }
+}
 
 .header-col {
   padding:25px 40px;
@@ -394,7 +408,7 @@ body {
         display:block;
         padding-left:0px;
         text-indent:0;
-        width:120px; 
+        width:120px;
         padding:5px 5px 5px 25px;
         background-position:2px 50%;
         &:hover {
@@ -404,7 +418,7 @@ body {
       }
       display:none;
       position:absolute;
-      top:18px; left:0px; 
+      top:18px; left:0px;
       background:#FFF;
       border:1px solid #000;
       li {
@@ -420,7 +434,7 @@ body {
       }
       ul {
         position:absolute;
-        top:-1px; left:150px; 
+        top:-1px; left:150px;
         li {
           float:none;
         }
@@ -438,22 +452,22 @@ body {
 .markItUpButton {
   padding-bottom: 3px;
   &.h1 a {
-    background-image:url({{ static_path }}lib/img/h1.png); 
+    background-image:url({{ static_path }}lib/img/h1.png);
   }
   &.h2 a {
-    background-image:url({{ static_path }}lib/img/h2.png); 
+    background-image:url({{ static_path }}lib/img/h2.png);
   }
   &.h3 a {
-    background-image:url({{ static_path }}lib/img/h3.png); 
+    background-image:url({{ static_path }}lib/img/h3.png);
   }
   &.h4 a {
-    background-image:url({{ static_path }}lib/img/h4.png); 
+    background-image:url({{ static_path }}lib/img/h4.png);
   }
   &.h5 a {
-    background-image:url({{ static_path }}lib/img/h5.png); 
+    background-image:url({{ static_path }}lib/img/h5.png);
   }
   &.h6 a {
-    background-image:url({{ static_path }}lib/img/h6.png); 
+    background-image:url({{ static_path }}lib/img/h6.png);
   }
   &.bold a {
     background-image:url({{ static_path }}lib/img/bold.png);
@@ -468,7 +482,7 @@ body {
     background-image:url({{ static_path }}lib/img/list-numeric.png);
   }
   &.picture a {
-    background-image:url({{ static_path }}lib/img/picture.png); 
+    background-image:url({{ static_path }}lib/img/picture.png);
   }
   &.link a {
     background-image:url({{ static_path }}lib/img/link.png);

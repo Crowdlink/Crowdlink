@@ -6,7 +6,12 @@
       %li{"ng-repeat" => "error in errors"} {[{error}]}
   %form.form-horizontal{name: "charge_form", novalidate: "", role: "form"}
     .form-group
-      %h4 Select an amount to pay
+      %h4
+        Select an amount to deposit
+        %small
+          %a.muted-link{"ng-click" => "help('fees')"}
+            fees apply
+            %i.fa.fa-question-circle.help
       %ul.nav.nav-pills.nav-stacked
         %li{"ng-class" => "{true: 'active'}[$parent.amount==opt_amt]", "ng-repeat" => "opt_amt in options"}
           %a{"ng-click" => "$parent.amount=opt_amt"}
