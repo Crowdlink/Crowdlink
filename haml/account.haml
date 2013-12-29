@@ -14,4 +14,4 @@
         %a{"ng-click" => "view='add_credit'"} Add Funds
       %li{"ng-class" => "{true: 'active'}[view=='charges']"}
         %a{"ng-click" => "view='charges'"} Charge History
-  .col-md-9.fade{"ng-include" => "'templates/account/' + view + '.html'"}
+  .col-md-9.fade{"ng-include" => "'{{template_path}}account/' + view + '.html'"}

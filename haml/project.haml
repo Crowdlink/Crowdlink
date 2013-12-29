@@ -71,4 +71,4 @@
   .row{"ng-show" => "project.events.length > 0"}
     %h3 Events
     %div{"ng-repeat" => "event in project.events"}
-      %span{"ng-include" => "'templates/' + event.template"}
+      %span{"ng-include" => "'{{template_path}}' + event.template"}

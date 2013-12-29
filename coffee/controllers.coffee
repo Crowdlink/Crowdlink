@@ -156,7 +156,7 @@ mainControllers.controller('rootController',
 
   $scope.help = (view='what_is') ->
     modalInstance = $modal.open(
-      templateUrl: "templates/help_modal.html"
+      templateUrl: "static/templates/help_modal.html"
       controller: "helpModalController"
       resolve:
         topic: ->

@@ -11,7 +11,7 @@ configure = JSON.parse(File.read(curr + '/../application.json'))['public']
 FileList.new(curr + '/../haml/**/*.haml').each do |filename|
   if filename =~ /([^\/]+)\.haml$/
     puts filename
-    File.open(curr + '/../templates/' + $1 + '.html', 'w') do |f|
+    File.open(curr + '/../static/templates/' + $1 + '.html', 'w') do |f|
       f.write Haml::Engine.new(File.read(filename)).render(Object.new, configure)
     end
   end

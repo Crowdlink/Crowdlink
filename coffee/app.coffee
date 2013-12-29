@@ -26,16 +26,16 @@ login_resolver = (auth_level) ->
 
 mainApp.config ["$routeProvider", ($routeProvider) ->
   $routeProvider.when("/login",
-    templateUrl: "templates/login.html"
+    templateUrl: "{{ template_path }}login.html"
     controller: "loginController"
   ).when("/logout",
     templateUrl: "main.html"
     controller: "remoteController"
   ).when("/",
-    templateUrl: "templates/home.html"
+    templateUrl: "{{ template_path }}home.html"
     controller: "frontPageController"
   ).when("/home",
-    templateUrl: "templates/user_home.html"
+    templateUrl: "{{ template_path }}user_home.html"
     controller: "homeController"
     resolve:
       login: login_resolver('user')
@@ -44,17 +44,17 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
           id: $rootScope.user.id
           join_prof: "home_join").$promise
   ).when("/new_project",
-    templateUrl: "templates/new_project.html"
+    templateUrl: "{{ template_path }}new_project.html"
     controller: "newProjController"
     resolve:
       login: login_resolver('user')
   ).when("/signup",
-    templateUrl: "templates/signup.html"
+    templateUrl: "{{ template_path }}signup.html"
     controller: "signupController"
     resolve:
       login: login_resolver('not_user')
   ).when("/account",
-    templateUrl: "templates/account.html"
+    templateUrl: "{{ template_path }}account.html"
     controller: "accountController"
     resolve:
       login: login_resolver('user')
@@ -65,7 +65,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
           __one: true
           join_prof: "settings_join").$promise
   ).when("/account/:subsection",
-    templateUrl: "templates/account.html"
+    templateUrl: "{{ template_path }}account.html"
     controller: "accountController"
     resolve:
       login: login_resolver('user')
@@ -76,11 +76,11 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
           join_prof: "settings_join").$promise
   # Error Pages
   ).when("/errors/:error",
-    templateUrl: "templates/error.html"
+    templateUrl: "{{ template_path }}error.html"
     controller: "errorController"
   # Primary object views
   ).when("/:username/:url_key",
-    templateUrl: "templates/project.html"
+    templateUrl: "{{ template_path }}project.html"
     controller: "projectController"
     resolve:
       project: (ProjectService, $route) ->
@@ -90,7 +90,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             url_key: $route.current.params.url_key
           join_prof: 'page_join').$promise
   ).when("/:username/:url_key/new_issue",
-    templateUrl: "templates/new_issue.html"
+    templateUrl: "{{ template_path }}new_issue.html"
     controller: "newIssueController"
     resolve:
       login: login_resolver('user')
@@ -101,7 +101,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             project_url_key: $route.current.params.url_key
           join_prof: 'brief_join').$promise
   ).when("/:username/:url_key/psettings",
-    templateUrl: "templates/psettings.html"
+    templateUrl: "{{ template_path }}psettings.html"
     controller: "projectSettingsController"
     resolve:
       login: login_resolver('user')
@@ -113,7 +113,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
           __one: true
           join_prof: 'page_join').$promise
   ).when("/:username/:purl_key/:url_key",
-    templateUrl: "templates/issue.html"
+    templateUrl: "{{ template_path }}issue.html"
     controller: "issueController"
     resolve:
       issue: (IssueService, $route) ->
@@ -124,7 +124,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             url_key: $route.current.params.url_key
           join_prof: "page_join").$promise
   ).when("/:username/:purl_key/:url_key/new_solution",
-    templateUrl: "templates/new_solution.html"
+    templateUrl: "{{ template_path }}new_solution.html"
     controller: "newSolutionController"
     resolve:
       login: login_resolver('user')
@@ -136,7 +136,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
               issue_url_key: $route.current.params.url_key
           join_prof: 'disp_join').$promise
   ).when("/:username/:purl_key/:iurl_key/:url_key",
-    templateUrl: "templates/solution.html"
+    templateUrl: "{{ template_path }}solution.html"
     controller: "solutionController"
     resolve:
       solution: (SolutionService, $route) ->
@@ -149,10 +149,10 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
           __one: true
           join_prof: "page_join").$promise
   ).when("/tos",
-    templateUrl: "templates/tos.html"
+    templateUrl: "{{ template_path }}tos.html"
   # user profile
   ).when("/:username",
-    templateUrl: "templates/profile.html"
+    templateUrl: "{{ template_path }}profile.html"
     controller: "profileController"
     resolve:
       prof_user: (UserService, $route) ->
@@ -397,7 +397,7 @@ mainApp.directive "toggleButton", ["$http", "$timeout", ($http, $compile) ->
 ]
 
 mainApp.directive "reportDropdown", ["$http", "$timeout", ($http, $compile) ->
-  templateUrl: "templates/dir/drop_toggle.html"
+  templateUrl: "{{ template_path }}dir/drop_toggle.html"
   restrict: "E"
   link: (scope, elem, attrs, ctrl) ->
     attr = attrs.var

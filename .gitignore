@@ -3,9 +3,8 @@ static/css/*
 static/js/*
 processed*
 static/lib/css/bootstrap.min.css
+static/templates/**
 templates/*.html
-templates/account/*.html
-templates/events/*.html
 cover/**
 bower_components/**
 assets/emailout/**
