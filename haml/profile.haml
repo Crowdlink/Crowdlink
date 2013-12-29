@@ -14,4 +14,4 @@
 .row
   %h3 Events
   %div{"ng-repeat" => "event in prof_user.public_events"}
-    %span{"ng-include" => "'templates/' + event.template"}
+    %div.media{"ng-include" => "'templates/' + event.template"}
