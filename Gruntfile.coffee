@@ -66,6 +66,7 @@ module.exports = (grunt) ->
 
           # Server Side
           "templates/base.html": "processed/haml/base.haml"
+          "processed/email/base.html": "haml/email/base.haml"
 
     coffee:
       default:
@@ -131,7 +132,7 @@ module.exports = (grunt) ->
         options:
           removeStyleTags: false
         files:
-          'assets/emailout/base.html': 'assets/email/base.html'
+          'templates/email/base.html': 'processed/email/base.html'
 
     watch:
       less_pre:
@@ -170,7 +171,7 @@ module.exports = (grunt) ->
         options:
           livereload: true
       email:
-        files: ['assets/email/**/*.html']
+        files: ['processed/email/*.html']
         tasks: ['inlinecss:main']
       yaml:
         files: ['assets/help/**/*.yaml']
@@ -190,7 +191,8 @@ module.exports = (grunt) ->
 
   grunt.registerTask "dev", ["shell:proc_coffee", "shell:proc_less",
                              "shell:proc_haml", "shell:proc_sass",
-                             "less", "haml", "compass", "coffee"]
+                             "less", "haml", "compass", "coffee",
+                             "inlinecss:main","shell:compile_yaml"]
   grunt.registerTask "prod", ["shell:proc_coffee", "shell:proc_less",
                              "shell:proc_haml", "shell:proc_sass",
                              "less", "haml", "compass", "coffee",
