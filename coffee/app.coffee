@@ -372,7 +372,7 @@ mainApp.directive "toggleButton", ["$http", "$timeout", ($http, $compile) ->
   link: (scope, elem, attrs, ctrl) ->
     attr = attrs.toggleButton
     icon = elem.find('i')
-    text = elem.find('.in-button')
+    text = elem.find('#text')
     scope.$watch('saving.' + attr, (val) ->
       if val
         icon.removeClass()
@@ -396,43 +396,71 @@ mainApp.directive "toggleButton", ["$http", "$timeout", ($http, $compile) ->
     scope.$watch(attr,update)
 ]
 
-mainApp.directive "reportDropdown", ["$http", "$timeout", ($http, $compile) ->
+mainApp.directive "reportDropdown", ($http, $compile, $rootScope, $modal) ->
   templateUrl: "templates/dir/drop_toggle.html"
   restrict: "E"
-  link: (scope, elem, attrs, ctrl) ->
-    attr = attrs.var
-    reasons = attrs.reasons
-    icon = elem.find('i')
-    text = elem.find('.in-button')
-    button = elem.find('.button')
-    scope.$watch('saving.' + attr, (val) ->
-      if val
-        icon.removeClass()
-        icon.addClass('fa fa-spin fa-spinner')
-      else
-        update(scope.$eval(attr))
-    )
-    update = (val) ->
-      scope.attr_val = scope.$eval(attr)
-      if not val
-        icon.removeClass()
-        icon.addClass('fa fa-ban')
-        button.removeClass('active danger')
-        text.html('Report')
-      else
-        icon.removeClass()
-        if val == "Spam"
-          icon.addClass('fa fa-trash-o')
-        else if val == "Fraudulent"
-          icon.addClass('fa fa-warning')
-        else
-          icon.addClass('fa fa-trash-o')
-        button.addClass('danger active')
-        text.html(val)
+  scope:
+    textCls: '@'
+    var: '@'
+    config: '='
+    varValue: '=var'
+    savingVarValue: '=savingVar'
+    updateFunc: '=update'
+  compile: (elem, attrs, transclude) ->
+    post: (scope, elem, attrs, ctrl) ->
+      # set some defaults on our option config objects
+      for val of scope.config.options
+        scope.config.options[val] = $.extend(
+          confirm: false
+          confirmText: "Are you sure?"
+          icon: ""
+          btnCls: ""
+          text: scope.config.options[val]['value']
+        , scope.config.options[val])
 
-    scope.$watch(reasons, (val) ->
-      scope.reasons = val
-    )
-    scope.attr = attr
-    scope.$watch(attr, update)
-]
+      icon = elem.find('i')          # button icon
+      text = elem.find('#text') # button text
+      button = elem.find('.button')  # actual button
+      # switch on the saving spinner when saving
+      scope.$watch('savingVarValue', (val) ->
+        if val
+          icon.removeClass()
+          icon.addClass('fa fa-spin fa-spinner')
+        else
+          update(scope.varValue)
+      )
+
+      # keep track of the classes that have been put on the button
+      classes_added = ""
+      # Changes the button state, button color, and text according to current
+      # status
+      update = (value) ->
+        for key of scope.config.options
+          if scope.config.options[key].value == value
+            config = scope.config.options[key]
+        if not config?
+          throw "Current dropdown value not found in configuration list"
+
+        icon.removeClass()
+        icon.addClass(config['icon'])
+
+        button.removeClass(classes_added)
+        button.addClass(config['btnCls'])
+        classes_added = config['btnCls']
+
+        text.html(config['text'])
+      scope.$watch('varValue', update)
+
+      # called from the template. Runs specified update function from parent
+      scope.change = (key) ->
+        config = scope.config.options[key]
+        if config.confirm
+          $modal.open(
+            templateUrl: "templates/confirm_modal.html"
+            controller: ($scope) ->
+              $scope.title = config.confirmText
+          ).result.then ->
+            scope.updateFunc(scope.var, config.value)
+        else
+          scope.updateFunc(scope.var, config.value)
+

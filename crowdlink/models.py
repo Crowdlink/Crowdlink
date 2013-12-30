@@ -174,7 +174,7 @@ class Issue(
         StatusMixin, Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
 
-    StatusVals = Enum('Completed', 'Discussion', 'Selected', 'Other')
+    StatusVals = Enum('Completed', 'Discussion', 'Selected', 'In-Progress')
     _status = db.Column(db.Integer, default=StatusVals.Discussion.index)
     title = db.Column(db.String(128))
     desc = db.Column(db.Text)

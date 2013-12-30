@@ -1,12 +1,12 @@
 <div class='btn-group'>
-  <a class='button dropdown-toggle' ng-class='{disabled: attr_val}' ng-click='attr_val &amp;&amp; update(attr, false)'>
+  <a class='button dropdown-toggle' ng-class='{disabled: varValue &amp;&amp; config.falseToggle}' ng-click='varValue &amp;&amp; config.falseToggle &amp;&amp; change(false)'>
     <i></i>
-    <div class='in-button'></div>
-    <span class='caret' ng-hide='attr_val'></span>
+    <div id='text' ng-class='textCls'></div>
+    <span class='caret' ng-hide='varValue &amp;&amp; config.falseToggle'></span>
   </a>
   <ul class='dropdown-menu'>
-    <li ng-repeat='reason in reasons'>
-      <a ng-click='update(attr, reason)'>{[{ reason }]}</a>
+    <li ng-repeat='key in config.order'>
+      <a ng-click='change(key)'>{[{ config.options[key]['text'] }]}</a>
     </li>
   </ul>
 </div>

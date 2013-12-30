@@ -1,9 +1,9 @@
 .btn-group
-  %a.button.dropdown-toggle{"ng-class" => "{disabled: attr_val}",
-    "ng-click" => "attr_val && update(attr, false)"}
+  %a.button.dropdown-toggle{"ng-class" => "{disabled: varValue && config.falseToggle}",
+    "ng-click" => "varValue && config.falseToggle && change(false)"}
     %i
-    .in-button
-    %span.caret{"ng-hide" => "attr_val"}
+    %div{id: "text", "ng-class" => "textCls"}
+    %span.caret{"ng-hide" => "varValue && config.falseToggle"}
   %ul.dropdown-menu
-    %li{"ng-repeat" => "reason in reasons"}
-      %a{"ng-click" => "update(attr, reason)"} {[{ reason }]}
+    %li{"ng-repeat" => "key in config.order"}
+      %a{"ng-click" => "change(key)"} {[{ config.options[key]['text'] }]}

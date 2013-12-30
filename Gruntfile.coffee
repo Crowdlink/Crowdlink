@@ -63,6 +63,7 @@ module.exports = (grunt) ->
           "templates/events/new_proj.html": "processed/haml/events/new_proj.haml"
           "templates/tos.html": "processed/haml/tos.haml"
           "templates/help_modal.html": "processed/haml/help_modal.haml"
+          "templates/confirm_modal.html": "processed/haml/confirm_modal.haml"
           "templates/dir/drop_toggle.html": "processed/haml/dir/drop_toggle.haml"
 
     coffee:

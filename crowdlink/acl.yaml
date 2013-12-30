@@ -125,14 +125,18 @@ issue:
         class: create_other
     # Object context roles
     project_maintainer:
-        inherit: user
+        inherit: 
+            - user
+            - creator
+        edit:
+            - status
+            - _status
+    creator:
         edit:
             - url_key
             - _status
             - title
             - desc
-    creator:
-        inherit: project_maintainer
 
 comment:
     # global context roles

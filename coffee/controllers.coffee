@@ -177,7 +177,6 @@ mainControllers.controller('rootController',
       # XXX; Need some error handling here
     )
 
-
   # update the title with a suffix
   $rootScope.$watch('title', (val) ->
     if val
@@ -286,6 +285,43 @@ mainControllers.controller('issueController',
       vote_status: false
       subscribed: false
       report_status: false
+
+  $scope.report_config =
+    order: ['spam', 'fraud']
+    falseToggle: true
+    options:
+      false:
+        text: "Report"
+        icon: "fa fa-ban"
+        value: false
+      fraud:
+        icon: "fa fa-warning"
+        btnCls: "danger"
+        value: "Fraudulent"
+      spam:
+        icon: "fa fa-trash-o"
+        btnCls: "danger"
+        value: "Spam"
+
+  $scope.status_config =
+    order: ['discussion', 'selected', 'progress', 'complete']
+    options:
+      discussion:
+        icon: "fa fa-comments-o"
+        value: "Discussion"
+      selected:
+        icon: "fa fa-star-o"
+        value: "Selected"
+      progress:
+        icon: "fa fa-ellipsis-h"
+        value: "In-Progress"
+      complete:
+        icon: "fa fa-check"
+        confirm: true
+        value: "Completed"
+        confirm_text: "Are you sure you want to mark this Issue Completed? Pledges will
+        made on this Issue will be put into progress and this status is not
+        reversible."
 
   $scope.$watch('issue.title',(val) ->
     if val
@@ -638,7 +674,7 @@ mainControllers.controller('helpModalController', ($sce, $scope, $modalInstance,
       $scope.curr_topic = $scope.topics[topic]
     )
   $scope.close = ->
-    $modalInstance.dismiss "close"
+    $modalInstance.close "close"
   $scope.update = (new_topic) ->
     return $scope.curr_topic = new_topic
 )

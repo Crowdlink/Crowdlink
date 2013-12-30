@@ -65,14 +65,18 @@ a.col {
     border:1px solid $brand-danger;
   }
 
-  .in-button {
+  div.medium {
       width:60px;
       display: inline-block;
       text-align:center;
   }
-  &.disabled .in-button {
-    width: 72px;
+  &.disabled div.medium { width: 72px; }
+  div.large {
+      width:75px;
+      display: inline-block;
+      text-align:center;
   }
+  &.disabled div.large { width: 87px; }
   i {
     width:14px;
     height:14px;

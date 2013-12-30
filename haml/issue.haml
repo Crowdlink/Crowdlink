@@ -30,15 +30,24 @@
           %a.button{"toggle-button" => "issue.subscribed",
           "ng-click" => "swap_save('issue.subscribed')"}
             %i{off: "fa-eye", on: "fa-eye-slash"}
-            .in-button{off: "Watch", on: "Unwatch"}
+            .medium{id: "text", off: "Watch", on: "Unwatch"}
           %a.button{"toggle-button" => "issue.vote_status",
           "ng-click" => "swap_save('issue.vote_status')"}
             %i{on: "fa-minus-circle", off: "fa-plus-circle"}
-            .in-button{off: "Vote", on: "Unvote"}
+            .medium{id: "text", off: "Vote", on: "Unvote"}
           %a.button.active{:href => "\#{[{issue.get_abs_url}]}/new_solution"}
             %i.fa.fa-large.fa-plus
             \ Add a Solution
-          %report-dropdown{"var" => "issue.report_status", "reasons" => "['Spam', 'Fraudulent']"}
+          %report-dropdown{"var" => "issue.report_status",
+            "saving-var" => "saving.issue.report_status", 
+            "config" => "report_config",
+            "text-cls" => "medium",
+            update: "update"}
+          %report-dropdown{"var" => "issue.status",
+            "saving-var" => "saving.issue.status", 
+            "config" => "status_config",
+            "text-cls" => "large",
+            update: "update"}
       .col-md-4.no-gutter
     %br/
     .row
