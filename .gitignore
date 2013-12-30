@@ -4,7 +4,7 @@ static/js/*
 processed*
 static/lib/css/bootstrap.min.css
 static/templates/**
-templates/*.html
+templates/**
 cover/**
 bower_components/**
 assets/emailout/**
