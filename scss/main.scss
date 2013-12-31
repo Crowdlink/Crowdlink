@@ -299,6 +299,39 @@ ul.main-nav-pills {
   border-bottom:3px solid #E0772F;
 }
 
+/* Login */
+/******************************************/
+.login-header {
+  font-weight:400;
+}
+.login-logo {
+  position:relative;
+  top:-30px;
+  height:1px;
+  img {
+    filter: grayscale(100%);
+    -webkit-filter: grayscale(100%);
+    filter: gray;
+    opacity:0.2;
+    width:200px;
+    height:180px;
+}
+}
+
+.remember {
+  padding-left:0px;
+  .checkbox {
+    padding-top:0px;
+  }
+}
+.forgot {
+  font-size:14px;
+}
+
+.oauth {
+  font-size:24px;line-height:40px;
+}
+
 /******************************************/
 
 html,

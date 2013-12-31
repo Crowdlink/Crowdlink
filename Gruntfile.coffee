@@ -141,16 +141,12 @@ module.exports = (grunt) ->
       less:
         files: ['processed/less/**/*.less']
         tasks: ['less:development']
-        options:
-          livereload: true
       haml_pre:
         files: ['haml/**/*.haml']
         tasks: ['shell:proc_haml']
       haml:
         files: ['processed/haml/**/*.haml']
         tasks: ['newer:haml']
-        options:
-          livereload: true
       compass_pre:
         files: ['scss/**/*.scss']
         tasks: ['shell:proc_sass']
@@ -166,16 +162,14 @@ module.exports = (grunt) ->
       coffee:
         files: ['processed/coffee/**/*.coffee']
         tasks: ['newer:coffee']
-        options:
-          livereload: true
       email:
         files: ['processed/email/*.html']
         tasks: ['inlinecss:main']
       yaml:
         files: ['assets/help/**/*.yaml']
         tasks: ['shell:compile_yaml']
-      css:
-        files: ['static/css/**/*.css']
+      static:
+        files: ['static/**/*.css', 'static/**/*.html', 'static/**/*.js']
         options:
           livereload: true
 
