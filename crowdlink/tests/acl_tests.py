@@ -1,3 +1,9 @@
+"""
+acl_test
+~~~~~~~~~~~~~
+Tests the pre-processor that constructs a dictionary of ACL keys from a YAML
+file.
+"""
 from crowdlink.acl import build_acl
 
 import yaml

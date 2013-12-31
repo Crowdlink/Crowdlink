@@ -77,7 +77,7 @@ def inherit_lst(*args):
 def provision():
     from crowdlink.util import stripe_card_token
     from crowdlink import db, root
-    from crowdlink.models import Email, User, Project, Issue, Solution
+    from crowdlink.models import Email, User, Project, Issue, Solution, Comment
     from crowdlink.fin_models import Charge, Earmark
 
     from random import choice
@@ -154,11 +154,21 @@ def provision():
             for sol_tmpl in issue.get('solutions', []):
                 sol = Solution.create(
                     title=sol_tmpl['title'],
-                    user=users['crowdlink'],
+                    user=users[sol_tmpl.get('creator', proj.maintainer.username)],
                     issue=new_issue,
                     desc=sol_tmpl.get('desc')).save()
                 curr_issue['solutions'][sol_tmpl.get('key', sol.url_key)] = (
                     {'obj': sol})
+
+            # add comments to the issue
+            curr_issue['comments'] = {}
+            for comm_tmpl in issue.get('comments', []):
+                comm = Comment.create(
+                    thing=new_issue,
+                    user=users[comm_tmpl.get('creator', new_issue.creator.username)],
+                    message=comm_tmpl.get('message')).save()
+                curr_issue['comments'][sol_tmpl.get('key', comm.id)] = (
+                    {'obj': comm})
 
     # get a list of issues to potentially earmark
     issues = []

@@ -8,4 +8,4 @@ from pprint import pprint
 class EmailTests(BaseTest):
     @login_required_ctx()
     def test_email_send(self):
-        assert send_email(self.app.config['email_test_addr'], 'test')
+        assert send_email(self.app.config['email_test_address'], 'test')

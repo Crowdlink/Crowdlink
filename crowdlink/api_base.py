@@ -1,7 +1,7 @@
 from flask.views import MethodView
 from flask.ext.sqlalchemy import BaseQuery
 from flask.ext.login import current_user
-from flask import abort, request, jsonify, current_app
+from flask import abort, request, jsonify, current_app, request
 
 from . import db
 
@@ -51,10 +51,28 @@ OPERATORS = {
 }
 
 
+class AnonymousUser(object):
+    id = -100
+
+    def is_anonymous(self):
+        return True
+
+    def global_roles(self):
+        return ['anonymous']
+
+    def is_authenticated(self):
+        return False
+
+    def get(self):
+        return self
+
+
 class API(MethodView):
     max_pg_size = 100
     pkey_val = 'id'
     create_method = 'create'
+    params = ''
+    session = db.session
 
     @property
     def pkey(self):
@@ -66,13 +84,16 @@ class API(MethodView):
                 .format(self.model.__class__.__name__))
 
     def dispatch_request(self, *args, **kwargs):
-        meth = getattr(self, request.method.lower(), None)
+        method_name = request.method.lower()
+        meth = getattr(self, method_name, None)
         # if the request method is HEAD and we don't have a handler for it
         # retry with GET
         if meth is None and request.method == 'HEAD':
             meth = getattr(self, 'get', None)
+            method_name = 'get'
         assert meth is not None, 'Unimplemented method %r' % request.method
         try:
+            ret = None
             return meth(*args, **kwargs)
         # Now catch all our common errors and return proper error messages for
         # them....
@@ -97,21 +118,22 @@ class API(MethodView):
         # typeerrors that occur when calling functions (create or action)
         # dynamically
         except TypeError as e:
-            current_app.logger.debug("TypeError from API", exc_info=True)
-            if 'at least' in e.message:
-                ret = jsonify_status_code(
-                    400, "Required arguments missing from API create method")
-            elif 'argument' in e.message and 'given' in e.message:
-                ret = jsonify_status_code(
-                    400, "Extra arguments supplied to the API create method")
-            else:
-                ret = jsonify_status_code(500, "Internal Server error")
+            if meth == 'post':
+                current_app.logger.debug("TypeError from API", exc_info=True)
+                if 'at least' in e.message:
+                    ret = jsonify_status_code(
+                        400, "Required arguments missing from API create method")
+                elif 'argument' in e.message and 'given' in e.message:
+                    ret = jsonify_status_code(
+                        400, "Extra arguments supplied to the API create method")
 
         # catch syntax errors and re-raise them
         except ValueError as e:
+            current_app.logger.debug("Value Error", exc_info=True)
             ret = jsonify_status_code(400, e.message)
         # catch syntax errors and re-raise them
         except SyntaxError as e:
+            current_app.logger.debug("Syntax Error", exc_info=True)
             ret = jsonify_status_code(400, e.message)
 
         # SQLA errors
@@ -126,7 +148,7 @@ class API(MethodView):
             current_app.logger.debug("Attempted to insert duplicate",
                                      exc_info=True)
             ret = jsonify_status_code(
-                200,
+                400,
                 "A duplicate value already exists in the database",
                 detail=e.message)
         except sqlalchemy.exc.InvalidRequestError as e:
@@ -164,6 +186,10 @@ class API(MethodView):
             ret = jsonify_status_code(500)
 
         current_app.logger.debug(self.params)
+        if ret is None:
+            current_app.logger.error(
+                "Unkown exception thrown by internal API", exc_info=True)
+            ret = jsonify_status_code(500, "Internal Server error")
         return ret
 
     def get_obj(self):
@@ -180,7 +206,8 @@ class API(MethodView):
 
     def get(self):
         """ Retrieve an object from the database """
-        self.params = request.dict_args
+        # convert args to a real dictionary that can be popped
+        self.params = {one:two for one, two in request.args.iteritems()}
         join = self.params.pop('join_prof', 'standard_join')
         obj = self.get_obj()
         if obj:  # if a int primary key is passed
@@ -201,10 +228,10 @@ class API(MethodView):
         """ Create a new object """
         self.params = request.get_json(silent=True)
         if not self.params:
-            abort(400)
+            return jsonify_status_code(400, "To create, values must be specified")
         # check to ensure the user can create for others if requested
-        username = self.params.pop('username', None)
-        userid = self.params.pop('user_id', None)
+        username = self.params.pop('__username', None)
+        userid = self.params.pop('__user_id', None)
         if userid or username:
             query = self.model.query
             if userid:
@@ -221,7 +248,7 @@ class API(MethodView):
 
         model = getattr(self.model, self.create_method)(**self.params)
 
-        db.session.commit()
+        self.session.commit()
         if model:  # only return the model if we recieved it back
             return jsonify(success=True, objects=[get_joined(model)])
         else:
@@ -231,15 +258,23 @@ class API(MethodView):
         """ Used to execute methods on an object """
         self.params = request.get_json(silent=True)
         if not self.params:
-            abort(400)
+            return jsonify_status_code(400, "To run an action, values must be specified")
 
         action = self.params.pop('action')
-        kwargs = self.params.pop('args', {})
         obj = self.get_obj()
-        if obj.can('action_' + action):
-            ret = getattr(obj, action)(**kwargs)
-
-        db.session.commit()
+        if not obj:
+            raise SyntaxError("Could not find any object to perform an action on")
+        assert obj.can('action_' + action)
+        try:
+            ret = getattr(obj, action)(**self.params)
+            if ret is None:
+                ret = True
+        except TypeError:
+            current_app.logger.debug(self.params)
+            raise SyntaxError(
+                "Wrong number of arguments supplied for action {}"
+                .format(action))
+        self.session.commit()
 
         return jsonify(success=ret)
 
@@ -251,32 +286,35 @@ class API(MethodView):
         """ Updates an objects values """
         self.params = request.get_json(silent=True)
         if not self.params:
-            abort(400)
-
+            return jsonify_status_code(400, "To update, values must be specified")
         obj = self.get_obj()
+        if not obj:
+            raise SyntaxError("Could not find any object to update")
 
         # updates all fields if data is provided, checks acl
         for key, val in self.params.iteritems():
             current_app.logger.debug(
-                "Updating value {} to {}".format(key, val))
+                "Updating value for '{}' to '{}'".format(key, val))
             assert obj.can('edit_' + key)
             setattr(obj, key, val)
 
-        db.session.commit()
+        self.session.commit()
 
         return jsonify(success=True)
 
     def delete(self):
         self.params = request.get_json(silent=True)
         if not self.params:
-            abort(400)
+            return jsonify_status_code(400, "To delete, values must be specified")
 
-        action = self.params.pop('action')
         obj = self.get_obj()
-        if obj.can('delete' + action):
-            count = obj.delete()
+        if not obj:
+            raise SyntaxError("Could not find any object to delete")
+        assert obj.can('delete')
+        self.session.delete(obj)
+        self.session.commit()
 
-        return jsonify(success=(count > 0), count=count)
+        return jsonify(success=True)
 
     def paginate(self, query=None):
         """ Sets limit and offset values on a query object based on arguments,
@@ -297,12 +335,15 @@ class API(MethodView):
     def search(self, query=None):
         """ Handles arguments __filter_by, __filter, and __order_by by
         modifying the query parameters before execution """
-        if not query:
+        if query is None:
             query = self.model.query
 
-        filters = self.params.pop('__filters', None)
+        filters = self.params.pop('__filter', None)
         try:
             if filters:
+                # it's a json encoded parameter to get
+                if isinstance(filters, basestring):
+                    filters = safe_json(filters)
                 for op in filters:
                     args = []
                     args.append(getattr(self.model, op['name']))
@@ -310,21 +351,34 @@ class API(MethodView):
                         args.append(op['val'])
                     if 'field' in op:
                         args.append(getattr(self.model, op['field']))
-                    op = OPERATORS.get(op)(*args)
-                    query = query.filter(op)
+                    operator = OPERATORS.get(op['op'])
+                    if operator is None:
+                        raise SyntaxError("Invalid operator specified in filter arguments")
+                    func = operator(*args)
+                    query = query.filter(func)
         except AttributeError:
+            current_app.logger.debug("Attribute filter error", exc_info=True)
             raise SyntaxError(
-                'Filter operator "{}" accessed invalid field on '
-                'model {}'.format(op, self.model.__class__.__name__))
+                'Filter operator "{}" accessed invalid field'
+                .format(op))
         except KeyError:
+            current_app.logger.debug("Key filter error", exc_info=True)
             raise SyntaxError(
                 'Filter operator "{}" was missing required arguments'
-                'on model {}'.format(op, self.model.__class__.__name__))
+                .format(op))
+        except TypeError:
+            current_app.logger.debug("Argument count error", exc_info=True)
+            raise SyntaxError(
+                'Incorrect argument count for requested filter operation'
+                .format(op))
 
         order_by = self.params.pop('__order_by', None)
         try:
             if order_by:
-                for key in json.loads(order_by):
+                # it's a json encoded parameter to get
+                if isinstance(order_by, basestring):
+                    order_by = safe_json(order_by)
+                for key in order_by:
                     if key.startswith('-'):
                         base = getattr(self.model, key[1:]).desc()
                     else:
@@ -332,18 +386,21 @@ class API(MethodView):
                     query = query.order_by(base)
         except AttributeError:
             raise SyntaxError(
-                'Order_by operator "{}" accessed invalid field on '
-                'model {}'.format(key, self.model.__class__.__name__))
+                'Order_by operator "{}" accessed invalid field'
+                .format(key))
 
         filter_by = self.params.pop('__filter_by', None)
         if filter_by:
-            for key, value in json.loads(filter_by).items():
+            # it's a json encoded parameter to get
+            if isinstance(filter_by, basestring):
+                filter_by = safe_json(filter_by)
+            for key, value in filter_by.items():
                 try:
                     query = query.filter_by(**{key: value})
                 except AttributeError:
                     raise SyntaxError(
-                        'Filter_by key "{}" accessed invalid field on '
-                        'model {}'.format(key, self.model.__class__.__name__))
+                        'Filter_by key "{}" accessed invalid field'
+                        .format(key))
 
         return query
 
@@ -408,6 +465,13 @@ def get_joined(obj, join_prof="standard_join"):
             dct[key] = subobj
     return dct
 
+def safe_json(json_string):
+    try:
+        return json.loads(json_string)
+    except Exception as e:
+        raise SyntaxError(
+            "Error decoding JSON parameters. Original exception was {}"
+            .format(e.message))
 
 def jsonify_status_code(
         status_code, message=None, headers=None, success=False, **kw):

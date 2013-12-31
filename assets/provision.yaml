@@ -17,6 +17,9 @@ projects:
             solutions:
                 - title: Testing
                   desc: This is a simple test
+            comments:
+                - message: This is a simple test message
+                  creator: scrappy
           - title: Change log for Improvements
             desc: |
                 Like gists on Github, show a historical revision log for an

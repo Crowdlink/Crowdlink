@@ -1,5 +1,4 @@
 import stripe
-import logging
 
 from crowdlink.tests import BaseTest, login_required
 from crowdlink.util import stripe_bank_token, stripe_card_token
@@ -20,8 +19,8 @@ class PaymentTests(BaseTest):
         res = self.json_post('/api/charge', data=data)
         pprint(res.json)
         assert res.json['success']
-        assert isinstance(res.json['charge']['id'], int)
-        assert res.json['charge']['id'] > 0
+        assert isinstance(res.json['objects'][0]['id'], int)
+        assert res.json['objects'][0]['id'] > 0
 
     # Recipeint api
     # =========================================================================
@@ -39,8 +38,8 @@ class PaymentTests(BaseTest):
         #logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
         pprint(res.json)
         assert res.json['success']
-        assert isinstance(res.json['recipient']['id'], int)
-        assert res.json['recipient']['id'] > 0
+        assert isinstance(res.json['objects'][0]['id'], int)
+        assert res.json['objects'][0]['id'] > 0
 
     # Transfer api
     # =========================================================================

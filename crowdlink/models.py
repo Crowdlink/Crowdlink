@@ -375,7 +375,7 @@ class Solution(
 
     def roles(self, user=current_user):
         roles = Solution.p_roles(issue=self.issue)
-        if self.creator == user or 'maintainer':
+        if self.creator == user:
             roles.append('creator')
         return roles
 
@@ -493,7 +493,7 @@ class Email(base):
 
         db.session.add(inst)
 
-    def send_activation(self):
+    def send_activation(self, generate_only=False):
         """ Regenerates activation hashes and time markers and commits the
         change.  If the commit action is successful, an email will be sent to
         the user """
@@ -502,11 +502,14 @@ class Email(base):
 
         db.session.commit()
 
-        return send_email(
-            self.address,
-            'confirm',
-            activate_hash=self.activate_hash,
-            user_id=self.user_id)
+        if generate_only is True:
+            return self.activate_hash, self.hash_gen
+        else:
+            return send_email(
+                self.address,
+                'confirm',
+                activate_hash=self.activate_hash,
+                user_id=self.user_id)
 
 
 class Dispute(base, PrivateMixin):
@@ -699,7 +702,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     # User creation logic
     # ========================================================================
     @classmethod
-    def create(cls, username, password, email_address):
+    def create(cls, username, password, email_address, user=None):
         user = cls(username=username)
         user.password = password
         db.session.add(user)

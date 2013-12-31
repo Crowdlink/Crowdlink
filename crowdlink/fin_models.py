@@ -479,6 +479,14 @@ class Earmark(StatusMixin, Sink, base):
     @classmethod
     def create(cls, thing, amount, user=current_user):
 
+        if thing.type not in ['Issue', 'Solution', 'Project']:
+            current_app.logger.warn(
+                "Someone tried to Earmark the wrong type of object"
+                "\nType: {}\nObjID: {}"
+                .format(thing.type,
+                        thing.id))
+            raise AttributeError
+
         amount = int(amount)
         if amount < 50:
             raise ValueError('Amount is too low to create earmark')
@@ -489,7 +497,7 @@ class Earmark(StatusMixin, Sink, base):
         setcontext(BasicContext)
         fee = Decimal(amount) * Decimal(current_app.config['transfer_fee'])
         mark = Earmark(
-            amount=int(amount)-fee,
+            amount=int(amount) - fee,
             fee=fee,
             user=user,
             thing=thing,
@@ -586,8 +594,12 @@ class Recipient(PrivateMixin, base):
         # create a new recipient in our db to reflect stripe
         recp = Recipient(
             livemode=livemode,
-            user=user
+            user=user,
+            name=' ',
+            verified=False,
+            stripe_created_at=datetime.utcnow(),
         )
+        db.session.add(recp)
         db.session.flush()
 
         vals = dict(

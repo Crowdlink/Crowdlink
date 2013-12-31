@@ -20,12 +20,7 @@ def login_required(username='crowdlink', password='testing'):
         self.user = self.db.session.query(User).filter_by(username=username).one()
         self.login(username, password)['user']
         login_user(self.user)
-        try:
-            func(self)
-        except AssertionError as e:
-            self.db.session.rollback()
-            self.logout()
-            raise
+        func(self)
         self.logout()
         logout_user()
 
@@ -39,12 +34,7 @@ def login_required_ctx(username='crowdlink', password='testing'):
         self = args[0]
         self.user = self.db.session.query(User).filter_by(username=username).one()
         login_user(self.user)
-        try:
-            f(self)
-        except AssertionError:
-            self.db.session.rollback()
-            logout_user()
-            raise
+        f(self)
         logout_user()
 
     return decorator.decorator(login_required_ctx)
@@ -54,6 +44,10 @@ class BaseTest(TestCase):
     def json_post(self, url, data):
         return self.client.post(
             url, data=json.dumps(data), content_type='application/json')
+
+        def tearDown(self):
+            self.db.session.remove()
+            self.db.drop_all()
 
     def json_get(self, url, data):
         return self.client.get(
@@ -72,9 +66,6 @@ class BaseTest(TestCase):
         del app.logger.handlers[0]
         with app.app_context():
             self.db = crowdlink.db
-            #self.db.drop_all()
-            #self.db.create_all()
-            #provision()
             os.system("psql -U crowdlink -h localhost crowdlink_testing -f " + root + "/assets/test_provision.sql > /dev/null 2>&1")
         return app
 

@@ -113,7 +113,7 @@ module.exports = (grunt) ->
       jshint:
         command: 'coffee-jshint coffee/*.coffee'
       test:
-        command: 'nosetests crowdlink.tests.api_tests crowdlink.tests.model_tests crowdlink.tests.event_tests --with-cover --cover-package=crowdlink -v'
+        command: 'nosetests crowdlink.tests.json_api_tests crowdlink.tests.internal_api_tests crowdlink.tests.event_tests crowdlink.tests.json_api_unit_tests crowdlink.tests.acl_tests --with-cover --cover-package=crowdlink --cover-html -v'
       testall:
         command: 'nosetests --with-cover --cover-package=crowdlink --cover-html -v'
       proc_coffee:

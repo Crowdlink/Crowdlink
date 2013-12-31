@@ -22,7 +22,7 @@ email_cfg = {
 
 def send_email(to_addr, typ, **kwargs):
     conf = email_cfg[typ]
-    send_addr = current_app.config['email_sender']
+    send_addr = current_app.config['email_send_address']
     send_name = current_app.config['email_send_name']
     msg = MIMEMultipart('alternative')
     msg['Subject'] = conf['subject']
