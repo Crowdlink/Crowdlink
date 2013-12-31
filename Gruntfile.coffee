@@ -157,8 +157,6 @@ module.exports = (grunt) ->
       compass:
         files: ['processed/scss/**/*.scss']
         tasks: ['compass']
-        options:
-          livereload: true
       dev_server:
         files: ['**/*.py', '*.ini', '*.json']
         tasks: ['shell:reload']
@@ -176,6 +174,10 @@ module.exports = (grunt) ->
       yaml:
         files: ['assets/help/**/*.yaml']
         tasks: ['shell:compile_yaml']
+      css:
+        files: ['static/css/**/*.css']
+        options:
+          livereload: true
 
   grunt.loadNpmTasks('grunt-contrib-less')    # compiled bootstrap
   grunt.loadNpmTasks('grunt-contrib-watch')   # watches for changes

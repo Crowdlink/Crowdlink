@@ -1,4 +1,4 @@
-@import url(http://fonts.googleapis.com/css?family=Open+Sans:400,700|Raleway:400,700);
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:400,700|Raleway:400,500|Orbitron:400);
 @import "compass/css3/images";
 @import "compass/css3/text-shadow";
 
@@ -12,6 +12,10 @@ $brand-success:         #1A9958;
 $brand-warning:         #F39C12;
 $brand-danger:          #E74C3C;
 $brand-info:            #3498DB;
+$green:                 #619532;
+$brand:                 #204967;
+$red:                   #BB463E;
+
 $img-lib-url: "/static/lib/img/";
 
 .help {
@@ -119,6 +123,8 @@ ul.main-list {
 .hr-header {
   text-align:center;
   border-bottom:2px solid #d5d5d5;
+  margin-top:5px;
+  margin-bottom:10px;
   b {
     display:inline-block;
     font-size:18px;
@@ -164,6 +170,48 @@ div h4.subtext {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
   }
   color:#efefef !important;
+}
+.landing-sign-up {
+  div.form-group {
+    margin-bottom:5px;
+  }
+}
+.form-group p.text-muted {
+  font-size:10pt;
+}
+div.home-body {
+  background-color:#3A9C4A;
+  color:#fff;
+  h2 {
+    color:#fff;
+  }
+  p {
+    font-size:14pt;
+    line-height:30px;
+  }
+}
+.btn-oauth {
+  background-color:#22A9E1;
+  color:#ddd;
+  &:hover {
+    color:#fff;
+  }
+}
+.btn-google {
+  background-color:#E04A32;
+}
+.btn-twitter {
+  background-color:#22A9E1;
+}
+.btn-github {
+  background-color:#000;
+}
+.more-info {
+  margin-top:55px;
+//  .btn {
+//    background-color:#9C3A42;
+//    color:#fff;
+//  }
 }
 /* Animation */
 /******************************************/
@@ -217,33 +265,38 @@ i.right-float {
 /* Header */
 /******************************************/
 .logo {
-  padding:9px 20px 5px 15px;
-}
-
-.green {
-  color:#619532;
-}
-.brand {
-  color:#204967 !important;
-}
-.red {
-  color:#BB463E;
+  padding:15px 10px 5px 15px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight:400;
+  font-size:16pt;
+  letter-spacing:1.5px;
+  img {
+    margin-top:-4px;
+  }
 }
 
 ul.main-nav-pills {
   li {
     line-height:30px;
+    font-size:16pt;
+    font-weight:normal;
+    float:right;
+    &.active a {
+      background-color:lighten($brand-primary, 8%) !important;
+    }
     a {
       border-radius:0px;
-      color: #000000;
+      color: #ddd;
       &:hover,
       &:focus{
-        background-color:none;
+        color:#fff;
+        background-color:$brand-primary;
       }
     }
-    font-size:18pt;
-    font-weight:normal;
   }
+}
+.navbar-fixed-top {
+  border-bottom:3px solid #E0772F;
 }
 
 /******************************************/
@@ -269,13 +322,18 @@ body {
 #footer {
   height: $footer-height;
 }
-
 .main-cont {
   position: absolute;
   top:0px;
   right:0px;
   left:0px;
   padding-top:52px;
+}
+.addthis-container {
+  padding-top:20px;
+  padding-bottom:15px;
+  margin:auto;
+  width: 310px;
 }
 
 /* Utilities */

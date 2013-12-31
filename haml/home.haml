@@ -1,69 +1,89 @@
-.container
-  .container.header-col.header-col-purple
+.jumbotron
+  .container
     .row
-      .col-lg-6.indent-quote
-        %br/
-        %br/
-        %br/
-        %br/
-        %br/
-        %h2.bs-masthead Crowd-source your user opinion to drive lean, agile development
-        %h4.subtext Sign up for free for open source project hosting. Paid plans coming soon.
+      .col-lg-6.col-lg-offset-1
+        %h1
+          Crowdsource your project direction.
+        %h3
+          Use donations, pledges, and votes to guage user opinions.
+          -#Get user feedback on issues and features through donations, voting, and suggestions.
       .col-lg-5
-        %h3.indent-quote Sign Up
-        %p.col-lg-offset-4{style: "padding-left:10px;"}
-        .hr-header
-          %b or
-        %br/
-        %a.col-lg-offset-4{href: "/login/github", style: "padding-left:10px;"}
-          %button.btn.btn-danger.btn-sm{type: "button"}
-            %i.fa.fa-github.fa-li.fa-large>
-            \  Sign in with Github
-  .col-sm-6.header-col.header-col-dark-blue
-    %h3.indent-quote For project maintainers
-    .row{style: "padding-left:15px;"}
-      .col-lg-10
-        %h3
-          %i.fa.fa-thumbs-up
-          \ Integrated voting
-        %p Voting and goal setting allows non-technical users to let their voice be heard and helps you follow user interest for more lean development. Users can vote for free or with money, you decide.
-    .row{style: "padding-left:15px;"}
-      .col-lg-10
-        %h3
-          %i.fa.fa-dollar
-          \ Grow your project
-        %p Generate impetus for your side projects by allowing people to show their interst with money
-    .row{style: "padding-left:15px;"}
-      .col-lg-10
-        %h3
-          %i.fa.fa-gear
-          \ Built in
-        %p Designed to work alongside your issue tracker to avoid duplicating work
-  .col-sm-6.header-col.header-col-light-blue
-    %h3 For users
-    .row{style: "padding-left:15px;"}
-      .col-lg-10
-        %h3
-          %i.fa.fa-comment
-          \ Be heard
-        %p Always wanted that one feature in a project? You can vote for that feature to be implemented, or even give a few dollars towards it.
-    .row{style: "padding-left:15px;"}
-      .col-lg-10
-        %h3
-          %i.fa.fa-bullhorn
-          \ Stay up to date
-        %p Track projects that your intersted in easily and be notified of new releases and features
-    .row{style: "padding-left:15px;"}
-      .col-lg-10
-        %h3
-          %i.fa.fa-flask
-          \ Drive innovation
-        %p Micro-donations can be targeted at specific objectives or improvements in projects that interest you
-  .clearfix
-  .container.header-col.header-col-gray
+        .row
+          %form.form-horizontal.ng-pristine.ng-valid.landing-sign-up{method: "post", "ng-submit" => "submit()"}
+            .alert-danger.alert.fade.ng-hide{"ng-show" => "errors"}
+              %span.ng-binding.ng-hide{"ng-show" => "errors.length === 1"}
+              %span.ng-binding.ng-hide{"ng-show" => "error_header"}
+              %ul.ng-hide{"ng-show" => "errors.length > 1"}
+                / ngRepeat: error in errors
+            .form-group
+              .col-lg-8.col-lg-offset-2
+                %input.form-control.ng-pristine.ng-valid{"ng-model" => "username", type: "text", placeholder:"Username"}/
+            .form-group
+              .col-lg-8.col-lg-offset-2
+                %input.form-control.ng-pristine.ng-valid{"ng-model" => "password", type: "password", placeholder:"Password"}/
+            .form-group
+              .col-lg-8.col-lg-offset-2
+                %input.form-control.ng-pristine.ng-valid{"ng-model" => "password", type: "password", placeholder:"Email"}/
+            .form-group
+              .col-lg-8.col-lg-offset-2
+                %button.btn.btn-info.fill-link{"ng-click" => "submit()", type: "submit"}
+                  %i.fa.fa-edit
+                  Sign up for Crowdlink
+                %p.text-muted
+                  By clicking "Sign up for Crowdlink", you agree to our
+                  %a{href: "/#/tos", target: "_blank"} terms of service
+                  and
+                  %a{href: "/#/privacy", target: "_blank"} privacy policy
+
+        .row
+          .col-lg-10.col-lg-offset-1.text-center
+            %hr.hr-header
+
+        .row
+          .col-lg-8.col-lg-offset-2.text-center
+            Sign up with Oauth
+        .row
+          %form.form-horizontal
+            .form-group
+              .col-lg-8.col-lg-offset-2.text-center
+                %a.btn.btn-oauth.btn-github.btn-large{href: "/login/github", type: "button"}
+                  %i.fa.fa-github.fa-large
+                %a.btn.btn-oauth.btn-twitter.btn-large{href: "/login/twitter", type: "button"}
+                  %i.fa.fa-twitter.fa-large
+                %a.btn.btn-oauth.btn-google.btn-large{href: "/login/google", type: "button"}
+                  %i.fa.fa-google-plus.fa-large
+
+
+%div.addthis-container
+  .addthis_toolbox.addthis_default_style
+    %a.addthis_button_facebook_like{"fb:like:layout" => "button_count"}
+    %a.addthis_button_tweet
+    %a.addthis_button_pinterest_pinit{"pi:pinit:layout" => "horizontal"}
+    %a.addthis_counter.addthis_pill_style
+  %script{src: "//s7.addthis.com/js/300/addthis_widget.js#pubid=xa-52c227390407c34f", type: "text/javascript"}
+.jumbotron.home-body
+  .container
     .row
-      .col-lg-4.col-sm-6
-        %h3
-          %i.fa.fa-linux
-          \ Open Source Friendly
-        %p Featurelet is completely free for open source projects
+      .col-md-3.col-md-offset-1
+        %h2
+          %i.fa.fa-bullhorn
+          Heading
+        %p
+          Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.
+
+      .col-md-3.col-md-offset-1
+        %h2
+          %i.fa.fa-thumbs-up
+          Heading
+        %p
+          Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.
+      .col-md-3.col-md-offset-1
+        %h2
+          %i.fa.fa-comment
+          Heading
+        %p Donec sed odio dui. Cras justo odio, dapibus ac facilisis in, egestas eget quam. Vestibulum id ligula porta felis euismod semper. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.
+    .row
+      .col-md-4.col-md-offset-4
+        %p.text-center.more-info
+          %a.btn.btn-danger.fill-link.btn-large{href: "/login/github", type: "button"}
+            Learn More »

@@ -47,36 +47,34 @@
     %script{src: "{{ static_path }}js/services.js"}
     {% endif %}
     {% raw %}#wrap{"ng-init" => "root_init({{logged_in}}, '{{user | tojson | urlencode}}')"}{% endraw %}
-      .navbar.navbar-default.navbar-fixed-top
+      .navbar.navbar-inverse.navbar-fixed-top
         .container.no-gutter
           %a.navbar-brand.logo{href: "#/home"}
-            %span.hidden-xs
-              %img{border: "0", src: "{{ static_path }}img/logo.jpg"}/
-            %span.visible-xs
-              %img{border: "0", src: "{{ static_path }}img/logo_sm.jpg"}/
+            %img{border: "0", width: "30", height: "30", src: "{{ static_path }}img/logo.svg"}/
+            %span.hidden-xs Crowdlink
           %ul.nav.nav-pills.main-nav-pills
+            %li.clickable{"ng-show" => "logged_in"}
+              %a{"ng-click" => "logout()"}
+                %i.fa.fa-sign-out
+                %span.hidden-xs Logout
+            %li{"ng-class" => "{true: 'active'}[location.path()=='/login']", "ng-hide" => "logged_in"}
+              %a{href: "#/login"}
+                %i.fa.fa-sign-in
+                %span.hidden-xs Login
             %li{"ng-class" => "{true: 'active'}[location.path().lastIndexOf('/account', 0) === 0]", "ng-show" => "logged_in"}
               %a{href: "#/account"}
-                %i.fa.fa-large.fa-gear
+                %i.fa.fa-gear
                 %span.hidden-xs Account
             %li{"ng-class" => "{true: 'active'}[location.path()==profile]", "ng-show" => "logged_in"}
               %a{href: "\#{[{profile}]}"}
-                %i.fa.fa-large.fa-user
+                %i.fa.fa-user
                 %span.hidden-xs Profile
-            %li.clickable{"ng-show" => "logged_in"}
-              %a{"ng-click" => "logout()"}
-                %i.fa.fa-large.fa-sign-out
-                %span.hidden-xs Logout
-            %li{"ng-class" => "{true: 'active'}[location.path()=='/signup']", "ng-hide" => "logged_in"}
+            %li.text-center{"ng-class" => "{true: 'active'}[location.path()=='/signup']", "ng-hide" => "logged_in"}
               %a{href: "#/signup"}
-                %i.fa.fa-large.fa-edit
+                %i.fa.fa-edit
                 %span.hidden-xs Sign Up
-            %li{"ng-class" => "{true: 'active'}[location.path()=='/login']", "ng-hide" => "logged_in"}
-              %a{href: "#/login"}
-                %i.fa.fa-sign-in.fa-large
-                %span.hidden-xs Login
 
-      .container.main-cont
+      .main-cont
         %div{"ng-show" => "messages.length > 0"}
           %br
         .alert.fade{"ng-repeat" => "message in messages", "ng-class" => "message['class']"}
@@ -85,6 +83,7 @@
           %ul{"ng-show" => "'messages' in message"}
             %li{"ng-repeat" => "m in message['messages']", "ng-bind" => "m"}
         .fade{"ng-view" => ""}
+
 
         %div.col-lg-4.col-lg-offset-4
           %p.text-muted{style: "margin:20px 0px;text-align:center;"}
