@@ -1,17 +1,18 @@
-.row{"ng-init" => "init()"}
-  .col-md-3{style: "padding:30px;"}
-    %h4 Account Information
-    %ul.nav.nav-pills.nav-stacked
-      %li{"ng-class" => "{true: 'active'}[view=='general']"}
-        %a{"ng-click" => "view='general'"} General
-      %li{"ng-class" => "{true: 'active'}[view=='general']", "ng-show" => "acc_user.gh_linked"}
-        %a{href: "/login/github"}
-          %i.fa.fa-github.fa-large>
-            Link You Github
-    %h4 Financial
-    %ul.nav.nav-pills.nav-stacked
-      %li{"ng-class" => "{true: 'active'}[view=='add_credit']"}
-        %a{"ng-click" => "view='add_credit'"} Add Funds
-      %li{"ng-class" => "{true: 'active'}[view=='charges']"}
-        %a{"ng-click" => "view='charges'"} Charge History
-  .col-md-9.fade{"ng-include" => "'{{template_path}}account/' + view + '.html'"}
+.container
+  .row{"ng-init" => "init()"}
+    .col-md-3{style: "padding:30px;"}
+      %h4 Account Information
+      %ul.nav.nav-pills.nav-stacked
+        %li{"ng-class" => "{true: 'active'}[view=='general']"}
+          %a{"ng-click" => "view='general'"} General
+        %li{"ng-class" => "{true: 'active'}[view=='general']", "ng-show" => "acc_user.gh_linked"}
+          %a{href: "/login/github"}
+            %i.fa.fa-github.fa-large>
+              Link You Github
+      %h4 Financial
+      %ul.nav.nav-pills.nav-stacked
+        %li{"ng-class" => "{true: 'active'}[view=='add_credit']"}
+          %a{"ng-click" => "view='add_credit'"} Add Funds
+        %li{"ng-class" => "{true: 'active'}[view=='charges']"}
+          %a{"ng-click" => "view='charges'"} Charge History
+    .col-md-9.fade{"ng-include" => "'{{template_path}}account/' + view + '.html'"}

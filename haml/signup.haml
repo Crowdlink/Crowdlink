@@ -1,70 +1,71 @@
-%br/
-%br/
-%br/
-%br/
-.col-lg-6.col-lg-offset-2{"ng-init" => "init()"}
-  %h3{class: "center"} Sign Up
+.container
   %br/
-  %form.form-horizontal{method: "post", name: "f", novalidate: ""}
-    .alert-danger.alert.fade{"ng-show" => "errors"}
-      %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
-      %span{"ng-show" => "error_header"} {[{ error_header }]}
-      %ul{"ng-show" => "errors.length > 1"}
-        %li{"ng-repeat" => "error in errors"} {[{error}]}
-    %div
-      .form-group{"valid-class" => "f.username"}
-        %label.col-lg-3.control-label Username
+  %br/
+  %br/
+  %br/
+  .col-lg-6.col-lg-offset-2{"ng-init" => "init()"}
+    %h3{class: "center"} Sign Up
+    %br/
+    %form.form-horizontal{method: "post", name: "f", novalidate: ""}
+      .alert-danger.alert.fade{"ng-show" => "errors"}
+        %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+        %span{"ng-show" => "error_header"} {[{ error_header }]}
+        %ul{"ng-show" => "errors.length > 1"}
+          %li{"ng-repeat" => "error in errors"} {[{error}]}
+      %div
+        .form-group{"valid-class" => "f.username"}
+          %label.col-lg-3.control-label Username
+          .col-lg-8
+            %input.form-control{name: "username", "ng-maxlength" => "32",
+              "ng-model" => "username", "ng-pattern" => "/^[a-zA-Z0-9-_]+$/",
+              type: "text", required: "", "unique-serverside" => "user/check"}
+            %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "busy"}
+            %i.fa.fa-check.right-float{"ng-show" => "confirmed && f.username.$valid"}
+            .help-block{"ng-show" => "f.username.$error.required"}
+              Please enter a Username
+            .help-block{"ng-show" => "f.username.$error.pattern"}
+              Can only contain letters, numbers, _, and -.
+            .help-block{"ng-show" => "f.username.$error.maxlength"}
+              Cannot be longer than 64 characters
+            .help-block{"ng-show" => "f.username.$error.taken"}
+              That name is taken
+      .form-group{"valid-class" => "f.pass"}
+        %label.col-lg-3.control-label Password
         .col-lg-8
-          %input.form-control{name: "username", "ng-maxlength" => "32",
-            "ng-model" => "username", "ng-pattern" => "/^[a-zA-Z0-9-_]+$/",
-            type: "text", required: "", "unique-serverside" => "user/check"}
+          %input.form-control{name: "pass", "ng-maxlength" => "64",
+              "ng-minlength" => "5", "ng-model" => "pass", required: "",
+              type: "password"}
+          .help-block{"ng-show" => "f.pass.$error.required"}
+            Please enter a password
+          .help-block{"ng-show" => "f.pass.$error.minlength"}
+            Must be longer than 5 characters
+          .help-block{"ng-show" => "f.pass.$error.maxlength"}
+            Must be fewer than 64 characters
+      .form-group{"valid-class" => "f.confirm"}
+        %label.col-lg-3.control-label Confirm
+        .col-lg-8
+          %input.form-control{name: "confirm", "ng-model" => "confirm",
+            "password-match" => "f.pass", type: "password", required: ""}
+          .help-block{"ng-show" => "f.confirm.$error.unique"}
+            Passwords must match
+          .help-block{"ng-show" => "f.confirm.$error.required"}
+            Please enter a confirmation password
+      .form-group{"valid-class" => "f.email"}
+        %label.col-lg-3.control-label{for: "RegisterForm_email"} Email
+        .col-lg-8
+          %input.form-control{name: "email", "ng-model" => "email",
+            type: "email", required: "", "unique-serverside" => "email/check"}
           %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "busy"}
-          %i.fa.fa-check.right-float{"ng-show" => "confirmed && f.username.$valid"}
-          .help-block{"ng-show" => "f.username.$error.required"}
-            Please enter a Username
-          .help-block{"ng-show" => "f.username.$error.pattern"}
-            Can only contain letters, numbers, _, and -.
-          .help-block{"ng-show" => "f.username.$error.maxlength"}
-            Cannot be longer than 64 characters
-          .help-block{"ng-show" => "f.username.$error.taken"}
-            That name is taken
-    .form-group{"valid-class" => "f.pass"}
-      %label.col-lg-3.control-label Password
-      .col-lg-8
-        %input.form-control{name: "pass", "ng-maxlength" => "64",
-            "ng-minlength" => "5", "ng-model" => "pass", required: "",
-            type: "password"}
-        .help-block{"ng-show" => "f.pass.$error.required"}
-          Please enter a password
-        .help-block{"ng-show" => "f.pass.$error.minlength"}
-          Must be longer than 5 characters
-        .help-block{"ng-show" => "f.pass.$error.maxlength"}
-          Must be fewer than 64 characters
-    .form-group{"valid-class" => "f.confirm"}
-      %label.col-lg-3.control-label Confirm
-      .col-lg-8
-        %input.form-control{name: "confirm", "ng-model" => "confirm",
-          "password-match" => "f.pass", type: "password", required: ""}
-        .help-block{"ng-show" => "f.confirm.$error.unique"}
-          Passwords must match
-        .help-block{"ng-show" => "f.confirm.$error.required"}
-          Please enter a confirmation password
-    .form-group{"valid-class" => "f.email"}
-      %label.col-lg-3.control-label{for: "RegisterForm_email"} Email
-      .col-lg-8
-        %input.form-control{name: "email", "ng-model" => "email",
-          type: "email", required: "", "unique-serverside" => "email/check"}
-        %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "busy"}
-        %i.fa.fa-check.right-float{"ng-show" => "confirmed && f.email.$valid"}
-        .help-block{"ng-show" => "f.email.$error.email"}
-          Invalid address
-        .help-block{"ng-show" => "f.email.$error.required"}
-          Email address is required
-        .help-block{"ng-show" => "f.email.$error.taken"}
-          That address is already being used by another user
-    .form-group
-      .col-lg-3
-      .col-lg-8
-        %button.btn.btn-info{name: "submit", "ng-click" => "submit()", class: "fill-link",
-            "ng-disabled" => "!f.$valid", type: "submit"}
-          Sign Up
+          %i.fa.fa-check.right-float{"ng-show" => "confirmed && f.email.$valid"}
+          .help-block{"ng-show" => "f.email.$error.email"}
+            Invalid address
+          .help-block{"ng-show" => "f.email.$error.required"}
+            Email address is required
+          .help-block{"ng-show" => "f.email.$error.taken"}
+            That address is already being used by another user
+      .form-group
+        .col-lg-3
+        .col-lg-8
+          %button.btn.btn-info{name: "submit", "ng-click" => "submit()", class: "fill-link",
+              "ng-disabled" => "!f.$valid", type: "submit"}
+            Sign Up

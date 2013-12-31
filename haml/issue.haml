@@ -1,81 +1,82 @@
-%div
-  .row
-    %ol.breadcrumb
-      %li
-        %a{href: "#/{[{issue.project_maintainer_username}]}"} {[{issue.project_maintainer_username}]}
-      %li
-        %a{href: "#\{[{issue.get_project_abs_url}]}"} {[{ issue.project.name }]}
-      %li
-        %a{href: ""} Issues
-      %li.active {[{issue.title}]}
+.container
   %div
     .row
-      .col-md-8.no-gutter
-        %h2
-          %span{"ng-show" => "issue.user_acl.edit_title"}
-            %span{"ng-show" => "editing.issue.title"}
-              .input-group
-                %input.form-control{"ng-model" => "issue.title", type: "text"}/
-                %span.btn.btn-info.input-group-addon{"ng-click" => "save('issue.title')"}
-                  %i.fa.fa-save{"ng-hide" => "saving.issue.title"}
-                  %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.issue.title"}
-                %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('issue.title')"}
-                  %i.fa.fa-times-circle
-            %span{"ng-hide" => "editing.issue.title"}
-              {[{ issue.title }]} 
-              %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('issue.title')"}
-          %span{"ng-hide" => "issue.user_acl.edit_title"}
-            {[{ issue.title }]}
-          %br
-          %a.button{"toggle-button" => "issue.subscribed",
-          "ng-click" => "swap_save('issue.subscribed')"}
-            %i{off: "fa-eye", on: "fa-eye-slash"}
-            .in-button{off: "Watch", on: "Unwatch"}
-          %a.button{"toggle-button" => "issue.vote_status",
-          "ng-click" => "swap_save('issue.vote_status')"}
-            %i{on: "fa-minus-circle", off: "fa-plus-circle"}
-            .in-button{off: "Vote", on: "Unvote"}
-          %a.button.active{:href => "\#{[{issue.get_abs_url}]}/new_solution"}
-            %i.fa.fa-large.fa-plus
-            \ Add a Solution
-          %report-dropdown{"var" => "issue.report_status", "reasons" => "['Spam', 'Fraudulent']"}
-      .col-md-4.no-gutter
-    %br/
-    .row
-      %h4
-        %b> Proposed on
-        {[{ issue.created_at | date:'medium' }]}
-        ({[{ issue.created_at|date_ago }]})
+      %ol.breadcrumb
+        %li
+          %a{href: "#/{[{issue.project_maintainer_username}]}"} {[{issue.project_maintainer_username}]}
+        %li
+          %a{href: "#\{[{issue.get_project_abs_url}]}"} {[{ issue.project.name }]}
+        %li
+          %a{href: ""} Issues
+        %li.active {[{issue.title}]}
+    %div
+      .row
+        .col-md-8.no-gutter
+          %h2
+            %span{"ng-show" => "issue.user_acl.edit_title"}
+              %span{"ng-show" => "editing.issue.title"}
+                .input-group
+                  %input.form-control{"ng-model" => "issue.title", type: "text"}/
+                  %span.btn.btn-info.input-group-addon{"ng-click" => "save('issue.title')"}
+                    %i.fa.fa-save{"ng-hide" => "saving.issue.title"}
+                    %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.issue.title"}
+                  %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('issue.title')"}
+                    %i.fa.fa-times-circle
+              %span{"ng-hide" => "editing.issue.title"}
+                {[{ issue.title }]} 
+                %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('issue.title')"}
+            %span{"ng-hide" => "issue.user_acl.edit_title"}
+              {[{ issue.title }]}
+            %br
+            %a.button{"toggle-button" => "issue.subscribed",
+            "ng-click" => "swap_save('issue.subscribed')"}
+              %i{off: "fa-eye", on: "fa-eye-slash"}
+              .in-button{off: "Watch", on: "Unwatch"}
+            %a.button{"toggle-button" => "issue.vote_status",
+            "ng-click" => "swap_save('issue.vote_status')"}
+              %i{on: "fa-minus-circle", off: "fa-plus-circle"}
+              .in-button{off: "Vote", on: "Unvote"}
+            %a.button.active{:href => "\#{[{issue.get_abs_url}]}/new_solution"}
+              %i.fa.fa-large.fa-plus
+              \ Add a Solution
+            %report-dropdown{"var" => "issue.report_status", "reasons" => "['Spam', 'Fraudulent']"}
+        .col-md-4.no-gutter
       %br/
-      %div.btn.btn-default.pull-right{"ng-click" => "toggle('issue.desc')",
-        "ng-show" => "issue.user_acl.edit_desc", "ng-hide" => "editing.issue.desc"}
-        Edit
-      .row.well.well-lg.center-margin
-        .row.col-lg-12{"ng-show" => "editing.issue.desc"}
-          %textarea{"mark-it-up" => "", "ng-model" => "issue.desc"}
-          %span.btn.btn-info{"ng-click" => "save('issue.desc')", "ng-disabled" => "saving.issue.desc"}
-            %i.fa.fa-save{"ng-hide" => "saving.issue.desc"}
-            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.issue.desc"}
-            \ Save
-          %span.btn.btn-primary{"ng-click" => "revert('issue.desc')", "ng-disabled" => "saving.issue.desc"}
-            %i.fa.fa-times-circle
-            \ Discard
-        %div{"ng-hide" => "editing.issue.desc"}
-          %span{"btf-markdown" => "issue.desc"}
-  .row{"ng-show" => "issue.events.length > 0"}
-    %h3 Events
-    %div{"ng-repeat" => "event in project.events"}
-      %span{"ng-include" => "'{{template_path}}' + event.template"}
+      .row
+        %h4
+          %b> Proposed on
+          {[{ issue.created_at | date:'medium' }]}
+          ({[{ issue.created_at|date_ago }]})
+        %br/
+        %div.btn.btn-default.pull-right{"ng-click" => "toggle('issue.desc')",
+          "ng-show" => "issue.user_acl.edit_desc", "ng-hide" => "editing.issue.desc"}
+          Edit
+        .row.well.well-lg.center-margin
+          .row.col-lg-12{"ng-show" => "editing.issue.desc"}
+            %textarea{"mark-it-up" => "", "ng-model" => "issue.desc"}
+            %span.btn.btn-info{"ng-click" => "save('issue.desc')", "ng-disabled" => "saving.issue.desc"}
+              %i.fa.fa-save{"ng-hide" => "saving.issue.desc"}
+              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.issue.desc"}
+              \ Save
+            %span.btn.btn-primary{"ng-click" => "revert('issue.desc')", "ng-disabled" => "saving.issue.desc"}
+              %i.fa.fa-times-circle
+              \ Discard
+          %div{"ng-hide" => "editing.issue.desc"}
+            %span{"btf-markdown" => "issue.desc"}
+    .row{"ng-show" => "issue.events.length > 0"}
+      %h3 Events
+      %div{"ng-repeat" => "event in project.events"}
+        %span{"ng-include" => "'{{template_path}}' + event.template"}
 
-  .row
-    %h4 Comments
-    %span.fade{"ng-repeat" => "comment in issue.comments"}
-      %b {[{ comment.user.username }]}
-      %b.pull-right {[{ comment.created_at | date:'medium' }]}
-      .row.well.well-sm.center-margin
-        {[{ comment.message }]}
+    .row
+      %h4 Comments
+      %span.fade{"ng-repeat" => "comment in issue.comments"}
+        %b {[{ comment.user.username }]}
+        %b.pull-right {[{ comment.created_at | date:'medium' }]}
+        .row.well.well-sm.center-margin
+          {[{ comment.message }]}
 
-  .row{"ng-show" => "logged_in"}
-    %textarea{"mark-it-up" => "", "ng-model" => "new_comment"}
-    %a.btn.btn-primary{"ng-click" => "comment(new_comment, issue)"}
-      Comment
+    .row{"ng-show" => "logged_in"}
+      %textarea{"mark-it-up" => "", "ng-model" => "new_comment"}
+      %a.btn.btn-primary{"ng-click" => "comment(new_comment, issue)"}
+        Comment

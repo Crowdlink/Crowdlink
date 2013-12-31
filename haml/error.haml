@@ -1,8 +1,9 @@
-.jumbotron{style: "position:relative; top:-5px;", "ng-init" => "init()"}
-  %h1.pull-left.brand
-    %i.fa.fa-exclamation
-  %h1{style: "position:relative; top:-5px; padding-left:50px; font-size:46pt;"}
-    {[{ err }]}
-    %small - {[{ error_data[err]['txt'] }]}
-  .clearfix
-  %p {[{ error_data[err]['long'] }]}
+.container
+  .jumbotron{style: "position:relative; top:-5px;", "ng-init" => "init()"}
+    %h1.pull-left.brand
+      %i.fa.fa-exclamation
+    %h1{style: "position:relative; top:-5px; padding-left:50px; font-size:46pt;"}
+      {[{ err }]}
+      %small - {[{ error_data[err]['txt'] }]}
+    .clearfix
+    %p {[{ error_data[err]['long'] }]}

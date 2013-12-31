@@ -1,22 +1,23 @@
-%div
-  %ol.breadcrumb
-    %li
-      %a{href: ""} Projects
-    %li
-      %a{href: "{[{project.get_abs_url}]}"} {[{ project.name }]}
-    %li.active Settings
-  .row{"ng-show" => "user.gh_linked"}
-    .col-md-9
-      %h3 GitHub Synchronization Details
-      .panel.panel-default
-        %table.table
-          %tr
-            %th Github Repository
-            %td {[{project.gh_repo_path}]}
-          %tr
-            %th Repo ID
-            %td.mono {[{project.gh_repo_id}]}
-          %tr
-            %th Last Synced
-            %td
-              {[{project.gh_synced_at|date_ago}]} ({[{project.gh_synced_at|date:'medium'}]})
+.container
+  %div
+    %ol.breadcrumb
+      %li
+        %a{href: ""} Projects
+      %li
+        %a{href: "{[{project.get_abs_url}]}"} {[{ project.name }]}
+      %li.active Settings
+    .row{"ng-show" => "user.gh_linked"}
+      .col-md-9
+        %h3 GitHub Synchronization Details
+        .panel.panel-default
+          %table.table
+            %tr
+              %th Github Repository
+              %td {[{project.gh_repo_path}]}
+            %tr
+              %th Repo ID
+              %td.mono {[{project.gh_repo_id}]}
+            %tr
+              %th Last Synced
+              %td
+                {[{project.gh_synced_at|date_ago}]} ({[{project.gh_synced_at|date:'medium'}]})

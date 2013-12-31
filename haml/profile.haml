@@ -1,17 +1,18 @@
-.row{"ng-init" => "init()"}
-  .col.header-col-light-gray
-    .row
-      .col-md-7
-        %h2 {[{ prof_user.username }]}
-        %h4
-          %b> Joined:
-          {[{ prof_user.created_at | date:'mediumDate' }]} ({[{ prof_user.created_at | date_ago }]})
-        %a.button{"toggle-button" => "prof_user.subscribed",
-          "ng-click" => "swap_save('prof_user.subscribed')"}
-          %i{on: "fa-eye-slash", off: "fa-eye"}
-          .in-button{on: "Unwatch", off: "Watch"}
-      .col-md-5.text-right
-.row
-  %h3 Events
-  %div{"ng-repeat" => "event in prof_user.public_events"}
-    %div.media{"ng-include" => "'{{template_path}}' + event.template"}
+.container
+  .row{"ng-init" => "init()"}
+    .col.header-col-light-gray
+      .row
+        .col-md-7
+          %h2 {[{ prof_user.username }]}
+          %h4
+            %b> Joined:
+            {[{ prof_user.created_at | date:'mediumDate' }]} ({[{ prof_user.created_at | date_ago }]})
+          %a.button{"toggle-button" => "prof_user.subscribed",
+            "ng-click" => "swap_save('prof_user.subscribed')"}
+            %i{on: "fa-eye-slash", off: "fa-eye"}
+            .in-button{on: "Unwatch", off: "Watch"}
+        .col-md-5.text-right
+  .row
+    %h3 Events
+    %div{"ng-repeat" => "event in prof_user.public_events"}
+      %div.media{"ng-include" => "'{{template_path}}' + event.template"}

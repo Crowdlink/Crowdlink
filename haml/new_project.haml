@@ -1,62 +1,63 @@
-.col.header-col-light-gray.row{"ng-init" => "init()"}
-  %br/
-  %br/
-  %br/
-  .col-lg-6.col-lg-offset-2
-    %h3.col-lg-offset-4 Create new project
-    %br/
-    %form.form-horizontal{name: "form", novalidate: ""}
-      .alert-danger.alert.fade{"ng-show" => "errors"}
-        %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
-        %span{"ng-show" => "error_header"} {[{ error_header }]}
-        %ul{"ng-show" => "errors.length > 1"}
-          %li{"ng-repeat" => "error in errors"} {[{error}]}
-      .form-group{"valid-class" => "form.ptitle"}
-        %label.col-lg-3.control-label{for: "NewProjectForm_ptitle"}
-          Project Name
-        .col-lg-8
-          %input.form-control{name: "ptitle", type: "text", "ng-model" => "ptitle",
-            required: "", "ng-change" => "mod_title()",
-            "ng-maxlength" => "64"}
-          .help-block{"ng-show" => "form.ptitle.$error.required"}
-            Please enter a title for your new project
-          .help-block{"ng-show" => "form.ptitle.$error.maxlength"}
-            Cannot be longer than 64 characters
-      .form-group{"valid-class" => "form.url_key", style: "min-height:57px"}
-        %label.col-lg-3.control-label{for: "NewProjectForm_url_key"}
-          Url Key
-        .col-lg-8
-          .col-md-4{style: "text-align:center; margin-top:10px;"}
-            %b /{[{ user.username }]}/
-          .col-md-8.no-gutter
-            %input.form-control{"unique-serverside" => "purl_key/check", name: "url_key", type: "text", "ng-model" => "url_key",
-              "ng-keydown" => "auto_key=false", "ng-pattern" => "/^[a-zA-Z0-9-_]+$/", "required" => ""}
-          .help-block{"ng-show" => "form.url_key.$error.pattern"}
-            Can only contain letters, numbers, _, and -.
-          .help-block{"ng-show" => "form.url_key.$error.taken"}
-            You've already created a project with this url key
-          %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "busy"}
-          %i.fa.fa-check.right-float{"ng-show" => "confirmed && form.url_key.$valid"}
-      .form-group{"valid-class" => "form.description"}
-        %label.col-lg-3.control-label{for: "NewProjectForm_description"}
-          Description
-        .col-lg-8
-          %input.form-control{name: "description", placeholder: "(Optional)", type: "text", "ng-model" => "description", "ng-maxlength" => "256"}
-          .help-block{"ng-show" => "form.description.$error.maxlength"}
-            Cannot be longer than 256 characters
-      .form-group{"valid-class" => "form.website"}
-        %label.col-lg-3.control-label{for: "NewProjectForm_website"}
-          Website
-        .col-lg-8
-          %input.form-control{name: "website", "ng-model" => "website", placeholder: "(Optional)", type: "text", "ng-maxlength" => "256"}
-          .help-block{"ng-show" => "form.website.$error.maxlength"}
-            Cannot be longer than 256 characters
-      .form-group
-        .col-lg-3
-        .col-lg-8
-          %button.btn.btn-primary{name: "create", "ng-click" => "submit()", type: "submit",
-            "ng-disabled" => "!form.$valid", type: "submit"}
-            Create
+.container
+  .col.header-col-light-gray.row{"ng-init" => "init()"}
     %br/
     %br/
     %br/
+    .col-lg-6.col-lg-offset-2
+      %h3.col-lg-offset-4 Create new project
+      %br/
+      %form.form-horizontal{name: "form", novalidate: ""}
+        .alert-danger.alert.fade{"ng-show" => "errors"}
+          %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+          %span{"ng-show" => "error_header"} {[{ error_header }]}
+          %ul{"ng-show" => "errors.length > 1"}
+            %li{"ng-repeat" => "error in errors"} {[{error}]}
+        .form-group{"valid-class" => "form.ptitle"}
+          %label.col-lg-3.control-label{for: "NewProjectForm_ptitle"}
+            Project Name
+          .col-lg-8
+            %input.form-control{name: "ptitle", type: "text", "ng-model" => "ptitle",
+              required: "", "ng-change" => "mod_title()",
+              "ng-maxlength" => "64"}
+            .help-block{"ng-show" => "form.ptitle.$error.required"}
+              Please enter a title for your new project
+            .help-block{"ng-show" => "form.ptitle.$error.maxlength"}
+              Cannot be longer than 64 characters
+        .form-group{"valid-class" => "form.url_key", style: "min-height:57px"}
+          %label.col-lg-3.control-label{for: "NewProjectForm_url_key"}
+            Url Key
+          .col-lg-8
+            .col-md-4{style: "text-align:center; margin-top:10px;"}
+              %b /{[{ user.username }]}/
+            .col-md-8.no-gutter
+              %input.form-control{"unique-serverside" => "purl_key/check", name: "url_key", type: "text", "ng-model" => "url_key",
+                "ng-keydown" => "auto_key=false", "ng-pattern" => "/^[a-zA-Z0-9-_]+$/", "required" => ""}
+            .help-block{"ng-show" => "form.url_key.$error.pattern"}
+              Can only contain letters, numbers, _, and -.
+            .help-block{"ng-show" => "form.url_key.$error.taken"}
+              You've already created a project with this url key
+            %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "busy"}
+            %i.fa.fa-check.right-float{"ng-show" => "confirmed && form.url_key.$valid"}
+        .form-group{"valid-class" => "form.description"}
+          %label.col-lg-3.control-label{for: "NewProjectForm_description"}
+            Description
+          .col-lg-8
+            %input.form-control{name: "description", placeholder: "(Optional)", type: "text", "ng-model" => "description", "ng-maxlength" => "256"}
+            .help-block{"ng-show" => "form.description.$error.maxlength"}
+              Cannot be longer than 256 characters
+        .form-group{"valid-class" => "form.website"}
+          %label.col-lg-3.control-label{for: "NewProjectForm_website"}
+            Website
+          .col-lg-8
+            %input.form-control{name: "website", "ng-model" => "website", placeholder: "(Optional)", type: "text", "ng-maxlength" => "256"}
+            .help-block{"ng-show" => "form.website.$error.maxlength"}
+              Cannot be longer than 256 characters
+        .form-group
+          .col-lg-3
+          .col-lg-8
+            %button.btn.btn-primary{name: "create", "ng-click" => "submit()", type: "submit",
+              "ng-disabled" => "!form.$valid", type: "submit"}
+              Create
+      %br/
+      %br/
+      %br/

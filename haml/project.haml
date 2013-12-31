@@ -1,74 +1,75 @@
-%div
-  .row
-    .col-md-8.no-gutter{style: "padding-right:15px;"}
-      %h2
-        %span{"ng-show" => "project.user_acl.edit_name"}
-          %span{"ng-show" => "editing.project.name"}
-            .input-group
-              %input.form-control{"ng-model" => "project.name", type: "text"}/
-              %span.btn.btn-info.input-group-addon{"ng-click" => "save('project.name')"}
-                %i.fa.fa-save{"ng-hide" => "saving.project.name"}
-                %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.project.name"}
-              %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('project.name')"}
-                %i.fa.fa-times-circle
-          %span{"ng-hide" => "editing.project.name"}
-            {[{ project.name }]} 
-            %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('project.name')"}
-        %span{"ng-hide" => "project.user_acl.edit_name"}
-          {[{ project.name }]}
-      %h4
-        %small
-          %b Created
-          {[{ project.created_at| date:'medium' }]}
-          ({[{ project.created_at| date_ago }]})
-      %h4
-        %b Maintainer
-        %a{:href => "#/{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
-      %br
-      %a.button{"toggle-button" => "project.subscribed",
-        "ng-click" => "swap_save('project.subscribed')"}
-        %i{on: "fa-eye-slash", off: "fa-eye"}
-        .in-button{on: "Unwatch", off: "Watch"}
-      %a.button{"toggle-button" => "project.vote_status",
-        "ng-click" => "swap_save('project.vote_status')"}
-        %i{on: "fa-minus-circle", off: "fa-plus-circle"}
-        .in-button{off: "Vote", on: "Unvote"}
-      %report-dropdown{"var" => "project.report_status", "reasons" => "['Spam', 'Fraudulent']"}
-      %a.button.active{:href => "\#{[{project.get_abs_url}]}new_issue"}
-        %i.fa.fa-large.fa-plus
-        Add an Issue
-      %a.button.active{:href => "\#{[{ project.get_abs_url }]}psettings"}
-        %i.fa.fa-large.fa-gear
-        Project Settings
-  .row
-    %h3 Issues
-    .input-group
-      %input.form-control{"ng-model" => "filter", :type => "text"}
-      %span.btn.btn-info.input-group-addon
-        %i.fa.fa-search{"ng-click" => "search()"}
-    / /input-group
-    %table.table.table-hover
-      %tbody
-        %tr.fade{"ng-repeat" => "issue in project.issues | filter:filter"}
-          %td.fit-width
-            %a.btn.btn-xs{"ng-class" => "{'btn-success': issue.vote_status, 'btn-info': !issue.vote_status}",
-              "ng-click" => "vote(issue)"}
-              %span{"ng-hide" => "issue.vote_status"}
-                Vote&nbsp;
-                %i.fa.fa-plus
-              %span{"ng-hide" => "!issue.vote_status"}
-                Unvote&nbsp;
-                %i.fa.fa-minus
-            \&nbsp;&nbsp;
-            %b
-              %ng-pluralize{:count => "issue.votes",
-                :when => "{'0': 'No votes', 'one': '1 vote', 'other': '{} votes'}"}
-          %td
-            %a{:href => "\#{[{ issue.get_abs_url }]}"}
-              %i.fa.fa-circle &nbsp;
-              %span{"ng-bind-html" => "issue.title | searchFilter:filter"}
+.container
+  %div
+    .row
+      .col-md-8.no-gutter{style: "padding-right:15px;"}
+        %h2
+          %span{"ng-show" => "project.user_acl.edit_name"}
+            %span{"ng-show" => "editing.project.name"}
+              .input-group
+                %input.form-control{"ng-model" => "project.name", type: "text"}/
+                %span.btn.btn-info.input-group-addon{"ng-click" => "save('project.name')"}
+                  %i.fa.fa-save{"ng-hide" => "saving.project.name"}
+                  %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.project.name"}
+                %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('project.name')"}
+                  %i.fa.fa-times-circle
+            %span{"ng-hide" => "editing.project.name"}
+              {[{ project.name }]} 
+              %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('project.name')"}
+          %span{"ng-hide" => "project.user_acl.edit_name"}
+            {[{ project.name }]}
+        %h4
+          %small
+            %b Created
+            {[{ project.created_at| date:'medium' }]}
+            ({[{ project.created_at| date_ago }]})
+        %h4
+          %b Maintainer
+          %a{:href => "#/{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
+        %br
+        %a.button{"toggle-button" => "project.subscribed",
+          "ng-click" => "swap_save('project.subscribed')"}
+          %i{on: "fa-eye-slash", off: "fa-eye"}
+          .in-button{on: "Unwatch", off: "Watch"}
+        %a.button{"toggle-button" => "project.vote_status",
+          "ng-click" => "swap_save('project.vote_status')"}
+          %i{on: "fa-minus-circle", off: "fa-plus-circle"}
+          .in-button{off: "Vote", on: "Unvote"}
+        %report-dropdown{"var" => "project.report_status", "reasons" => "['Spam', 'Fraudulent']"}
+        %a.button.active{:href => "\#{[{project.get_abs_url}]}new_issue"}
+          %i.fa.fa-large.fa-plus
+          Add an Issue
+        %a.button.active{:href => "\#{[{ project.get_abs_url }]}psettings"}
+          %i.fa.fa-large.fa-gear
+          Project Settings
+    .row
+      %h3 Issues
+      .input-group
+        %input.form-control{"ng-model" => "filter", :type => "text"}
+        %span.btn.btn-info.input-group-addon
+          %i.fa.fa-search{"ng-click" => "search()"}
+      / /input-group
+      %table.table.table-hover
+        %tbody
+          %tr.fade{"ng-repeat" => "issue in project.issues | filter:filter"}
+            %td.fit-width
+              %a.btn.btn-xs{"ng-class" => "{'btn-success': issue.vote_status, 'btn-info': !issue.vote_status}",
+                "ng-click" => "vote(issue)"}
+                %span{"ng-hide" => "issue.vote_status"}
+                  Vote&nbsp;
+                  %i.fa.fa-plus
+                %span{"ng-hide" => "!issue.vote_status"}
+                  Unvote&nbsp;
+                  %i.fa.fa-minus
+              \&nbsp;&nbsp;
+              %b
+                %ng-pluralize{:count => "issue.votes",
+                  :when => "{'0': 'No votes', 'one': '1 vote', 'other': '{} votes'}"}
+            %td
+              %a{:href => "\#{[{ issue.get_abs_url }]}"}
+                %i.fa.fa-circle &nbsp;
+                %span{"ng-bind-html" => "issue.title | searchFilter:filter"}
 
-  .row{"ng-show" => "project.events.length > 0"}
-    %h3 Events
-    %div{"ng-repeat" => "event in project.events"}
-      %span{"ng-include" => "'{{template_path}}' + event.template"}
+    .row{"ng-show" => "project.events.length > 0"}
+      %h3 Events
+      %div{"ng-repeat" => "event in project.events"}
+        %span{"ng-include" => "'{{template_path}}' + event.template"}
