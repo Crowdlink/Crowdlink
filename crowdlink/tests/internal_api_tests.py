@@ -56,7 +56,7 @@ class EmailTests(BaseTest):
         email = Email(user=self.user,
                       address=addr,
                       primary=False).save()
-        hash, date = email.send_activation(generate_only=True)
+        hash, date = email.send_activation(force=False)
         assert isinstance(date, datetime.datetime)
 
         Email.activate_email(addr, hash)

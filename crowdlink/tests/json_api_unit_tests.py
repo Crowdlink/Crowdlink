@@ -134,11 +134,11 @@ class TestBasic(TestModelsPrefilled):
         """ can we login with a patch action """
         if person is None:
             person = self.people[0]
-        p = {'action': 'login', 'id': person.id, 'password': "testing"}
+        p = {'__action': 'login', 'id': person.id, 'password': "testing"}
         self.patch('/api/user', 200, params=p)
 
     def test_cant_find_patch(self):
-        p = {'id': 342095823405982345, 'action': 'dsflgjksdfglk'}
+        p = {'id': 342095823405982345, '__action': 'dsflgjksdfglk'}
         self.patch('/api/user', 404, params=p)
 
     # Post Methods

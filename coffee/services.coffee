@@ -34,8 +34,11 @@ mainServices.factory("UserService", ($resource) ->
       method: "POST"
       timeout: 10000
       isArray: false
-    register:
-      url: "{{ api_path }}register"
+    oauth_create:
+      method: "PATCH"
+      timeout: 10000
+      isArray: false
+    create:
       method: "POST"
       timeout: 10000
     query:
@@ -86,4 +89,12 @@ mainServices.factory("ChargeService", ($resource) ->
     create:
       method: "POST"
       timeout: 10000
+)
+
+mainServices.factory("OAuthService", ($resource) ->
+  $resource "{{ api_path }}oauth", {},
+    query:
+      method: "GET"
+      timeout: 10000
+      isArray: false
 )

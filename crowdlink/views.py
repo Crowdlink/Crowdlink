@@ -1,15 +1,14 @@
-from flask import Blueprint, request, redirect, render_template, url_for, send_file, current_app
+from flask import (Blueprint, render_template, send_file, current_app, flash,
+                   redirect, url_for, get_flashed_messages, session, abort,
+                   request)
 from flask.ext.login import current_user
 
-from . import root, lm, github
+from . import root, lm, app
 from .models import User
 from .api_base import get_joined
 
 import sqlalchemy
 import os
-
-
-main = Blueprint('main', __name__, template_folder='../templates')
 
 
 # tell the session manager how to access the user object
@@ -21,60 +20,72 @@ def user_loader(id):
         return None
 
 
-@main.errorhandler(403)
-def access_denied(e):
-    return render_template('403.html')
+@app.route("/test/<action>/")
+def test_403(action=None):
+    """ Allows simple testing of the various error display systems """
+    if action == 'flash':
+        send_message('This is a test of the automated flash alert system!', 'alert-danger')
+        return redirect(url_for('angular_root', _anchor='/'))
+    if action == 'mflash':
+        send_message('This is a test of the automated flash alert system!', 'alert-success')
+        send_message('This is another test of the automated flash alert system!', 'alert-info')
+        return redirect(url_for('angular_root', _anchor='/'))
+    if action == 'lflash':
+        send_message('This is a test of the long automated flash alert system!', 'alert-primary', 10000)
+        return redirect(url_for('angular_root', _anchor='/'))
+    if action == 'sflash':
+        send_message('This is a test of the long automated flash alert system!', 'alert-warning', page_stay=3)
+        return redirect(url_for('angular_root', _anchor='/'))
+    elif action == '403':
+        abort(403)
+    elif action == '400':
+        abort(400)
+    elif action == '409':
+        abort(409)
+    elif action == '500':
+        abort(500)
+    elif action == '404':
+        abort(404)
 
 
-@main.route("/favicon.ico")
+def error_handler(e, code):
+    # prevent error loops
+    if request.path == '/':
+        return str(code)
+    return redirect(url_for('angular_root', _anchor='/errors/' + str(code)))
+
+
+app.register_error_handler(404, lambda e: error_handler(e, 404))
+app.register_error_handler(400, lambda e: error_handler(e, 400))
+app.register_error_handler(403, lambda e: error_handler(e, 403))
+app.register_error_handler(409, lambda e: error_handler(e, 409))
+app.register_error_handler(500, lambda e: error_handler(e, 500))
+
+
+@app.route("/favicon.ico")
 def favicon():
     return send_file(os.path.join(root, 'static/favicon.ico'))
 
 
-@github.tokengetter
-def get_github_oauth_token():
-    return (current_user.gh_token, '')
-
-
-@main.route("/login/github/")
-def github_init_auth():
-    """ Redirects to github to obtain auth token """
-    return github.authorize(
-        callback=url_for('main.github_auth', _external=True))
-
-
-@main.route("/login/github/authorize/")
-@github.authorized_handler
-def github_auth(resp):
-    """ The github authorization callback """
-    if resp is None:
-        return 'Access denied: reason=%s error=%s' % (
-            request.args['error_reason'],
-            request.args['error_description']
-        )
-    # if the auth failed
-    if 'access_token' not in resp:
-        current_app.logger.info("Return response from Github didn't contain an"
-                                "access token")
-        return redirect(url_for('main.account'))
-
-    if current_user:
-        current_user.gh_token = resp['access_token']
-        current_user.gh_synced = True
-        current_user.safe_save()
-        # Populate the github cache
-        current_user.gh
-        return redirect(url_for('main.account'))
+def send_message(message, cls='alert-danger', timeout=5000, page_stay=1):
+    if page_stay > 1:
+        timeout = None
+    dat = {'message': message, 'class': cls, 'timeout': timeout, 'page_stay': page_stay}
+    if not '_messages' in session:
+        session['_messages'] = [dat]
     else:
-        # they're trying to login, or create an account
-        # XXX: Not implemented correctly
-        user = User.create_user_github(resp['access_token'])
+        session['_messages'].append(dat)
 
 
-@main.route("/", methods=['GET', 'POST'])
+@app.route("/", methods=['GET', 'POST'])
 def angular_root():
     logged_in = "true" if current_user.is_authenticated() else "false"
     user = get_joined(current_user) if current_user.is_authenticated() else "undefined"
+    # re-encode our flash messages and pass them to angular for display
+    messages = session.pop('_messages', None)
+    if messages is None:
+        messages = []
     return render_template('base.html',
                            logged_in=logged_in,
-                           user=user)
+                           user=user,
+                           messages=messages)

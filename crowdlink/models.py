@@ -1,14 +1,19 @@
-from flask import session, current_app, flash
-from flask.ext.login import current_user
+from flask import session, current_app
+from flask.ext.login import current_user, login_user
 from datetime import datetime, timedelta
 from enum import Enum
 
-from . import db, github, crypt
+from . import db, crypt, github
 from .model_lib import (base, SubscribableMixin, VotableMixin, EventJSON,
-                        StatusMixin, PrivateMixin, ReportableMixin)
+                        StatusMixin, PrivateMixin, ReportableMixin,
+                        JSONEncodedDict)
 from .fin_models import Mark, Earmark
 from .util import inherit_lst
 from .acl import acl
+from .oauth import (oauth_retrieve, providers, oauth_profile_populate,
+                    check_action_provider, oauth_from_session)
+from .lib import send_email
+from .api_base import get_joined, APISyntaxError
 
 import valideer as V
 import re
@@ -463,7 +468,7 @@ class Comment(base):
 
 
 class Email(base):
-    standard_join = []
+    standard_join = ['address', 'verified', 'primary']
 
     user = db.relationship('User', backref=db.backref('emails'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -487,13 +492,16 @@ class Email(base):
                         .update({'verified': True, 'hash_gen': None, 'activate_hash': None}))
 
     @classmethod
-    def create(cls, address, user):
+    def create(cls, address, primary=True, verified=False, user=current_user):
         inst = cls(address=address,
-                   user=user)
+                   user=user,
+                   primary=primary,
+                   verified=verified)
 
         db.session.add(inst)
+        return inst
 
-    def send_activation(self, generate_only=False):
+    def send_activation(self, force_send=None):
         """ Regenerates activation hashes and time markers and commits the
         change.  If the commit action is successful, an email will be sent to
         the user """
@@ -502,14 +510,16 @@ class Email(base):
 
         db.session.commit()
 
-        if generate_only is True:
-            return self.activate_hash, self.hash_gen
-        else:
+        # complicated block that allows force send to either force to send or
+        # force to not send. None defers to send_emails config value
+        if (current_app.config.get('send_emails', True) or force_send is True) and force_send is None:
             return send_email(
                 self.address,
                 'confirm',
                 activate_hash=self.activate_hash,
                 user_id=self.user_id)
+        else:
+            return self.activate_hash, self.hash_gen
 
 
 class Dispute(base, PrivateMixin):
@@ -558,10 +568,13 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     _password = db.Column(db.String)
     gh_token = db.Column(db.String, unique=True)
+    tw_token = db.Column(db.String, unique=True)
+    go_token = db.Column(db.String, unique=True)
 
     # Event information
     public_events = db.Column(EventJSON, default=list)
     events = db.Column(EventJSON, default=list)
+    profile = db.Column(JSONEncodedDict, default=dict)
     __mapper_args__ = {'polymorphic_identity': 'User'}
 
     # financial placeholders
@@ -578,7 +591,11 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                      'user_acl',
                      'get_abs_url',
                      'roles',
+                     'profile',
                      '-_password',
+                     '-go_token',
+                     '-gh_token',
+                     '-tw_token',
                      '-public_events',
                      '-events',
                      ]
@@ -592,7 +609,11 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                               'subscribed'])
 
     settings_join = inherit_lst(standard_join,
-                                [{'obj': 'primary_email'}])
+                                [{'obj': 'primary_email'},
+                                 'gh_linked',
+                                 'go_linked',
+                                 'tw_linked',
+                                 {'obj': 'emails'}])
 
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
@@ -601,20 +622,17 @@ class User(Thing, SubscribableMixin, ReportableMixin):
 
     acl = acl['user']
 
+
+    # Financial functions
+    # =========================================================================
     @property
     def available_marks(self):
+        """ returns the available funds from marks """
         return sum([m.remaining for m in Mark.query.filter(
             Mark.user == self and Mark.cleared is True)])
 
-    def roles(self, user=current_user):
-        if self.id == getattr(user, 'id', None):
-            return ['owner']
-        return []
-
-    @property
-    def get_dur_url(self):
-        return "/u/{id}".format(id=self.id)
-
+    # Password wrapping as encrypted value
+    # =========================================================================
     @property
     def password(self):
         return self._password
@@ -626,11 +644,45 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     def check_password(self, password):
         return crypt.check(self._password, password)
 
+    # Utility methods
+    # =========================================================================
     @property
-    def primary_email(self):
-        for email in self.emails:
-            if email.primary:
-                return email
+    def gh_linked(self): return bool(self.gh_token)
+
+    @property
+    def tw_linked(self): return bool(self.tw_token)
+
+    @property
+    def go_linked(self): return bool(self.go_token)
+
+    @go_linked.setter
+    def go_linked(self, val):
+        if val is False:
+            self.go_token = None
+        else:
+            raise AttributeError
+
+    @tw_linked.setter
+    def tw_linked(self, val):
+        if val is False:
+            self.tw_token = None
+        else:
+            raise AttributeError
+
+    @gh_linked.setter
+    def gh_linked(self, val):
+        if val is False:
+            self.gh_token = None
+        else:
+            raise AttributeError
+
+    @property
+    def get_dur_url(self):
+        return "/u/{id}".format(id=self.id)
+
+    def get_abs_url(self):
+        return "/{username}".format(
+            username=unicode(self.username).encode('utf-8'))
 
     @property
     def avatar_lg(self):
@@ -643,30 +695,27 @@ class User(Thing, SubscribableMixin, ReportableMixin):
         gravatar_url += hashlib.md5(self.primary_email.lower()).hexdigest()
         gravatar_url += "?" + urllib.urlencode({'d': default, 's': str(size)})
 
-    def get_abs_url(self):
-        return "/{username}".format(
-            username=unicode(self.username).encode('utf-8'))
+    @property
+    def linked_accounts(self):
+        accts = []
+        for key in providers.keys():
+            if getattr(self, key + '_token') is not None:
+                accts.append(key)
+        return accts
+
+    @property
+    def primary_email(self):
+        for email in self.emails:
+            if email.primary:
+                return email
 
     def save(self):
-        self.username = self.username.lower()
+        if self.username:
+            self.username = self.username.lower()
         super(User, self).save()
-
-    def global_roles(self):
-        """ Determines global roles for the user. """
-        if self.admin:
-            return ['admin']
-        if self.username is None:
-            return ['usernameless']
-        if not self.primary_email.verified:
-            return ['noactive_user']
-        return ['user']
 
     # Github Synchronization Logic
     # ========================================================================
-    @property
-    def gh_linked(self):
-        return bool(self.gh_token)
-
     @property
     def gh(self):
         if 'github_user' not in session:
@@ -679,15 +728,6 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             return github.get('user/repos').data
         except ValueError:
             self.gh_deauth()
-
-    def gh_deauth(self, flatten=False):
-        """ De-authenticates a user and redirects them to their account
-        settings with a flash """
-        flash("Your GitHub Authentication token was missing when expected, "
-              "please re-authenticate.")
-        self.gh_token = ''
-        for project in self.get_projects():
-            project.gh_desync(flatten=flatten)
 
     def gh_repos_syncable(self):
         """ Generate a list only of repositories that can be synced """
@@ -711,14 +751,67 @@ class User(Thing, SubscribableMixin, ReportableMixin):
         return user
 
     @classmethod
-    def create_user_github(cls, access_token):
-        user = cls(gh_token=access_token).save()
-        Email(address=user.gh['email'], user=user).save()
-        if not user.save():
-            return False
-        return user
+    def oauth_create(cls, username, primary, password=None, cust_email=None):
+        current_app.logger.debug(
+            dict(username=username, password=password, primary=primary, cust_email=cust_email))
 
-    # Authentication callbacks
+        user = cls(username=username)
+        if password is not None:
+            user.password = password
+        db.session.add(user)
+
+        prim_set = False  # a flag for if primary has been found
+
+        # verify that these actions are kosher
+        oauth_data = oauth_from_session('signup')
+        user_data = oauth_retrieve(oauth_data['provider'],
+                                   oauth_data['raw_token'],
+                                   email_only=True)
+
+        # set their token
+        setattr(user,
+                oauth_data['provider'] + '_token',
+                oauth_data['raw_token'])
+
+        oauth_profile_populate(oauth_data['provider'], user=user)
+
+        # grab all their emails from oauth to enter into database
+        for mail in user_data['emails']:
+            email = Email.create(mail['email'],
+                                 user=user,
+                                 primary=False,
+                                 verified=True)
+            if primary == mail['email']:
+                email.primary = True
+                prim_set = True
+
+        # enter a custom email if they provided one
+        if cust_email is not None:
+            prim = False
+            if primary == cust_email:
+                prim_set = True
+                prim = True
+            email = Email.create(cust_email, primary=prim, user=user)
+            if primary == cust_email:
+                email.primary = True
+                prim_set = True
+
+        if prim_set is False:
+            raise APISyntaxError(
+                "Primary email was not any one of provided emails")
+
+        db.session.flush()
+
+        login_user(user)
+
+        return {'objects': [get_joined(user)]}
+
+    def refresh_provider(self, provider):
+        oauth_profile_populate(provider)
+        db.session.commit()
+        return {'profile_data': self.profile}
+
+    # Authentication
     # ========================================================================
     def is_authenticated(self):
         return True
@@ -731,6 +824,21 @@ class User(Thing, SubscribableMixin, ReportableMixin):
 
     def get_id(self):
         return unicode(self.id)
+
+    def roles(self, user=current_user):
+        if self.id == getattr(user, 'id', None):
+            return ['owner']
+        return []
+
+    def global_roles(self):
+        """ Determines global roles for the user. """
+        if self.admin:
+            return ['admin']
+        if self.username is None:
+            return ['usernameless']
+        if not self.primary_email.verified:
+            return ['noactive_user']
+        return ['user']
 
     # Convenience functions
     # ========================================================================
@@ -746,4 +854,3 @@ class User(Thing, SubscribableMixin, ReportableMixin):
         return self
 
 from . import events as events
-from .lib import send_email

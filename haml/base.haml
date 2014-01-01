@@ -19,11 +19,11 @@
     / Showdown
     %script{src: "//cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"}
     / Angular
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-resource.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-route.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-sanitize.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.2/angular-animate.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-resource.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-route.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-sanitize.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-animate.min.js"}
     / Bootstrap
     %script{src: "//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.7.0/ui-bootstrap-tpls.min.js"}
     / Strip
@@ -46,10 +46,10 @@
     %script{src: "{{ static_path }}js/controllers.js"}
     %script{src: "{{ static_path }}js/services.js"}
     {% endif %}
-    {% raw %}#wrap{"ng-init" => "root_init({{logged_in}}, '{{user | tojson | urlencode}}')"}{% endraw %}
+    {% raw %}#wrap{"ng-init" => "root_init({{logged_in}}, '{{user | tojson | urlencode}}', '{{ messages | tojson | urlencode}}')"}{% endraw %}
       .navbar.navbar-inverse.navbar-fixed-top
         .container.no-gutter
-          %a.navbar-brand.logo{href: "#/home"}
+          %a.navbar-brand.logo{href: "\#{[{home}]}"}
             %img{border: "0", width: "30", height: "30", src: "{{ static_path }}img/logo.svg"}/
             %span.hidden-xs Crowdlink
           %ul.nav.nav-pills.main-nav-pills
@@ -75,13 +75,13 @@
                 %span.hidden-xs Sign Up
 
       .main-cont
-        %div{"ng-show" => "messages.length > 0"}
+        %div{"ng-repeat" => "message in messages"}
           %br
-        .alert.fade{"ng-repeat" => "message in messages", "ng-class" => "message['class']"}
-          %span{"ng-bind" => "message['header']"}
-          %span{"ng-bind" => "message['message']"}
-          %ul{"ng-show" => "'messages' in message"}
-            %li{"ng-repeat" => "m in message['messages']", "ng-bind" => "m"}
+          .alert.container.fade{"ng-class" => "message.class"}
+            %span{"ng-bind" => "message.header"}
+            %span{"ng-bind" => "message.message"}
+            %ul{"ng-show" => "message.messages.length > 0"}
+              %li{"ng-repeat" => "m in message.messages", "ng-bind" => "m"}
         .fade{"ng-view" => ""}
 
 

@@ -38,6 +38,7 @@ module.exports = (grunt) ->
           loadPath: ["haml"]
         files:
           "static/templates/signup.html": "processed/haml/signup.haml"
+          "static/templates/oauth_signup.html": "processed/haml/oauth_signup.haml"
           "static/templates/project.html": "processed/haml/project.haml"
           "static/templates/home.html": "processed/haml/home.haml"
           "static/templates/login.html": "processed/haml/login.haml"
@@ -62,6 +63,7 @@ module.exports = (grunt) ->
           "static/templates/events/new_proj.html": "processed/haml/events/new_proj.haml"
           "static/templates/tos.html": "processed/haml/tos.haml"
           "static/templates/help_modal.html": "processed/haml/help_modal.haml"
+          "static/templates/confirm_modal.html": "processed/haml/confirm_modal.haml"
           "static/templates/dir/drop_toggle.html": "processed/haml/dir/drop_toggle.haml"
           "static/templates/project/recent.html": "processed/haml/project/recent.haml"
           "static/templates/project/issues.html": "processed/haml/project/issues.haml"

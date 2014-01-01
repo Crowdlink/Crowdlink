@@ -1,10 +1,6 @@
-from flask import current_app, render_template, jsonify
+from flask import current_app, render_template
 
-from .models import User
-
-import json
 import smtplib
-import flask_sqlalchemy
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart

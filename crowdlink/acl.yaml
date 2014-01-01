@@ -50,6 +50,7 @@ user:
             - page_join
             - disp_join
         class: create
+        action: oauth_create
     noactive_user:
         view:
             - standard_join
@@ -68,7 +69,11 @@ user:
     # Object context roles
     owner:
         inherit: user
-        edit: url_key
+        edit:
+            - go_linked
+            - gh_linked
+            - tw_linked
+        action: refresh_provider
         view:
             - home_join
             - settings_join

@@ -162,27 +162,6 @@ div h4.subtext {
 .header-col-light-gray {
   background-color: #ebebeb;
 }
-.header-col-purple {
-  background-color: #5D496F;
-  h2, h3, h4, ul {
-    color:#efefef !important;
-  }
-  color:#efefef !important;
-}
-.header-col-light-blue {
-  background-color: lighten($brand-info, 30%);
-}
-.header-col-light-green {
-    background-color:#D0E4BE;
-}
-.header-col-dark-blue {
-  background-color: lighten($brand-primary, 20%);
-  h3, h4, ul {
-    color:#efefef !important;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
-  }
-  color:#efefef !important;
-}
 .landing-sign-up {
   div.form-group {
     margin-bottom:5px;
@@ -282,7 +261,11 @@ i.right-float {
   float:right;
   right: 10px;
   top: -28px;
+  color: $green;
   position:relative;
+  .no-load {
+    height: 1px;
+  }
 }
 .long-desc {
   min-height: 300px;

@@ -1,18 +1,74 @@
 .col-md-9{"ng-show" => "view=='general'"}
-  %h3 Account Information
+  %h3 General
   .panel.panel-default
     %table.table
       %tr
         %th Username
         %td{"ng-bind" => "acc_user.username"}
-      %tr
-        %th Primary Email
-        %td
-          {[{acc_user.primary_email.address}]}
-          %span.label{"ng-class" => "{true: 'label-success', false: 'label-danger'}[acc_user.primary_email.verified]"}
-            %span{"ng-show" => "acc_user.primary_email.verified"} Verified
-            %span{"ng-hide" => "acc_user.primary_email.verified"} Un-Verified
-      %tr{"ng-show" => "acc_user.gh_linked"}
-        %th Github Account
-        %td
-          {[{acc_user.gh.login}]} {[{acc_user.gh_token}]}
+  %div{"ng-show" => "acc_user.gh_linked || acc_user.go_linked || acc_user.tw_linked"}
+    %h3 Linked Accounts
+    .panel.panel-default
+      %table.table
+        %tr{"ng-show" => "acc_user.gh_linked"}
+          %th
+            %i.fa{"ng-class" => "{false: 'fa-github', true: 'fa-spin fa-spinner'}[saving.acc_user.gh_linked]"}
+            \&nbsp;
+            Github
+          %td
+            %a{href: "{[{acc_user.profile.gh.profile_link}]}"}
+              {[{acc_user.profile.gh.username}]}
+          %td
+            %span.label.label-success
+              Linked
+          %td.pull-right
+            %button.btn.btn-danger.btn-xs{"ng-click" => "unlink('acc_user.gh_linked')"}
+              Unlink
+        %tr{"ng-show" => "acc_user.tw_linked"}
+          %th
+            %i.fa{"ng-class" => "{false: 'fa-twitter', true: 'fa-spin fa-spinner'}[saving.acc_user.tw_linked]"}
+            \&nbsp;
+            Twitter
+          %td
+            %a{href: "http://twitter.com/{[{acc_user.profile.tw.username}]}"}
+              @{[{acc_user.profile.tw.username}]}
+          %td
+            %span.label.label-success
+              Linked
+          %td.pull-right
+            %button.btn.btn-danger.btn-xs{"ng-click" => "unlink('acc_user.tw_linked')"}
+              Unlink
+        %tr{"ng-show" => "acc_user.go_linked"}
+          %th
+            %i.fa{"ng-class" => "{false: 'fa-google-plus', true: 'fa-spin fa-spinner'}[saving.acc_user.go_linked]"}
+            \&nbsp;
+            Google
+          %td
+            %a{href: "{[{ acc_user.profile.go.profile_link }]}"}
+              {[{acc_user.profile.go.name}]}
+          %td
+            %span.label.label-success
+              Linked
+          %td.pull-right
+            %button.btn.btn-danger.btn-xs{"ng-click" => "unlink('acc_user.go_linked')"}
+              Unlink
+
+  %div
+    %h3 Email Accounts
+    .panel.panel-default
+      %table.table
+        %tr{"ng-repeat" => "email in acc_user.emails"}
+          %td
+            {[{email.address}]}
+          %td
+            %span.label{"ng-class" => "{true: 'label-success', false: 'label-danger'}[email.verified]"}
+              %span{"ng-show" => "email.verified"} Verified
+              %span{"ng-hide" => "email.verified"} Un-Verified
+          %td
+            %button.btn.btn-primary.btn-xs{"ng-click" => "unlink('acc_user.go_linked')",
+              "ng-hide" => "email.primary"}
+              Set Primary
+            %span.label.label-primary{"ng-show" => "email.primary"}
+              Primary
+          %td.pull-right
+            %button.btn.btn-danger.btn-xs{"ng-click" => "unlink('acc_user.go_linked')"}
+              Remove

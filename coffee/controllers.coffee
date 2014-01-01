@@ -24,6 +24,8 @@ parentFormController = ($scope) ->
         $scope.errors = ["URL not found, client side sofware error.", ]
       else if value.status == 400
         $scope.errors = ["Client side syntax error, this is a mistake on our part. Sorry about this..", ]
+      else if value.status == 409
+        $scope.errors = ["One of the submitted data values is a duplicate, and thus submission of this data isn't allowed.", ]
       else
         $scope.errors = ["Unkown error communicating with server", ]
 
@@ -105,14 +107,16 @@ ProjectService, SolutionService, UserService) ->
 mainControllers.controller('rootController',
 ($scope, $location, $rootScope, $http, $modal, $timeout, UserService)->
 
-  $scope.root_init = (logged_in, user) ->
+  $scope.root_init = (logged_in, user, flashes) ->
     $rootScope.logged_in = logged_in
     $rootScope.title = ""
     if logged_in
       $rootScope.user = JSON.parse(decodeURIComponent(user))
     else
       $rootScope.user = {}
-    $rootScope.flash = []
+    $rootScope.flash = JSON.parse(decodeURIComponent(flashes))
+    $rootScope.messages = {}
+    $scope.home = '/'
 
   $rootScope.noty_error = (response) ->
     options =
@@ -187,11 +191,13 @@ mainControllers.controller('rootController',
   )
 
   # update the profile url when the username changes
-  $rootScope.$watch('user.username', (val) ->
-    if $rootScope.logged_in
+  $rootScope.$watch('logged_in', (val) ->
+    if val
       $scope.profile = '/' + val
+      $scope.home = '/home'
     else
-      $scope.profile = ""
+      $scope.profile = ''
+      $scope.home = '/'
   )
 
   $rootScope.location = $location
@@ -200,18 +206,29 @@ mainControllers.controller('rootController',
   )
   $rootScope.$on('$locationChangeSuccess', (event, next, current) ->
     $rootScope.loading = false
-    # Swap our pending flash events to display for two seconds when the route
-    # is changed
-    if $rootScope.flash.length > 0
-      $rootScope.messages = $rootScope.flash.slice 0
-      $rootScope.flash = []
-      $timeout( ->
-        $rootScope.messages = []
-      , 2000)
+    # activate pending flashes
+    for message in $rootScope.flash
+      id = Date.now() + Math.floor(Math.random() * 100)
+      $rootScope.messages[id] = $.extend(
+        timeout: 5000
+        page_stay: 1
+        pages: 0
+        messages: []
+      , message)
+      if $rootScope.messages[id].timeout
+        remove = (id) ->
+          ->
+            delete $rootScope.messages[id]
+        $timeout remove(id), $rootScope.messages[id].timeout
+    $rootScope.flash = []
+    for id, message of $rootScope.messages
+      message.pages += 1
+      if message.pages > message.page_stay
+        delete $rootScope.messages[id]
   )
   $rootScope.$on('$routeChangeError', (event, current, previous, rejection) ->
     $rootScope.loading = false
-    if 'status' of rejection
+    if typeof rejection != "string" and 'status' of rejection
       st = rejection.status
       if st == 400
         $location.path("/errors/400").replace()
@@ -322,14 +339,34 @@ mainControllers.controller('issueController',
 
 # AccountController ===========================================================
 mainControllers.controller('accountController',
-($scope, $location, $rootScope, $routeParams, acc_user)->
+($scope, $location, $modal, $rootScope, $routeParams, $injector, acc_user)->
+  $injector.invoke(parentEditController, this, {$scope: $scope})
+
   $scope.acc_user = acc_user.objects[0]  # pass user info with more information to view
+  $scope.saving =
+    acc_user:
+      gh_linked: false
+      tw_linked: false
+      go_linked: false
   $scope.init = ->
     $rootScope.title = "Account"
     if 'subsection' of $routeParams
       $scope.view = $routeParams.subsection
     else
       $scope.view = 'general'
+
+  $scope.build_data = (frag) ->
+    data =
+      id: $scope.acc_user.id
+    return data
+
+  $scope.unlink = (provider) ->
+    $modal.open(
+      templateUrl: "{{template_path}}confirm_modal.html"
+      controller: ($scope) ->
+        $scope.title = "Are you sure you want to unlink this account?"
+    ).result.then ->
+      $scope.update(provider, false)
 )
 
 # ProjectController============================================================
@@ -477,6 +514,73 @@ mainControllers.controller('loginController',
     , $scope.error_report)
 )
 
+# oauthSignupController ============================================================
+mainControllers.controller('oauthSignupController',
+($scope, $rootScope, $routeParams, $injector, providerData, $location, UserService)->
+  $injector.invoke(parentFormController, this, {$scope: $scope})
+  $rootScope.title = "Sign Up"
+  if 'success' of providerData and providerData.success
+    $scope.providerData = providerData.data
+    for mail in providerData.data.emails
+      if mail.verified
+        $scope.primary = mail.email
+    console.log(providerData)
+    if providerData.data.emails.length == 0
+      $scope.emailRequired = true
+    else
+      $scope.optionalPlaceholder = "(Optional)"
+      $scope.emailRequired = false
+    $scope.load_username = () ->
+      $scope.username = providerData.data.username
+      # force username check on the server
+      $scope.f.username.$dirty = true
+      $scope.f.username.$pristine = false
+  else
+    if 'error' of providerData
+      $location.path('/errors/' + providerData.error).replace()
+    else
+      $location.path('/errors/500').replace()
+
+  prim_update = ->
+    if (not $scope.f.email.$valid or not $scope.f.email.$dirty or $scope.email.length == 0) and $scope.primary == "custom"
+      $scope.f.primary.$setValidity "valid_email", false
+    else
+      $scope.f.primary.$setValidity "valid_email", true
+  $scope.$watch "primary", prim_update
+  $scope.$watch "email", (val) ->
+    for mail in providerData.data.emails
+      if mail.email == val
+        $scope.f.email.$setValidity "duplicate", false
+        return
+    $scope.f.email.$setValidity "duplicate", true
+    # ensure we update the valid status of primary, depends on valid of this
+    # field
+    prim_update()
+
+  $scope.submit = () ->
+    # set primary as the custom email if it was checked
+    if $scope.primary == "custom"
+      primary = $scope.email
+    else
+      primary = $scope.primary
+
+    UserService.oauth_create(
+      username: $scope.username
+      password: $scope.pass
+      cust_email: $scope.email
+      primary: primary
+      __action: 'oauth_create'
+      __cls: true
+    ,(value) ->
+      if 'success' of value and value.success
+        $rootScope.logged_in = true
+        $rootScope.user = value.objects[0]
+        $location.path("/home").replace()
+      else
+        $scope.error_report(value)
+    , $scope.error_report)
+)
+
 # SignupController ============================================================
 mainControllers.controller('signupController',
 ($scope, $rootScope, $routeParams, $injector, UserService)->
@@ -484,9 +588,9 @@ mainControllers.controller('signupController',
   $rootScope.title = "Sign Up"
 
   $scope.submit = () ->
-    UserService.reigster(
+    UserService.post(
       username: $scope.username
-      password: $scope.paswword
+      password: $scope.pass
       email: $scope.email
     ,(value) ->
       if 'success' of value and value.success
@@ -605,27 +709,59 @@ mainControllers.controller('frontPageController',
 
 # errorController =======================================================
 mainControllers.controller('errorController', ($scope, $routeParams, $rootScope)->
-  $scope.err = $routeParams.error
   $scope.error_data =
     "400":
+      subtext: "400"
       txt: "Incorrect Request Format"
       long: "Our apologies, we seem to have goofed. This error is likely a
-        mistake in our client side code, hopefully we'll have this
-        fixed soon."
+ mistake in our client side code, hopefully we'll have this fixed soon."
     "500":
+      subtext: "500"
       txt: "Internal Server Error"
-      long: "Our apologies, we seem to have goofed. This error has been
-        logged on the server side."
+      long: "Our apologies, we seem to have goofed."
     "404":
+      subtext: "404"
       txt: "Resource not found"
       long: "The resource that you attempted to access could not be found.
-        This could be an error on our part and if so, sorry about
-        that."
+ This could be an error on our part and if so, sorry about that."
     "403":
+      subtext: "403"
       txt: "Access Denied"
       long: "You do not have the proper permissions to access the resource
-        you requested. This could be an error on our part and if so,
-        sorry about that."
+ you requested. This could be an error on our part and if so, sorry about that."
+    "oauth_email_present":
+      subtext: "Error"
+      txt: "OAuth Email Address Present"
+      long: "One of the email addresses returned by the OAuth provider has
+ already been registered by a user in our system, thus we cannot create a new
+ account linked to this provider. If you've forgotten the password to this
+ account you can perform password recovery. If you don't believe you've created
+ an account that is using these email addresses please contact support."
+    "oauth_already_linked":
+      subtext: "Error"
+      txt: "OAuth Already Linked"
+      long: "Your account is already linked to an account with that OAuth provider."
+    "oauth_linked_other":
+      subtext: "Error"
+      txt: "Account Already Linked"
+      long: "Another account is already linked to that account with that OAuth
+ provider."
+    "oauth_comm_error":
+      subtext: "Error"
+      txt: "OAuth Communication Failure"
+      long: "There was an error interacting with the OAuth provider. This
+ happens occasionaly when they fail to respond as expected, so a retry might be
+ in order. If problem persists please contact us as it's possibly a bug in our
+ system."
+    "oauth_error":
+      subtext: "Error"
+      txt: "OAuth Error"
+      long: "An unexpected error has occured with our OAuth system, and has
+ been logged. If you are repeatedly encountering this error please conteact us."
+  if $routeParams.error not of $scope.error_data
+    $scope.err = 500
+  else
+    $scope.err = $routeParams.error
   $rootScope.title = $scope.error_data[$scope.err]['txt']
 )
 

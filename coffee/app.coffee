@@ -38,7 +38,9 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
     templateUrl: "{{ template_path }}user_home.html"
     controller: "homeController"
     resolve:
-      login: login_resolver('user')
+      logged: ($rootScope, $location) ->
+        if not $rootScope.logged_in
+          $location.path('/').replace()
       huser: (UserService, $rootScope) ->
         UserService.query(
           id: $rootScope.user.id
@@ -48,6 +50,13 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
     controller: "newProjController"
     resolve:
       login: login_resolver('user')
+  ).when("/oauth_signup",
+    templateUrl: "{{ template_path }}oauth_signup.html"
+    controller: "oauthSignupController"
+    resolve:
+      login: login_resolver('not_user')
+      providerData: (OAuthService) ->
+        OAuthService.query().$promise
   ).when("/signup",
     templateUrl: "{{ template_path }}signup.html"
     controller: "signupController"
@@ -361,24 +370,24 @@ mainApp.directive "uniqueServerside",
       return  unless value
 
       # show spinner
-      scope.busy = true
-      scope.confirmed = false
+      ctrl.busy = true
+      ctrl.confirmed = false
 
       # everything is fine -> do nothing
-      $http.post(window.api_path + attrs.uniqueServerside,
+      $http.post('{{api_path}}' + attrs.uniqueServerside,
         value: elem.val()
       ).success((data) ->
         $timeout ->
           # display new error message
           if data.taken
             ctrl.$setValidity "taken", false
-            scope.confirmed = false
+            ctrl.confirmed = false
           else
-            scope.confirmed = true
-          scope.busy = false
+            ctrl.confirmed = true
+          ctrl.busy = false
         , 500
       ).error (data) ->
-        scope.busy = false
+        ctrl.busy = false
 ]
 
 mainApp.directive "toggleButton", ["$http", "$timeout", ($http, $compile) ->

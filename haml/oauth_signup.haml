@@ -3,8 +3,8 @@
   %br/
   %br/
   %br/
-  .col-lg-6.col-lg-offset-2{"ng-init" => "init()"}
-    %h3{class: "center"} Sign Up
+  .col-lg-6.col-lg-offset-2
+    %h3{class: "center"} OAuth Sign Up
     %br/
     %form.form-horizontal{method: "post", name: "f", novalidate: ""}
       .alert-danger.alert.fade{"ng-show" => "errors"}
@@ -29,12 +29,11 @@
               Cannot be longer than 64 characters
             .help-block{"ng-show" => "f.username.$error.taken"}
               That name is taken
-      .form-group{"valid-class" => "f.pass"}
+      .form-group{"valid-class" => "f.pass", "ng-init" => "load_username()"}
         %label.col-lg-3.control-label Password
         .col-lg-8
           %input.form-control{name: "pass", "ng-maxlength" => "64",
-              "ng-minlength" => "5", "ng-model" => "pass", required: "",
-              type: "password"}
+              "ng-minlength" => "5", "ng-model" => "pass", type: "password"}
           .help-block{"ng-show" => "f.pass.$error.required"}
             Please enter a password
           .help-block{"ng-show" => "f.pass.$error.minlength"}
@@ -45,16 +44,30 @@
         %label.col-lg-3.control-label Confirm
         .col-lg-8
           %input.form-control{name: "confirm", "ng-model" => "confirm",
-            "password-match" => "f.pass", type: "password", required: ""}
+            "password-match" => "f.pass", type: "password"}
           .help-block{"ng-show" => "f.confirm.$error.unique"}
             Passwords must match
           .help-block{"ng-show" => "f.confirm.$error.required"}
             Please enter a confirmation password
+      .form-group{"ng-repeat" => "email in providerData.emails"}
+        %label.col-lg-3.control-label
+          %span{"ng-show" => "$first"}
+            Email
+        .col-lg-7
+          .well.well-sm{style: "margin-bottom: 0px"}
+            {[{ email.email }]}
+          %i.fa.fa-check.right-float.no-load
+        .col-lg-1
+          %input{type: "radio", "ng-model" => "$parent.primary", value: "{[{ email.email }]}",
+            name: "primary", required: ""}
       .form-group{"valid-class" => "f.email"}
-        %label.col-lg-3.control-label{for: "RegisterForm_email"} Email
-        .col-lg-8
-          %input.form-control{name: "email", "ng-model" => "email",
-            type: "email", required: "", "unique-serverside" => "email/check"}
+        %label.col-lg-3.control-label
+          %span{"ng-show" => "providerData.emails.length > 0"}
+            Additional
+          Email
+        .col-lg-7
+          %input.form-control{name: "email", "ng-model" => "email", placeholder: "{[{ optionalPlaceholder }]}",
+            type: "email", "unique-serverside" => "email/check", "ng-required" => "{[{emailRequired}]}", required: ""}
           %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "f.email.busy"}
           %i.fa.fa-check.right-float{"ng-show" => "f.email.confirmed && f.email.$valid"}
           .help-block{"ng-show" => "f.email.$error.email"}
@@ -63,9 +76,48 @@
             Email address is required
           .help-block{"ng-show" => "f.email.$error.taken"}
             That address is already being used by another user
+          .help-block{"ng-show" => "f.email.$error.duplicate"}
+            That address is already being added by OAuth Linking
+        .col-lg-1
+          %input{type: "radio", "ng-model" => "primary", value: "custom", required: "",
+            name: "primary"}
       .form-group
         .col-lg-3
-        .col-lg-8
+        .col-lg-4
           %button.btn.btn-info{name: "submit", "ng-click" => "submit()", class: "fill-link",
               "ng-disabled" => "!f.$valid", type: "submit"}
-            Sign Up
+            OAuth Only
+        .col-lg-4
+          %button.btn.btn-primary{name: "submit", "ng-click" => "submit()", class: "fill-link",
+              "ng-disabled" => "!f.$valid || !f.confirm.$valid || !f.confirm.$dirty || pass.length === 0", type: "submit"}
+            OAuth + Regular
+  .col-lg-3
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    %br
+    .panel.panel-info
+      .panel-heading OAuth Only
+      .panel-body
+        %i{"ng-class" => "{true: 'fa fa-check', false: 'fa fa-times'}[f.username.$valid && f.username.$dirty]"} 
+        \&nbsp;Username
+        %br
+        %i{"ng-class" => "{true: 'fa fa-check', false: 'fa fa-times'}[providerData.emails.length > 0 || f.email.$valid]"} 
+        \&nbsp;Email
+    .panel.panel-primary
+      .panel-heading OAuth + Classic Login
+      .panel-body
+        %i{"ng-class" => "{true: 'fa fa-check', false: 'fa fa-times'}[f.$valid && f.confirm.$valid && f.confirm.$dirty && pass.length !== 0]"} 
+        \&nbsp;Password

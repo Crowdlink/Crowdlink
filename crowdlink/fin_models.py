@@ -14,7 +14,6 @@ import stripe
 import math
 import itertools
 
-
 class Source(base):
     """ Represents a common base table for Sources for financial transactions.
     """
@@ -331,8 +330,8 @@ class Earmark(StatusMixin, Sink, base):
         factors, including disputes, chargebacks (causing freezing),
         non-complete issue, etc """
         log = self.log.create(
-            action='mature',
             item=self,
+            action='mature',
             data=event_data)
         db.session.add(log)
         self.matured = True

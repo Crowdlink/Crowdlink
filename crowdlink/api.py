@@ -1,71 +1,136 @@
 from flask import Blueprint, request, current_app, jsonify
 from flask.ext.login import (login_required, logout_user, current_user,
-                             login_user)
+                             request, login_user)
+from flask.ext.oauthlib.client import OAuthException
 
 from .api_base import API, get_joined, jsonify_status_code
+from .oauth import oauth_retrieve, oauth_from_session
 from .models import (User, Project, Issue, Solution, Email, Dispute, Comment,
                      Thing)
 from .fin_models import Earmark, Recipient, Transfer, Charge
 
+from . import oauth
+
 import valideer
 import sqlalchemy
 import decorator
+import stripe
 
 
 api = Blueprint('api_bp', __name__)
 
+"""
+def error_handler(e, code):
+    return jsonify_status_code(400, e.message)
 
-# Common Fixtures
-# =============================================================================
-@decorator.decorator
-def catch_common(func, *args, **kwargs):
-    """ tries to catch common exceptions and return properly """
-    # get the auth dictionary
-    try:
-        return func(*args, **kwargs)
 
-    # Missing required data error
-    except (KeyError, AttributeError) as e:
-        current_app.logger.debug("400: Incorrect Syntax", exc_info=True)
-        ret = {'success': False,
-               'message': 'Incorrect syntax on key ' + e.message}, 400
+api.register_error_handler(404, lambda e: error_handler(e, 404))
+api.register_error_handler(400, lambda e: error_handler(e, 400))
+api.register_error_handler(403, lambda e: error_handler(e, 403))
+api.register_error_handler(409, lambda e: error_handler(e, 409))
+api.register_error_handler(500, lambda e: error_handler(e, 500))
+"""
 
-    # Permission error
-    except AssertionError:
-        current_app.logger.debug("Permission error", exc_info=True)
-        ret = {'success': False,
-               'message': 'You don\'t have permission to do that'}, 403
+@api.errorhandler(Exception)
+def api_error_handler(exc):
+    """ This handles all exceptions that can be thrown by the API and takes
+    care of logging them and reporting to the end user.
 
-    # validation errors
-    except valideer.base.ValidationError as e:
-        current_app.logger.debug("Validation Error", exc_info=True)
-        ret = {'success': False, 'validation_errors': e.to_dict()}, 200
+    Each branch must define ret to be a tuple
+    (status_code, message back to the user).
+    Msg can be defined as optional logging information that shouldn't be
+    reported to the user. By default the message will be logged in debug
+    mode if no msg is specified"""
+    # debug constants
+    ERROR = 0
+    WARN = 1
+    INFO = 2
+    DEBUG = 3
 
-    # SQLA errors
-    except (sqlalchemy.orm.exc.NoResultFound,
-            sqlalchemy.orm.exc.MultipleResultsFound):
-        current_app.logger.debug("Does not exist", exc_info=True)
-        ret = {'error': 'Could not be found'}, 404
-    except sqlalchemy.exc.IntegrityError as e:
-        current_app.logger.debug("Attempted to insert duplicate",
-                                 exc_info=True)
-        ret = {
-            'success': False,
-            'message': "A duplicate value already exists in the database",
-            'detail': e.message},
-        200
-    except (sqlalchemy.exc, sqlalchemy.orm.exc):
-        current_app.logger.debug("Unkown SQLAlchemy Error", exc_info=True)
-        ret = {
-            'success': False,
-            'message': "An unknown database operations error has occurred"},
-        200
+    e = type(exc)
+    msg = None
+    meth = request.method
+    # Some custom exceptions have error notices that can be displayed, thus the
+    # error_key is sent back to the frontend so they know where to send the
+    # user
+    if hasattr(e, 'error_key'):
+        kwargs = {'error_key': e.error_key}
+    else:
+        kwargs = {}
 
-    # a bit of a hack to make it work with flask-restful and regular views
-    r = jsonify(ret[0])
-    r.status_code = ret[1]
-    return r
+    # Common API errors
+    if e is KeyError or e is AttributeError:
+        ret = 400, 'Incorrect syntax on key ' + str(e.message)
+    elif e is AssertionError:
+        ret = 403, "You don't have permission to do that"
+        msg = INFO
+    elif e is valideer.base.ValidationError:
+        ret = 200, "Validation Error"
+    elif e is TypeError:
+        if meth == 'POST':
+            if 'at least' in e.message:
+                ret = 400, "Required arguments missing from API create method"
+            elif 'argument' in e.message and 'given' in e.message:
+                ret = 400, "Extra arguments supplied to the API create method"
 
+    # Stripe handling
+    elif e is stripe.InvalidRequestError:
+        ret = 402, 'Invalid request was sent to Stripe'
+        msg = ERROR
+    elif e is stripe.AuthenticationError:
+        ret = 402, 'Our Stripe credentials seem to have expired... Darn.'
+        msg = ERROR
+    elif e is stripe.APIConnectionError:
+        ret = 402, 'Unable to connect to Stripe to process request'
+        msg = WARN
+    elif e is stripe.StripeError:
+        ret = 402, 'Unknown stripe error'
+        msg = ERROR
+
+    # SQLAlchemy exceptions
+    elif e is sqlalchemy.orm.exc.NoResultFound:
+        ret = 404, 'Could not be found'
+    elif e is sqlalchemy.orm.exc.MultipleResultsFound:
+        ret = 400, 'Only one result requested, but MultipleResultsFound'
+    elif e is sqlalchemy.exc.IntegrityError:
+        ret = 409, "A duplicate value already exists in the database"
+    elif e is sqlalchemy.exc.InvalidRequestError:
+        ret = 400, "Client programming error, invalid search sytax used."
+    elif issubclass(e, sqlalchemy.exc.SQLAlchemyError):
+        ret = 402, "An unknown database operations error has occurred"
+        msg = WARN, 'Uncaught type of database exception'
+
+    # OAuth Exceptions
+    elif e is oauth.OAuthAlreadyLinked:
+        ret = 400, 'That account is already linked by you'
+    elif e is oauth.OAuthLinkedOther:
+        ret = 400, 'That account is already linked by another user'
+    elif e is oauth.OAuthEmailPresent:
+        ret = 400, 'That email already exists in our system'
+    elif e is oauth.OAuthCommError:
+        ret = 400, 'Error communicating with the OAuth provider'
+    elif e is oauth.OAuthDenied:
+        ret = 400, 'OAuth session information expired or you denied the OAuth request'
+    elif issubclass(e, OAuthException):
+        ret = 400, 'Unkown OAuth error occured'
+        msg = WARN
+    else:
+        ret = 500, "Internal Server error"
+
+    response = jsonify(message=ret[1], **kwargs)
+    response.status_code = ret[0]
+    # if we should run special logging...
+    if msg is not None:
+        # allow the user to just change the log level by changing msg
+        if isinstance(msg, int):
+            msg = msg, ret[1]
+        attr_map = {0: 'error', 1: 'warn', 2: 'info', 3: 'debug'}
+        # log the message using flasks logger. In the future this will use
+        # logstash and other methods
+        getattr(current_app.logger, attr_map[msg[0]])(msg[1], exc_info=True)
+    else:
+        current_app.logger.debug(str(ret), exc_info=True)
+    return response
 
 # Check functions for forms
 # =============================================================================
@@ -131,6 +196,28 @@ def login():
         return jsonify(success=True, user=get_joined(user))
 
     return jsonify(success=False, message="Invalid credentials")
+
+
+@api.route("/oauth", methods=['GET'])
+def oauth_user_data():
+    """ Thin wrapper around the oauth retrieve function for the signup page to
+    use. """
+    data = oauth_from_session('signup')
+    data = oauth_retrieve(data['provider'], data['raw_token'])
+    if data is not False:
+
+        # check for presently taken email addresses
+        if len(data['emails']) > 0:
+            from .models import Email
+            args = []
+            for email in data['emails']:
+                args.append(Email.address == email['email'])
+            matches = Email.query.filter(sqlalchemy.or_(*args))
+            if matches.count() > 0:
+                return jsonify(success=False, error='oauth_email_present')
+
+        return jsonify(success=True, data=data)
+    return jsonify(success=False, error='oauth_missing_token')
 
 
 class UserAPI(API):
@@ -234,3 +321,19 @@ class CommentAPI(API):
 
     def can_cls(self, action):
         return self.model.can_cls(action, thing=self.params['thing'])
+
+
+# activate all the APIs on the blueprint
+TransferAPI.register(api, '/transfer')
+RecipientAPI.register(api, '/recipient')
+DisputeAPI.register(api, '/dispute')
+ChargeAPI.register(api, '/charge')
+EarmarkAPI.register(api, '/earmark')
+
+SolutionAPI.register(api, '/solution')
+IssueAPI.register(api, '/issue')
+ProjectAPI.register(api, '/project')
+CommentAPI.register(api, '/comment')
+
+EmailAPI.register(api, '/email')
+UserAPI.register(api, '/user')

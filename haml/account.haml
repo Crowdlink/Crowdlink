@@ -5,10 +5,18 @@
       %ul.nav.nav-pills.nav-stacked
         %li{"ng-class" => "{true: 'active'}[view=='general']"}
           %a{"ng-click" => "view='general'"} General
-        %li{"ng-class" => "{true: 'active'}[view=='general']", "ng-show" => "acc_user.gh_linked"}
-          %a{href: "/login/github"}
-            %i.fa.fa-github.fa-large>
-              Link You Github
+        %li{"ng-show" => "!acc_user.gh_linked"}
+          %a{href: "/oauth/gh/link"}
+            %i.fa.fa-github.fa-large
+              Link Github Account
+        %li{"ng-show" => "!acc_user.tw_linked"}
+          %a{href: "/oauth/tw/link"}
+            %i.fa.fa-twitter.fa-large
+              Link Twitter Account
+        %li{"ng-show" => "!acc_user.go_linked"}
+          %a{href: "/oauth/go/link"}
+            %i.fa.fa-google-plus.fa-large
+              Link Google Account
       %h4 Financial
       %ul.nav.nav-pills.nav-stacked
         %li{"ng-class" => "{true: 'active'}[view=='add_credit']"}

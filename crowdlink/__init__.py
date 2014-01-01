@@ -1,8 +1,7 @@
 from flask import Flask
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager
-from flask.ext.restful import Api
-from flask_oauthlib.client import OAuth
+from flask.ext.oauthlib.client import OAuth
 
 from jinja2 import FileSystemLoader
 
@@ -16,17 +15,29 @@ root = os.path.abspath(os.path.dirname(__file__) + '/../')
 
 db = SQLAlchemy()
 lm = LoginManager()
-oauth = OAuth()
+oauth_lib = OAuth()
 crypt = cryptacular.bcrypt.BCRYPTPasswordManager()
 
 # OAuth configuration, must be outside function to be importable
-github = oauth.remote_app(
+github = oauth_lib.remote_app(
     'github',
     app_key='github'
 )
+twitter = oauth_lib.remote_app(
+    'twitter',
+    app_key='twitter'
+)
+google = oauth_lib.remote_app(
+    'google',
+    app_key='google'
+)
+
+
+app = None
 
 
 def create_app(config='/application.json'):
+    global app
 
     # initialize our flask application
     app = Flask(__name__, static_folder='../static', static_url_path='/static')
@@ -41,12 +52,30 @@ def create_app(config='/application.json'):
     app.config['github'] = dict(
         consumer_key=app.config['github_consumer_key'],
         consumer_secret=app.config['github_consumer_secret'],
-        request_token_params={'scope': 'user:email,repo'},
+        request_token_params={'scope': 'user:email'},
         base_url='https://api.github.com/',
         request_token_url=None,
         access_token_method='POST',
         access_token_url='https://github.com/login/oauth/access_token',
         authorize_url='https://github.com/login/oauth/authorize'
+    )
+    app.config['twitter'] = dict(
+        consumer_key=app.config['twitter_consumer_key'],
+        consumer_secret=app.config['twitter_consumer_secret'],
+        base_url='https://api.twitter.com/1.1/',
+        request_token_url='https://api.twitter.com/oauth/request_token',
+        access_token_url='https://api.twitter.com/oauth/access_token',
+        authorize_url='https://api.twitter.com/oauth/authenticate',
+    )
+    app.config['google'] = dict(
+        consumer_key=app.config['google_consumer_key'],
+        consumer_secret=app.config['google_consumer_secret'],
+        request_token_params={'scope': 'email profile'},
+        base_url='https://www.googleapis.com/oauth2/v1/',
+        request_token_url=None,
+        access_token_method='POST',
+        access_token_url='https://accounts.google.com/o/oauth2/token',
+        authorize_url='https://accounts.google.com/o/oauth2/auth',
     )
 
     # add the debug toolbar if we're in debug mode...
@@ -60,27 +89,16 @@ def create_app(config='/application.json'):
     # register all our plugins
     db.init_app(app)
     lm.init_app(app)
-    oauth.init_app(app)
-    api_restful = Api(app)
+    oauth_lib.init_app(app)
 
     # Setup the anonymous user to register a single role
     lm.anonymous_user = AnonymousUser
 
     # Route registration
     # =========================================================================
-    from . import api, views, models, monkey_patch, fin_models, log_models
+    from . import api, oauth, views, models, monkey_patch, fin_models, log_models
     app.register_blueprint(api.api, url_prefix='/api')
-    app.register_blueprint(views.main)
-
-    api_restful.add_resource(api.ProjectAPI, '/api/project')
-    api_restful.add_resource(api.IssueAPI, '/api/issue')
-    api_restful.add_resource(api.SolutionAPI, '/api/solution')
-    api_restful.add_resource(api.UserAPI, '/api/user')
-    api_restful.add_resource(api.ChargeAPI, '/api/charge')
-    api_restful.add_resource(api.EarmarkAPI, '/api/earmark')
-    api_restful.add_resource(api.RecipientAPI, '/api/recipient')
-    api_restful.add_resource(api.TransferAPI, '/api/transfer')
-    api_restful.add_resource(api.CommentAPI, '/api/comment')
+    app.register_blueprint(oauth.oauth, url_prefix='/oauth')
 
     return app
 
