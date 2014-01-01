@@ -315,7 +315,7 @@ ul.main-nav-pills {
     opacity:0.2;
     width:200px;
     height:180px;
-}
+  }
 }
 
 .remember {
@@ -330,6 +330,19 @@ ul.main-nav-pills {
 
 .oauth {
   font-size:24px;line-height:40px;
+}
+
+/* Feed */
+/******************************************/
+
+div.feed {
+  i {
+    color:lightgray;
+  }
+}
+hr.feed {
+  border-top:1px solid lightgray;
+
 }
 
 /******************************************/

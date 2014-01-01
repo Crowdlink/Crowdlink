@@ -3,11 +3,12 @@
     .col-md-8.no-gutter
       .col
         %h3 Your feed
-        %div{"ng-repeat" => "event in huser.events"}
-          %div.media{"ng-include" => "'{{ template_path }}' + event.template"}
-          %hr
-        %span{"ng-show" => "huser.events.length == 0"}
-          There's nothing to see here right now... Start watching projects or users to monitor their progress.
+        .container
+          %div{"ng-repeat" => "event in huser.events"}
+            %div.row.feed{"ng-include" => "'{{ template_path }}' + event.template"}
+            %hr.feed
+          %span{"ng-show" => "huser.events.length == 0"}
+            There's nothing to see here right now... Start watching projects or users to monitor their progress.
     .col-md-4.no-gutter
       .col
         %h3 Your projects

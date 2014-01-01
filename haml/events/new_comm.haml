@@ -1,15 +1,15 @@
-%a.pull-left{href: "\#{[{event.user_p}]}"}
-  %img.media-object{alt: "...", src: "http://placehold.it/64x64"}
-.media-body
-  %h5.media-heading.col-lg-9
+.col-lg-1.text-center.hidden-sm.hidden-xs.hidden-md.no-gutter
+  %a{href: "\#{[{event.user_p}]}"}
+    %i.fa.fa-comments.fa-2x
+.col-lg-11.no-gutter
+  .col-lg-10
     %a{href: "\#{[{event.user_p}]}"}
       {[{ event.uname }]}
     commented on
     %a{href: "\#{[{event.thing_p}]}"} {[{event.tname}]}
     %br/
     %small
-      %b {[{ event.message }]}
-
-  .col-lg-3
+      %pre{style:"margin-top:10px;margin-bottom:0px;"}
+        {[{ event.message }]}
+  .col-lg-2
     .pull-right.text-muted {[{event.time | date_ago}]}
-
