@@ -97,7 +97,6 @@ a.col {
   }
   text-decoration:none;
 }
-
 ul.main-list {
   a:hover {
       text-decoration:none !important;
@@ -111,14 +110,19 @@ ul.main-list {
     }
   }
 }
-
 .fill-link {
   width:100%;
   margin-top: 2px;
   margin-bottom:2px;
   display:block;
 }
-
+.round-box {
+  border:1px solid lightgray;
+  border-radius:6px;
+}
+.inner-pad {
+  padding:15px;
+}
 /* Homepage styling */
 .hr-header {
   text-align:center;
@@ -258,10 +262,10 @@ i.right-float {
   top: -28px;
   position:relative;
 }
+.long-desc {
+  min-height: 300px;
+}
 /******************************************/
-
-
-
 /* Header */
 /******************************************/
 .logo {

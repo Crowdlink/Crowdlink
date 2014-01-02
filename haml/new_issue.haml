@@ -1,53 +1,57 @@
 .container
-  .col.header-col-light-gray.row
-    %br/
-    %br/
-    %br/
-    .col-lg-10
-      %h3.col-lg-offset-4
-        Create a new Issue
+  .row
+    .col-lg-12
+      %ol.breadcrumb
+        %li
+          %a{href: "#/{[{project.maintainer_username}]}"} {[{project.maintainer_username}]}
+        %li
+          %a{href: "#\{[{project.get_abs_url}]}"} {[{ project.name }]}
+        %li
+          %a{href: ""} Issues
+        %li.active {[{title}]}
+      .row
+        %h3.col-lg-12
+          Create a new Issue
       %br
-      %form.form-horizontal{name: "form", novalidate: ""}
-        .alert-danger.alert.fade{"ng-show" => "errors"}
-          %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
-          %span{"ng-show" => "error_header"} {[{ error_header }]}
-          %ul{"ng-show" => "errors.length > 1"}
-            %li{"ng-repeat" => "error in errors"} {[{error}]}
-        .form-group{"valid-class" => "form.title"}
-          %label.col-lg-3.control-label
-            Title
-          .col-lg-8
-            %input.form-control{name: "title", type: "text", "ng-model" => "title",
-              required: "", "ng-change" => "mod_title()", "ng-minlength" => "10",
-              "ng-maxlength" => "64"}
-            .help-block{"ng-show" => "form.title.$error.required"}
-              Please enter a title description for your issue
-            .help-block{"ng-show" => "form.title.$error.maxlength"}
-              Cannot be longer than 128 characters
-            .help-block{"ng-show" => "form.title.$error.minlength"}
-              Must be longer than 10 characters
-            %span{"ng-show" => "form.title.$valid"}
-              %br
-              %b Issues with similar titles
-              %table.table.table-hover
-                %tbody
-                  %tr.fade{"ng-repeat" => "issue in issues | fuseImpFilter:title"}
-                    %td
-                      %a{:href => "\#{[{ issue.get_abs_url }]}"}
-                        %i.fa.fa-circle &nbsp;
-                        %span{"ng-bind-html" => "issue.title | searchFilter:title"}
-        .form-group{"valid-class" => "form.description"}
-          %label.col-lg-3.control-label
-            Description
-          .col-lg-8
-            %textarea.form-control{"mark-it-up" => "", name: "description", type: "text",
-              "ng-model" => "description"}
-        .form-group
-          .col-lg-3
-          .col-lg-8
-            %button.btn.btn-primary{name: "create", "ng-click" => "submit()", type: "submit",
-              "ng-disabled" => "!form.$valid", type: "submit"}
-              Create
-      %br/
-      %br/
-      %br/
+      .row
+        .col-lg-1
+          %img{src:"http://placehold.it/64x64"}
+        .col-lg-11
+          .row
+            .col-lg-8.round-box
+              %form.form-horizontal.inner-pad{name: "form", novalidate: ""}
+                .alert-danger.alert.fade{"ng-show" => "errors"}
+                  %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+                  %span{"ng-show" => "error_header"} {[{ error_header }]}
+                  %ul{"ng-show" => "errors.length > 1"}
+                    %li{"ng-repeat" => "error in errors"} {[{error}]}
+                .form-group{"valid-class" => "form.title"}
+                  %input.form-control{name: "title", type: "text", "raw-ng-model" => "raw_issue_title",
+                    "ng-change" => "mod_title()", required: "", "ng-minlength" => "10",
+                    "ng-maxlength" => "64", placeholder: "Title", "ng-model" => "issue_title"}
+                  .help-block{"ng-show" => "form.title.$error.required"}
+                    Please enter a title description for your issue
+                  .help-block{"ng-show" => "form.title.$error.maxlength"}
+                    Cannot be longer than 128 characters
+                  .help-block{"ng-show" => "form.title.$error.minlength"}
+                    Must be longer than 10 characters
+                .form-group{"valid-class" => "form.description"}
+                  %textarea.form-control.long-desc{"mark-it-up" => "", name: "description", type: "text",
+                    "ng-model" => "description", placeholder:"Description of the issue. For issues with many potential solutions it is often best to keep the issue description completely separate from the possible solutions"}
+                .form-group
+                  %button.btn.btn-info{name: "create", "ng-click" => "submit()", type: "submit",
+                    "ng-disabled" => "!form.$valid", type: "submit"}
+                    Create
+            .col-lg-4
+              %div.round-box.inner-pad
+                %b Other Issues on Project '{[{ project.name }]}'
+                %table.table.table-hover
+                  %tbody
+                    %tr.fade{"ng-repeat" => "issue in issues | fuseImpFilter:raw_issue_title"}
+                      %td
+                        %a{:href => "\#{[{ issue.get_abs_url }]}"}
+                          %i.fa.fa-puzzle-piece &nbsp;
+                          %span{"ng-bind-html" => "issue.title | searchFilter:raw_issue_title"}
+            %br/
+            %br/
+            %br/

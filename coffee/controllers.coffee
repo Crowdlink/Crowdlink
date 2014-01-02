@@ -407,7 +407,7 @@ $injector, ChargeService, $location)->
       if 'success' of value and value.success
         $rootScope.flash.push
           message: "Successfully charged your card for
-          $#{$scope.actual_amt /100}. You can now contibute to other projects."
+          $#{$scope.actual_amt/100}. You can now contibute to other projects."
           class: 'alert-success'
         $location.path("/account/charges")
       else
@@ -529,11 +529,12 @@ mainControllers.controller('newProjController',
 
 # newIssueController ==========================================================
 mainControllers.controller('newIssueController',
-($scope, $rootScope, $routeParams, $location, $injector, issues,
+($scope, $rootScope, $routeParams, $location, $injector, issues, project,
 IssueService)->
 
   $injector.invoke(parentFormController, this, {$scope: $scope})
-  $scope.issues = issues
+  $scope.issues = issues['objects']
+  $scope.project = project['objects'][0]
   $rootScope.title = "New Issue"
 
   $scope.submit = ->

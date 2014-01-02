@@ -100,6 +100,13 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             project_maintainer_username: $route.current.params.username
             project_url_key: $route.current.params.url_key
           join_prof: 'brief_join').$promise
+      project: (ProjectService, $route) ->
+        ProjectService.query(
+          __filter_by:
+            maintainer_username: $route.current.params.username
+            url_key: $route.current.params.url_key
+          __one: true
+          join_prof: 'disp_join').$promise
   ).when("/:username/:url_key/psettings",
     templateUrl: "{{ template_path }}psettings.html"
     controller: "projectSettingsController"
@@ -173,7 +180,7 @@ mainFilters.filter('searchFilter', ($sce) ->
   trusted = {}
   (input, query, option) ->
     if input == undefined
-      return
+      return input
     if input
       tmp = input.replace(
         RegExp('('+ query + ')', 'gi'), '<span class="match">$1</span>')
@@ -184,14 +191,14 @@ mainFilters.filter('searchFilter', ($sce) ->
 mainFilters.filter('fuseImpFilter', ->
   (input, query, option) ->
     if input == undefined
-      return
+      return input
     if query
       f = new Fuse(input,
         keys: ['title']
       )
-      return f.search(query)
+      return f.search(query).slice(0,15)
     else
-      return input
+      return input.slice(0,15)
 )
 
 mainFilters.filter "date_ago", ->
@@ -436,3 +443,13 @@ mainApp.directive "reportDropdown", ["$http", "$timeout", ($http, $compile) ->
     scope.attr = attr
     scope.$watch(attr, update)
 ]
+
+mainApp.directive "rawNgModel", ->
+  require: "^ngModel"
+  scope:
+    rawNgModel: '='
+  link: (scope, element, attrs, ngModelCtrl) ->
+    ngModelCtrl.$parsers.splice 0, 0, ((viewValue) ->
+      scope.rawNgModel = viewValue
+      viewValue
+    )
