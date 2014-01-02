@@ -142,6 +142,13 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
               project_url_key: $route.current.params.purl_key
               issue_url_key: $route.current.params.url_key
           join_prof: 'disp_join').$promise
+      project: (ProjectService, $route) ->
+        ProjectService.query(
+          __filter_by:
+            maintainer_username: $route.current.params.username
+            url_key: $route.current.params.purl_key
+          __one: true
+          join_prof: 'disp_join').$promise
   ).when("/:username/:purl_key/:iurl_key/:url_key",
     templateUrl: "{{ template_path }}solution.html"
     controller: "solutionController"

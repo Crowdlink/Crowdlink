@@ -98,6 +98,8 @@ a.col {
   text-decoration:none;
 }
 ul.main-list {
+  list-style-type: none;
+  margin-bottom:0px;
   a:hover {
       text-decoration:none !important;
   }
@@ -108,6 +110,12 @@ ul.main-list {
     &:hover {
       background-color:#ddd;
     }
+  }
+}
+ul.main-list.sub-list {
+  /* overrides for main list*/
+  li {
+    font-size:14px;
   }
 }
 .fill-link {

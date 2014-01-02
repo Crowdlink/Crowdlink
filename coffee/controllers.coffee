@@ -544,7 +544,7 @@ IssueService)->
       project_url_key: $routeParams.url_key
       project_maintainer_username: $routeParams.username
       desc: $scope.description
-      title: $scope.title
+      title: $scope.issue_title
     ,(value) ->
       if 'success' of value and value.success
         issue = value.objects[0]
@@ -556,11 +556,13 @@ IssueService)->
 
 # newSolutionController =======================================================
 mainControllers.controller('newSolutionController',
-($scope, $rootScope, $routeParams, $location, $injector, solutions, SolutionService)->
+($scope, $rootScope, $routeParams, $location, $injector, solutions, project, SolutionService)->
 
   $injector.invoke(parentFormController, this, {$scope: $scope})
-  $scope.sols = solutions.objects[0]
-  $rootScope.title = "New Issue"
+  $scope.sols = solutions.objects
+  $scope.project = project['objects'][0]
+  $scope.issue = $routeParams.url_key
+  $rootScope.title = "New Solution"
 
   $scope.submit = ->
     $scope.error_header = ""
@@ -570,7 +572,7 @@ mainControllers.controller('newSolutionController',
       project_url_key: $routeParams.purl_key
       issue_url_key: $routeParams.url_key
       desc: $scope.desc
-      title: $scope.title
+      title: $scope.sol_title
     ,(value) ->
       if 'success' of value and value.success
         sol = value.objects[0]

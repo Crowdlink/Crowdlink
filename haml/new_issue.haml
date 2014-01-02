@@ -45,13 +45,10 @@
             .col-lg-4
               %div.round-box.inner-pad
                 %b Other Issues on Project '{[{ project.name }]}'
-                %table.table.table-hover
-                  %tbody
-                    %tr.fade{"ng-repeat" => "issue in issues | fuseImpFilter:raw_issue_title"}
-                      %td
-                        %a{:href => "\#{[{ issue.get_abs_url }]}"}
-                          %i.fa.fa-puzzle-piece &nbsp;
-                          %span{"ng-bind-html" => "issue.title | searchFilter:raw_issue_title"}
-            %br/
-            %br/
-            %br/
+                %hr
+                %ul.list-group.main-list.sub-list
+                  %div.fade{"ng-repeat" => "issue in issues | fuseImpFilter:raw_issue_title"}
+                    %li
+                      %a{:href => "\#{[{ issue.get_abs_url }]}"}
+                        %i.fa.fa-puzzle-piece &nbsp;
+                        %span{"ng-bind-html" => "issue.title | searchFilter:raw_issue_title"}
