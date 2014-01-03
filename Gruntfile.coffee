@@ -63,6 +63,10 @@ module.exports = (grunt) ->
           "static/templates/tos.html": "processed/haml/tos.haml"
           "static/templates/help_modal.html": "processed/haml/help_modal.haml"
           "static/templates/dir/drop_toggle.html": "processed/haml/dir/drop_toggle.haml"
+          "static/templates/project/recent.html": "processed/haml/project/recent.haml"
+          "static/templates/project/issues.html": "processed/haml/project/issues.haml"
+          "static/templates/project/general_info.html": "processed/haml/project/general_info.haml"
+          "static/templates/project/settings.html": "processed/haml/project/settings.haml"
 
           # Server Side
           "templates/base.html": "processed/haml/base.haml"

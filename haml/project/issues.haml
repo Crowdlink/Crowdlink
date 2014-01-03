@@ -1,0 +1,29 @@
+%h3 Issues
+%hr.feed
+.container
+  .input-group
+    %input.form-control{"ng-model" => "filter", :type => "text"}
+    %span.btn.btn-info.input-group-addon
+      %i.fa.fa-search{"ng-click" => "search()"}
+  / /input-group
+  %table.table.table-hover
+    %tbody
+      %tr.fade{"ng-repeat" => "issue in project.issues | filter:filter"}
+        %td.fit-width
+          %a.btn.btn-xs{"ng-class" => "{'btn-success': issue.vote_status, 'btn-info': !issue.vote_status}",
+            "ng-click" => "vote(issue)"}
+            %span{"ng-hide" => "issue.vote_status"}
+              Vote&nbsp;
+              %i.fa.fa-plus
+            %span{"ng-hide" => "!issue.vote_status"}
+              Unvote&nbsp;
+              %i.fa.fa-minus
+          \&nbsp;&nbsp;
+          %b
+            %ng-pluralize{:count => "issue.votes",
+              :when => "{'0': 'No votes', 'one': '1 vote', 'other': '{} votes'}"}
+        %td
+          %a{:href => "\#{[{ issue.get_abs_url }]}"}
+            %i.fa.fa-puzzle-piece &nbsp;
+            %span{"ng-bind-html" => "issue.title | searchFilter:filter"}
+

@@ -350,6 +350,7 @@ mainControllers.controller('projectController',
       subscribed: false
       vote_status: false
       name: false
+  $scope.view = 'recent'
 
   $scope.vote = (issue) ->
     issue.vote_status = !issue.vote_status
