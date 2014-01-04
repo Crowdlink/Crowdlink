@@ -92,15 +92,20 @@ topics:
   fees:
       title: What is your fee structure?
       body: |
-          At the moment Stripe is the only way to transfer money in or out of Crowdlink, although we plan to offer other payment processors soon.
-          To allow you to pick the best payment processor we pass their fees directly on. Stripe charges a 2.9% + $0.30 transaction fee.
-          That fee is represented immediately after putting money in a Crowdlink account. For example, if a user puts a $20 charge towards his Crowdlink
-          account the available balance will be $19.12.
-          <br>
-          Crowdlink charges a 4% fee for pledges and donations. We take this fee out any time funds move between Crowdlink users.
-          For example, A user Pledges $2.00 towards an issue. When that issue is completed the project maintainer will split
-          $1.92 between users who contributed towards the solution.
-          <br>
-          The fee structure is to encourage users to optimize putting funds into their account however they like, and
-          making microtransactions, IE donating a little bit to many projects, something that isn't a painful experience.
+          <p>There are two types of fees possible on Crowdlink. The first is incurred when depositing or withdrawing money from Crowdlink.
+          The other happens during the donation/pledge process.
+          <p>For the first type of fee, the thought process is to pass payment processor fees on to the user when they deposit/withdraw from their account. This
+          gives the user more control, and potentially allows them to reduce these transaction fees or increase convenience. At the moment Stripe is
+          the only way to transfer money in or out of Crowdlink, although we plan to offer other payment processors soon.
+          For now, this means there is a
+          fee of 2.9% + $0.30 per transaction, because that is what Stripe charges. For withdrawl Stripe charge $0.50 per transaction.</p>
+          <p>Payment processor fees are represented immediately after putting money in a Crowdlink account. For example, if a user puts a $20 charge towards his Crowdlink
+          account the available balance will be $19.12.</p>
+          <p>The other type of fee supports Crowdlink. It is a flat 4% fee for pledges and donations.
+          This fee occurs any time funds move between Crowdlink users, and may change.
+          For example, if a user Pledges $2.00 towards a solution then when that issue is completed the project maintainer will split
+          $1.92 between users who contributed towards the solution.</p>
+          <p>Our intent is to make the fee structure as straightforward as possible, and encourage people to make small but meaningful
+          contributions, potentially donating a little bit to many different projects. If you have any questions please
+          contact support, and suggestions are always welcome on our project page.
       brief: Much community. So crowdfund. Wow.

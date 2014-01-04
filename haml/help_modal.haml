@@ -1,22 +1,20 @@
-.modal-dialog{"ng-init" => "init()", style: "width:900px;"}
-  .modal-content
-    .modal-header
-      %button.close{"aria-hidden" => "true", "ng-click" => "close()", type: "button"} ×
-      %h4.modal-title FAQ
-
-
-    .modal-body
-      .container
-        .col-md-3
+.modal.fade
+  .modal-dialog{"ng-init" => "init()"}
+    .modal-content
+      .modal-header{style:"background-color:#2C3E50;border-top-right-radius: 4.5px;border-top-left-radius:4.5px;"}
+        %button.close{"aria-hidden" => "true", "ng-click" => "close()", type: "button", style:"color:white;"} ×
+        %h4.modal-title{style:"color:white;"} FAQ
+      .modal-body
+        %span
           %div{"ng-repeat" => "cat in cats"}
             %h5 {[{ cat['name'] }]}
             %ul.nav.nav-pills.nav-stacked
               %li{"ng-class" => "{true: 'active'}[curr_topic==topics[topic]]", "ng-repeat" => "topic in cat['keys']"}
                 %a{"ng-click" => "update(topics[topic])", style: "font-size:14px;"} {[{ topics[topic]['title'] }]}
-        .col-md-9
-          %div
-            %h4 {[{ curr_topic['title'] }]}
-            %span{"ng-bind-html" => "curr_topic['body']"}
+        %hr{style:"background-color:#000;height:2px;"}
+        %span
+          %h4 {[{ curr_topic['title'] }]}
+          %span{"ng-bind-html" => "curr_topic['body']"}
 
-    .modal-footer
-      %button.btn.btn-warning{"ng-click" => "close()"} Close
+      .modal-footer
+        %button.btn.btn-warning{"ng-click" => "close()"} Close

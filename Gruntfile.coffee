@@ -170,7 +170,7 @@ module.exports = (grunt) ->
         files: ['processed/email/*.html']
         tasks: ['inlinecss:main']
       yaml:
-        files: ['assets/help/**/*.yaml']
+        files: ['assets/help/*.yaml']
         tasks: ['shell:compile_yaml']
       static:
         files: ['static/**/*.css', 'static/**/*.html', 'static/**/*.js']
