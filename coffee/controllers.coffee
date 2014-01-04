@@ -499,18 +499,20 @@ mainControllers.controller('loginController',
   $scope.submit = () ->
     $scope.errors = []
     UserService.login(
-      username: $scope.username
+      identifier: $scope.identifier
       password: $scope.password
+      __action: 'login'
+      __cls: true
     ,(value) ->
       if 'success' of value and value.success
-        $rootScope.user = value.user
+        $rootScope.user = value.objects[0]
         $rootScope.logged_in = true
         if 'redirect' of $routeParams
           $location.path($routeParams.redirect)
         else
           $location.path("/home")
       else
-        $scope.error_report(value)
+        $scope.error_report({'message': 'Invalid credentials'})
     , $scope.error_report)
 )
 

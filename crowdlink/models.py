@@ -20,6 +20,7 @@ import re
 import werkzeug
 import urllib
 import hashlib
+import sqlalchemy
 import os
 
 
@@ -738,6 +739,17 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     def gh_repo(self, path):
         """ Get a single repositories information from the gh_path """
         return github.get('repos/{0}'.format(path)).data
+
+    # Action methods
+    # ========================================================================
+    @classmethod
+    def login(cls, identifier, password):
+        user = User.query.filter(
+            sqlalchemy.or_(User.emails.any(Email.address==identifier), User.username==identifier)).first()
+        if user and user.check_password(password):
+            login_user(user)
+            return {'objects': [get_joined(user)]}
+        return False
 
     # User creation logic
     # ========================================================================

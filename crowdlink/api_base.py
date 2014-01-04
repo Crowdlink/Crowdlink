@@ -189,7 +189,10 @@ class API(MethodView):
         except TypeError as e:
             if 'argument' in e.message:
                 current_app.logger.debug(self.params)
-                raise APISyntaxError, "Wrong number of arguments supplied for action {}".format(action), sys.exc_info()[2]
+                original = "{}: {}".format(type(e).__name__, e.message)
+                msg = ("Wrong number of arguments supplied for action {}."
+                       "\nOriginal Exception: {}".format(action, original))
+                raise APISyntaxError, msg, sys.exc_info()[2]
             else:
                 raise
         self.session.commit()

@@ -30,8 +30,7 @@ mainServices.factory("SolutionService", ($resource) ->
 mainServices.factory("UserService", ($resource) ->
   $resource "{{ api_path }}user", {},
     login:
-      url: "{{ api_path }}login"
-      method: "POST"
+      method: "PATCH"
       timeout: 10000
       isArray: false
     oauth_create:

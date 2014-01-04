@@ -50,7 +50,9 @@ user:
             - page_join
             - disp_join
         class: create
-        action: oauth_create
+        action:
+            - oauth_create
+            - login
     noactive_user:
         view:
             - standard_join

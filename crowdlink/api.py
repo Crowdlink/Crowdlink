@@ -49,6 +49,7 @@ def api_error_handler(exc):
 
     e = type(exc)
     msg = None
+    ret = None
     meth = request.method
     # Some custom exceptions have error notices that can be displayed, thus the
     # error_key is sent back to the frontend so they know where to send the
@@ -72,6 +73,9 @@ def api_error_handler(exc):
                 ret = 400, "Required arguments missing from API create method"
             elif 'argument' in e.message and 'given' in e.message:
                 ret = 400, "Extra arguments supplied to the API create method"
+        else:
+            ret = 500, "Unkown internal server error"
+            msg = ERROR
 
     # Stripe handling
     elif e is stripe.InvalidRequestError:
@@ -117,8 +121,12 @@ def api_error_handler(exc):
     else:
         ret = 500, "Internal Server error"
 
-    response = jsonify(message=ret[1], **kwargs)
-    response.status_code = ret[0]
+    if ret is None:
+        current_app.logger.error("Error handler for type {} failed to return proper information".format(e.__name__))
+        return jsonify("Exception occured in error handling"), 500
+    else:
+        response = jsonify(message=ret[1], **kwargs)
+        response.status_code = ret[0]
     # if we should run special logging...
     if msg is not None:
         # allow the user to just change the log level by changing msg
