@@ -6,9 +6,12 @@ manager = Manager(app)
 
 import logging
 import os
-from crowdlink.lib import send_email
+
+from crowdlink.mail import TestEmail
 from crowdlink import db, root
 from crowdlink.models import User
+
+from flask import current_app
 
 
 @manager.option('-u', '--userid', dest='userid')
@@ -35,13 +38,13 @@ def provision():
 
 @manager.option('-t', '--template', dest='template', default='test')
 def test_email(template=None):
-    recipient = app.config['EMAIL_TEST_ADDR']
-    send_email(recipient, template)
+    recipient = current_app.config['email_test_address']
+    TestEmail().send_email(recipient)
 
 
 @manager.command
 def runserver():
-    app.run(debug=True, host='0.0.0.0')
+    current_app.run(debug=True, host='0.0.0.0')
 
 
 @manager.command

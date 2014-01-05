@@ -4,20 +4,10 @@ from flask import (Blueprint, render_template, send_file, current_app, flash,
 from flask.ext.login import current_user
 
 from . import root, lm, app
-from .models import User
 from .api_base import get_joined
 
 import sqlalchemy
 import os
-
-
-# tell the session manager how to access the user object
-@lm.user_loader
-def user_loader(id):
-    try:
-        return User.query.filter_by(id=id).one()
-    except sqlalchemy.orm.exc.NoResultFound:
-        return None
 
 
 @app.route("/test/<action>/")
@@ -89,3 +79,7 @@ def angular_root():
                            logged_in=logged_in,
                            user=user,
                            messages=messages)
+
+@app.route('/activate', methods=['GET'])
+def activate_email():
+    pass

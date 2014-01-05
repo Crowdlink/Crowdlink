@@ -100,6 +100,14 @@ def create_app(config='/application.json'):
     app.register_blueprint(api.api, url_prefix='/api')
     app.register_blueprint(oauth.oauth, url_prefix='/oauth')
 
+    # tell the session manager how to access the user object
+    @lm.user_loader
+    def user_loader(id):
+        try:
+            return models.User.query.filter_by(id=id).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return None
+
     return app
 
 from .api_base import AnonymousUser

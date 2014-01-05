@@ -193,7 +193,7 @@ mainControllers.controller('rootController',
   # update the profile url when the username changes
   $rootScope.$watch('logged_in', (val) ->
     if val
-      $scope.profile = '/' + val
+      $scope.profile = '/' + $rootScope.user.username
       $scope.home = '/home'
     else
       $scope.profile = ''
