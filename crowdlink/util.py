@@ -14,7 +14,8 @@ def stripe_card_token(number='4242424242424242'):
     dct_token['card'] = dict(token.card)
     return dct_token
 
-def stripe_bank_token(routing_number='110000000', account_number='000123456789'):
+def stripe_bank_token(
+    routing_number='110000000', account_number='000123456789'):
     # create a new token via the api. this is usually done via the JS side
     token = stripe.Token.create(
         bank_account={
@@ -224,7 +225,7 @@ __date__ = '2007-06-22'
 __version__ = '0.10'
 __license__ = 'Python http://www.python.org/psf/license/'
 
-def trunc(s,min_pos=0,max_pos=75,ellipsis=True):
+def trunc(s, min_pos=0, max_pos=75, ellipsis=True):
     """Return a nicely shortened string if over a set upper limit
     (default 75 characters)
 
@@ -292,10 +293,10 @@ def trunc(s,min_pos=0,max_pos=75,ellipsis=True):
     else:
         # Case 2: Return it to nearest period if possible
         try:
-            end = s.rindex('.',min_pos,max_pos)
+            end = s.rindex('.', min_pos, max_pos)
         except ValueError:
             # Case 3: Return string to nearest space
-            end = s.rfind(' ',min_pos,max_pos)
+            end = s.rfind(' ', min_pos, max_pos)
             if end == NOT_FOUND:
                 end = max_pos
         return s[0:end] + suffix
