@@ -4,23 +4,31 @@
       %h4 Account Information
       %ul.nav.nav-pills.nav-stacked
         %li{"ng-class" => "{true: 'active'}[view=='general']"}
-          %a{"ng-click" => "view='general'"} General
-        %li{"ng-show" => "!acc_user.gh_linked"}
-          %a{href: "/oauth/gh/link"}
-            %i.fa.fa-github.fa-large
-              Link Github Account
-        %li{"ng-show" => "!acc_user.tw_linked"}
-          %a{href: "/oauth/tw/link"}
-            %i.fa.fa-twitter.fa-large
-              Link Twitter Account
-        %li{"ng-show" => "!acc_user.go_linked"}
-          %a{href: "/oauth/go/link"}
-            %i.fa.fa-google-plus.fa-large
-              Link Google Account
+          %a{"ng-click" => "view='general'"}
+            %i.fa.fa-globe
+              General
       %h4 Financial
       %ul.nav.nav-pills.nav-stacked
         %li{"ng-class" => "{true: 'active'}[view=='add_credit']"}
-          %a{"ng-click" => "view='add_credit'"} Add Funds
+          %a{"ng-click" => "view='add_credit'"}
+            %i.fa.fa-credit-card
+              Add Funds
         %li{"ng-class" => "{true: 'active'}[view=='charges']"}
-          %a{"ng-click" => "view='charges'"} Charge History
+          %a{"ng-click" => "view='charges'"}
+            %i.fa.fa-book.fa-large
+              Charge History
+      %h4 Link accounts
+      %ul.nav.nav-pills.nav-stacked
+        %li{"ng-show" => "!acc_user.gh_linked"}
+          %a{href: "/oauth/gh/link"}
+            %i.fa.fa-github
+              Link Github
+        %li{"ng-show" => "!acc_user.tw_linked"}
+          %a{href: "/oauth/tw/link"}
+            %i.fa.fa-twitter
+              Link Twitter
+        %li{"ng-show" => "!acc_user.go_linked"}
+          %a{href: "/oauth/go/link"}
+            %i.fa.fa-google-plus
+              Link Google
     .col-md-9.fade{"ng-include" => "'{{template_path}}account/' + view + '.html'"}

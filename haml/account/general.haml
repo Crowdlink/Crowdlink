@@ -3,8 +3,17 @@
   .panel.panel-default
     %table.table
       %tr
-        %th Username
+        %th
+          %i.fa.fa-user
+          \&nbsp;
+          Username
         %td{"ng-bind" => "acc_user.username"}
+      %tr
+        %th
+          %i.fa.fa-edit
+          \&nbsp;
+          Joined
+        %td {[{ acc_user.created_at | date:'mediumDate' }]} ({[{ acc_user.created_at | date_ago }]})
   %div{"ng-show" => "acc_user.gh_linked || acc_user.go_linked || acc_user.tw_linked"}
     %h3 Linked Accounts
     .panel.panel-default
@@ -14,10 +23,10 @@
             %i.fa{"ng-class" => "{false: 'fa-github', true: 'fa-spin fa-spinner'}[saving.acc_user.gh_linked]"}
             \&nbsp;
             Github
-          %td
+          %td.text-center
             %a{href: "{[{acc_user.profile.gh.profile_link}]}"}
               {[{acc_user.profile.gh.username}]}
-          %td
+          %td.text-center
             %span.label.label-success
               Linked
           %td.pull-right
@@ -28,10 +37,10 @@
             %i.fa{"ng-class" => "{false: 'fa-twitter', true: 'fa-spin fa-spinner'}[saving.acc_user.tw_linked]"}
             \&nbsp;
             Twitter
-          %td
+          %td.text-center
             %a{href: "http://twitter.com/{[{acc_user.profile.tw.username}]}"}
               @{[{acc_user.profile.tw.username}]}
-          %td
+          %td.text-center
             %span.label.label-success
               Linked
           %td.pull-right
@@ -42,10 +51,10 @@
             %i.fa{"ng-class" => "{false: 'fa-google-plus', true: 'fa-spin fa-spinner'}[saving.acc_user.go_linked]"}
             \&nbsp;
             Google
-          %td
+          %td.text-center
             %a{href: "{[{ acc_user.profile.go.profile_link }]}"}
               {[{acc_user.profile.go.name}]}
-          %td
+          %td.text-center
             %span.label.label-success
               Linked
           %td.pull-right
@@ -57,13 +66,15 @@
     .panel.panel-default
       %table.table
         %tr{"ng-repeat" => "email in acc_user.emails"}
-          %td
+          %th
+            %i.fa.fa-envelope-o
+            \&nbsp;
             {[{email.address}]}
-          %td
+          %td.text-center
             %span.label{"ng-class" => "{true: 'label-success', false: 'label-danger'}[email.verified]"}
               %span{"ng-show" => "email.verified"} Verified
               %span{"ng-hide" => "email.verified"} Un-Verified
-          %td
+          %td.text-center
             %button.btn.btn-primary.btn-xs{"ng-click" => "unlink('acc_user.go_linked')",
               "ng-hide" => "email.primary"}
               Set Primary
