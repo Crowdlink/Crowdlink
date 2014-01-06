@@ -42,15 +42,9 @@
               %a.button.btn.btn-default{:href => ""}
                 %i.fa.fa-large.fa-heart
                 .in-button.hidden-xs.hidden-sm.hidden-md Donate
-
         .row
           .col-md-12
             {[{ project.desc }]}
-
-
-
-
-
 
     %br
     .row
@@ -71,6 +65,9 @@
           %a{"ng-click" => "view='settings'"}
             %i.fa.fa-gear
             Project Settings
+
 %div{style:"box-shadow:0px -2px 0px #DDD;background-color:#fff;"}
   .container
     .row.inner-pad.tab-content{"ng-include" => "'{{template_path}}project/' + view + '.html'"}
+    %br
+%hr{style:"margin:0px;box-shadow:2px 2px 2px #DDD;"}

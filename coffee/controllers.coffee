@@ -481,6 +481,7 @@ mainControllers.controller('profileController',
 ($scope, $rootScope, $routeParams, prof_user, $injector)->
   $injector.invoke(parentEditController, this, {$scope: $scope})
   $scope.prof_user = prof_user.objects[0]
+  $scope.view = 'feed'
   $scope.build_data = (frag) ->
     data =
       id: $scope.prof_user.id

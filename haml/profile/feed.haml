@@ -1,0 +1,6 @@
+%h3
+  Public feed
+%hr.feed
+%div{"ng-repeat" => "event in prof_user.public_events"}
+  %div.row.feed{"ng-include" => "'{{template_path}}' + event.template"}
+  %hr.feed

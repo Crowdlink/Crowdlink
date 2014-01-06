@@ -1,0 +1,49 @@
+%h3
+  General user information
+  %a.button.btn.btn-info.pull-right{:href => ""}
+    %i.fa.fa-large.fa-exclamation
+    Report this user
+%hr.feed
+.container
+  .col-lg-8.col-lg-offset2
+    %table.table-hover.info-table
+      %tbody
+        %tr
+          %td User name:
+          %td {[{ prof_user.username }]}
+        %tr
+          %td Joined:
+          %td {[{ prof_user.created_at | date:'mediumDate' }]} ({[{ prof_user.created_at | date_ago }]})
+        %tr{"ng-show" => "prof_user.gh_linked"}
+          %td
+            %i.fa.fa-github
+            \&nbsp;
+            Linked Github
+          %td
+            %a{href: "{[{prof_user.profile.gh.profile_link}]}"}
+              {[{prof_user.profile.gh.username}]}
+        %tr{"ng-show" => "prof_user.tw_linked"}
+          %td
+            %i.fa.fa-twitter
+            \&nbsp;
+            Linked Twitter
+          %td
+            %a{href: "http://twitter.com/{[{prof_user.profile.tw.username}]}"}
+              @{[{prof_user.profile.tw.username}]}
+        %tr{"ng-show" => "prof_user.go_linked"}
+          %td
+            %i.fa.fa-google-plus
+            \&nbsp;
+            Linked Google
+          %td
+            %a{href: "{[{ prof_user.profile.go.profile_link }]}"}
+              {[{prof_user.profile.go.name}]}
+        %tr{"ng-show" => "prof_user.donations_recieved > 0"}
+          %td Donations Recieved:
+          %td
+        %tr{"ng-show" => "prof_user.pledges_recieved > 0"}
+          %td Pledges Recieved:
+          %td
+        %tr{"ng-show" => "prof_user.contributors > 0"}
+          %td Total Contributors:
+          %td

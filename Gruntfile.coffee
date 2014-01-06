@@ -69,6 +69,10 @@ module.exports = (grunt) ->
           "static/templates/project/issues.html": "processed/haml/project/issues.haml"
           "static/templates/project/general_info.html": "processed/haml/project/general_info.haml"
           "static/templates/project/settings.html": "processed/haml/project/settings.haml"
+          "static/templates/profile/feed.html": "processed/haml/profile/feed.haml"
+          "static/templates/profile/projects.html": "processed/haml/profile/projects.haml"
+          "static/templates/profile/general_info.html": "processed/haml/profile/general_info.haml"
+          "static/templates/profile/settings.html": "processed/haml/profile/settings.haml"
 
           # Server Side
           "templates/base.html": "processed/haml/base.haml"

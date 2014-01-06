@@ -603,11 +603,14 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                      ]
     home_join = inherit_lst(standard_join,
                             [{'obj': 'events'},
-                             {'obj': 'projects',
-                              'join_prof': 'disp_join'}])
+                             {'obj': 'projects', 'join_prof': 'disp_join'}])
 
     page_join = inherit_lst(standard_join,
                             [{'obj': 'public_events'},
+                             {'obj': 'projects', 'join_prof': 'disp_join'},
+                              'gh_linked',
+                              'go_linked',
+                              'tw_linked',
                               'subscribed'])
 
     settings_join = inherit_lst(standard_join,
