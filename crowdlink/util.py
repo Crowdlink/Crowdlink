@@ -100,17 +100,13 @@ def provision():
 
     # make a bunch of testing users
 
-    # velma doesn't have a real username
-    velma = User.create(None, "testing", "velma@crowdlink.io")
-    users['velma'] = velma
-
     # fred isn't activated, no email address verified
     fred = User.create("fred", "testing", "fred@crowdlink.io")
     users['fred'] = fred
     db.session.commit()
 
     # regular users...
-    for username in ['scrappy', 'shaggy', 'scooby', 'daphne', 'crowdlink',
+    for username in ['velma', 'scrappy', 'shaggy', 'scooby', 'daphne', 'crowdlink',
                      'barney', 'betty']:
         usr = User.create(username, "testing", username + "@crowdlink.io")
         db.session.commit()

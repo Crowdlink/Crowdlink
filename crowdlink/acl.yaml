@@ -53,6 +53,8 @@ user:
         action:
             - oauth_create
             - login
+            - send_recover
+            - recover
     noactive_user:
         view:
             - standard_join

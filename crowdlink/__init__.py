@@ -9,6 +9,7 @@ import os
 import json
 import logging
 import cryptacular.bcrypt
+import sqlalchemy
 
 
 root = os.path.abspath(os.path.dirname(__file__) + '/../')

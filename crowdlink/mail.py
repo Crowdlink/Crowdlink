@@ -21,11 +21,22 @@ class EmailBase(object):
         self.email_timeout = current_app.config.get('email_timeout', 2)
         self.email_username = current_app.config.get('email_username', '')
         self.email_password = current_app.config.get('email_password', '')
+        self.send_real = current_app.config.get('send_emails', True)
 
         self.plain_context = {}
         self.html_context = {}
 
-    def send_email(self, to_addr):
+    def send(self, to_addr, force_send=None):
+        # allow us to override the application level config manually
+        if force_send is not None:
+            self.send_real = force_send
+
+        # if we shouldn't actually send, then don't
+        if self.send_real is False:
+            current_app.logger.debug(
+                "Not sending email because configuration or override")
+            return True
+
         send_addr = current_app.config['email_send_address']
         send_name = current_app.config['email_send_name']
 
@@ -66,6 +77,7 @@ class EmailBase(object):
             current_app.logger.warn('Email unable to send', exc_info=True)
             return False
 
+
 class TestEmail(EmailBase):
     """ a email used to test our systems and template """
 
@@ -91,14 +103,15 @@ class TestEmail(EmailBase):
             button_one_link=url,
             sincere=True)
 
+
 class ActivationEmail(EmailBase):
-    """ Email class for creating an activation email """
+    """ Email for creating an activation email """
 
     html_template = "email/base.html"
     subject = 'Activate your Crowdlink.io Account'
 
     def __init__(self, email_obj):
-        super(TestEmail, self).__init__()
+        super(ActivationEmail, self).__init__()
         if email_obj.activate_hash is None:
             raise AttributeError("Tried to send an activation email for an "
                                  "email with no activation hash")
@@ -117,4 +130,36 @@ class ActivationEmail(EmailBase):
             one_button_row=True,
             body=body,
             button_one_text='Activate',
+            button_one_link=activation_href,
+            sincere=True)
+
+
+class RecoverEmail(EmailBase):
+    """ Email for recovering account password """
+
+    html_template = "email/base.html"
+    subject = 'Recover your account password at Crowdlink'
+
+    def __init__(self, user_obj):
+        super(RecoverEmail, self).__init__()
+        if user_obj.recover_hash is None:
+            raise AttributeError("Tried to send a recovery email for a "
+                                 "user with no recovery hash")
+        body = """
+        Someone has requested to recover your account password for your account
+        on Crowdlink.io. To change your password click below and follow the
+        link.
+        """
+        recovery_href = url_for('angular_root',
+                                _external=True,
+                                _anchor='/recover/{hash}/{user_id}'
+                                .format(hash=user_obj.recover_hash,
+                                        user_id=user_obj.id))
+
+        self.html_context = dict(
+            title='Recover your account on Crowdlink',
+            one_button_row=True,
+            body=body,
+            button_one_text='Recover',
+            button_one_link=recovery_href,
             sincere=True)

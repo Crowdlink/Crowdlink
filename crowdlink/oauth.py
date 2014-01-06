@@ -226,7 +226,7 @@ def oauth_retrieve(provider, raw_token, email_only=False):
     when running the actual register action. """
     retval = {}
     current_app.logger.debug("OAuth data from session {}"
-                             .format(session['oauth']))
+                             .format(session.get('oauth')))
     try:
         if provider == 'gh':
             # request new api that gives verification status

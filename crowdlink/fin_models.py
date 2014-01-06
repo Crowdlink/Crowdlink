@@ -290,6 +290,43 @@ class Transfer(Sink, PrivateMixin, base):
         self.cleared = True
 
 
+class Dispute(base, PrivateMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', foreign_keys=[user_id])
+    thing_id = db.Column(db.Integer, db.ForeignKey('thing.id'))
+    thing = db.relationship('Thing', backref='disputes')
+    content = db.Column(db.String)
+
+    standard_join = ['id',
+                     'content',
+                     {'obj': 'user', 'join_prof': 'disp_join'},
+                     {'obj': 'thing', 'join_prof': 'disp_join'}]
+
+    @classmethod
+    def create(cls, thing, content, user=current_user):
+        db.session.rollback()
+
+        if thing.type in ['Project', 'Solution']:
+            current_app.logger.warn(
+                "Someone tried to report a Thing that was of unallowed type"
+                "\nThing ID: {}\nUser ID: {}"
+                .format(thing.id,
+                        user.id))
+            raise AttributeError
+
+        # if they're reporting an issue
+        report = cls(thing=thing,
+                     content=content,
+                     user=user)
+
+        # freeze any earmarks that are in place if they're disputing an Issue
+        if thing.type == "Issue":
+            db.session.flush()
+            user.earmarks.filter(Earmark.thing == thing
+                    ).one().dispute(event_data={'report_id': report.id})
+
+
 class Earmark(StatusMixin, Sink, base):
     """ Represents a users intent to give money to another member. """
     # status information as it relates to the attached thing

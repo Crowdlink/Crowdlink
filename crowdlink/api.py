@@ -1,13 +1,12 @@
 from flask import Blueprint, request, current_app, jsonify
 from flask.ext.login import (login_required, logout_user, current_user,
-                             request, login_user)
+                             login_user)
 from flask.ext.oauthlib.client import OAuthException
 
-from .api_base import API, get_joined, jsonify_status_code
+from .api_base import API, get_joined, jsonify_status_code, APISyntaxError
 from .oauth import oauth_retrieve, oauth_from_session
-from .models import (User, Project, Issue, Solution, Email, Dispute, Comment,
-                     Thing)
-from .fin_models import Earmark, Recipient, Transfer, Charge
+from .models import User, Project, Issue, Solution, Email, Comment, Thing
+from .fin_models import Earmark, Recipient, Transfer, Charge, Dispute
 
 from . import oauth
 
@@ -19,17 +18,6 @@ import stripe
 
 api = Blueprint('api_bp', __name__)
 
-"""
-def error_handler(e, code):
-    return jsonify_status_code(400, e.message)
-
-
-api.register_error_handler(404, lambda e: error_handler(e, 404))
-api.register_error_handler(400, lambda e: error_handler(e, 400))
-api.register_error_handler(403, lambda e: error_handler(e, 403))
-api.register_error_handler(409, lambda e: error_handler(e, 409))
-api.register_error_handler(500, lambda e: error_handler(e, 500))
-"""
 
 @api.errorhandler(Exception)
 def api_error_handler(exc):
@@ -55,24 +43,32 @@ def api_error_handler(exc):
     # error_key is sent back to the frontend so they know where to send the
     # user
     if hasattr(e, 'error_key'):
-        kwargs = {'error_key': e.error_key}
+        kwargs = dict(error_key=e.error_key, success=False)
     else:
-        kwargs = {}
+        kwargs = dict(success=False)
 
     # Common API errors
     if e is KeyError or e is AttributeError:
-        ret = 400, 'Incorrect syntax on key ' + str(e.message)
+        ret = 400, 'Incorrect syntax or missing key ' + str(exc.message)
     elif e is AssertionError:
         ret = 403, "You don't have permission to do that"
+        msg = INFO
+    elif e is APISyntaxError:
+        ret = 400, exc.message
         msg = INFO
     elif e is valideer.base.ValidationError:
         ret = 200, "Validation Error"
     elif e is TypeError:
         if meth == 'POST':
-            if 'at least' in e.message:
+            if 'at least' in exc.message:
                 ret = 400, "Required arguments missing from API create method"
-            elif 'argument' in e.message and 'given' in e.message:
+            elif 'argument' in exc.message and 'given' in exc.message:
                 ret = 400, "Extra arguments supplied to the API create method"
+            elif 'unexpected' in exc.message:
+                ret = 400, "Invalid keyword argument provided"
+            else:
+                ret = 500, "Unkown internal server error"
+                msg = ERROR
         else:
             ret = 500, "Unkown internal server error"
             msg = ERROR
@@ -100,6 +96,8 @@ def api_error_handler(exc):
         ret = 409, "A duplicate value already exists in the database"
     elif e is sqlalchemy.exc.InvalidRequestError:
         ret = 400, "Client programming error, invalid search sytax used."
+    elif e is sqlalchemy.exc.DataError:
+        ret = 400, "ORM returned invalid data for an argument"
     elif issubclass(e, sqlalchemy.exc.SQLAlchemyError):
         ret = 402, "An unknown database operations error has occurred"
         msg = WARN, 'Uncaught type of database exception'
@@ -122,11 +120,12 @@ def api_error_handler(exc):
         ret = 500, "Internal Server error"
 
     if ret is None:
-        current_app.logger.error("Error handler for type {} failed to return proper information".format(e.__name__))
-        return jsonify("Exception occured in error handling"), 500
-    else:
-        response = jsonify(message=ret[1], **kwargs)
-        response.status_code = ret[0]
+        current_app.logger.error("Error handler for type {} failed to return "
+                                 "proper information".format(e.__name__))
+        ret = 500, "Exception occured in error handling"
+
+    response = jsonify(message=ret[1], **kwargs)
+    response.status_code = ret[0]
     # if we should run special logging...
     if msg is not None:
         # allow the user to just change the log level by changing msg
@@ -256,7 +255,7 @@ class IssueAPI(API):
         elif pid:
             project = Project.query.filter(Project.id == pid).one()
         else:
-            raise SyntaxError(
+            raise APISyntaxError(
                     "Unable to identify parent project from information given")
 
         self.params['project'] = project
@@ -283,7 +282,7 @@ class SolutionAPI(API):
         elif iid:
             issue = Issue.query.filter(Issue.id == iid).one()
         else:
-            raise SyntaxError(
+            raise APISyntaxError(
                     "Unable to identify parent Issue from information given")
 
         self.params['issue'] = issue
@@ -322,7 +321,7 @@ class CommentAPI(API):
         if tid:
             thing = Thing.query.filter(Thing.id == tid).one()
         else:
-            raise SyntaxError(
+            raise APISyntaxError(
                     "Unable to identify parent Thing from information given")
 
         self.params['thing'] = thing

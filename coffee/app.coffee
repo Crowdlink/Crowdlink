@@ -28,9 +28,18 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
   $routeProvider.when("/login",
     templateUrl: "{{ template_path }}login.html"
     controller: "loginController"
-  ).when("/logout",
-    templateUrl: "main.html"
-    controller: "remoteController"
+    resolve:
+      login: login_resolver('not_user')
+  ).when("/recover",
+    templateUrl: "{{ template_path }}send_recover.html"
+    controller: "sendRecoverController"
+    resolve:
+      login: login_resolver('not_user')
+  ).when("/recover/:hash/:user_id",
+    templateUrl: "{{ template_path }}recover.html"
+    controller: "recoverController"
+    resolve:
+      login: login_resolver('not_user')
   ).when("/",
     templateUrl: "{{ template_path }}home.html"
     controller: "frontPageController"
@@ -138,6 +147,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             project_maintainer_username: $route.current.params.username
             project_url_key: $route.current.params.purl_key
             url_key: $route.current.params.url_key
+          __one: true
           join_prof: "page_join").$promise
   ).when("/:username/:purl_key/:url_key/new_solution",
     templateUrl: "{{ template_path }}new_solution.html"

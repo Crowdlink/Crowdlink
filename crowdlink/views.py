@@ -1,12 +1,11 @@
-from flask import (Blueprint, render_template, send_file, current_app, flash,
-                   redirect, url_for, get_flashed_messages, session, abort,
-                   request)
+from flask import (render_template, send_file, redirect, url_for, session,
+                   abort, request)
 from flask.ext.login import current_user
 
-from . import root, lm, app
+from . import root, app, db
+from .models import Email
 from .api_base import get_joined
 
-import sqlalchemy
 import os
 
 
@@ -47,6 +46,7 @@ def error_handler(e, code):
 
 app.register_error_handler(404, lambda e: error_handler(e, 404))
 app.register_error_handler(400, lambda e: error_handler(e, 400))
+app.register_error_handler(402, lambda e: error_handler(e, 402))
 app.register_error_handler(403, lambda e: error_handler(e, 403))
 app.register_error_handler(409, lambda e: error_handler(e, 409))
 app.register_error_handler(500, lambda e: error_handler(e, 500))
@@ -80,6 +80,24 @@ def angular_root():
                            user=user,
                            messages=messages)
 
+
 @app.route('/activate', methods=['GET'])
 def activate_email():
-    pass
+    try:
+        hash = request.args['hash']
+        email_address = request.args['address']
+    except KeyError:
+        abort(400)
+    else:
+        try:
+            if not Email.activate_email(email_address, hash):
+                abort(400)
+            try:
+                db.session.commit()
+            except Exception:
+                abort(400)
+        except Exception:
+            abort(500)
+
+        send_message("Your email address is now verified.", cls='alert-success')
+    return redirect(url_for('angular_root', _anchor='/'))

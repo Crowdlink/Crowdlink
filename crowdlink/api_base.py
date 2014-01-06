@@ -332,7 +332,7 @@ class API(MethodView):
         symfunc = cls.as_view(cls.__name__)
         mod.add_url_rule(url,
                          view_func=symfunc,
-                         methods=['GET', 'PUT', 'PATCH', 'DELETE'])
+                         methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
 
 def get_joined(obj, join_prof="standard_join"):
     # If it's a list, join each of the items in the list and return

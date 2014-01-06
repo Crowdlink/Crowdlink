@@ -23,11 +23,13 @@ parentFormController = ($scope) ->
       else if value.status == 404
         $scope.errors = ["URL not found, client side sofware error.", ]
       else if value.status == 400
-        $scope.errors = ["Client side syntax error, this is a mistake on our part. Sorry about this..", ]
+        $scope.errors = ["Client side syntax error, this likely is a mistake on our part. Sorry about this..", ]
       else if value.status == 409
         $scope.errors = ["One of the submitted data values is a duplicate, and thus submission of this data isn't allowed.", ]
+      else if value.status == 402
+        $scope.errors = ["The server was unable to execute your requested action.", ]
       else
-        $scope.errors = ["Unkown error communicating with server", ]
+        $scope.errors = ["Unkown error interacting with server", ]
 
 # parentEditController ========================================================
 parentEditController = ($scope, $rootScope, $timeout, IssueService,
@@ -499,7 +501,7 @@ mainControllers.controller('loginController',
 
   $scope.submit = () ->
     $scope.errors = []
-    UserService.login(
+    UserService.action(
       identifier: $scope.identifier
       password: $scope.password
       __action: 'login'
@@ -567,7 +569,7 @@ mainControllers.controller('oauthSignupController',
     else
       primary = $scope.primary
 
-    UserService.oauth_create(
+    UserService.action(
       username: $scope.username
       password: $scope.pass
       cust_email: $scope.email
@@ -586,17 +588,19 @@ mainControllers.controller('oauthSignupController',
 
 # SignupController ============================================================
 mainControllers.controller('signupController',
-($scope, $rootScope, $routeParams, $injector, UserService)->
+($scope, $rootScope, $routeParams, $location, $injector, UserService)->
   $injector.invoke(parentFormController, this, {$scope: $scope})
   $rootScope.title = "Sign Up"
 
   $scope.submit = () ->
-    UserService.post(
+    UserService.create(
       username: $scope.username
       password: $scope.pass
-      email: $scope.email
-    ,(value) ->
+      email_address: $scope.email
+    , (value) ->
       if 'success' of value and value.success
+        $rootScope.logged_in = true
+        $rootScope.user = value.objects[0]
         $location.path("/home").replace()
       else
         $scope.error_report(value)
@@ -708,6 +712,57 @@ mainControllers.controller('homeController',
 mainControllers.controller('frontPageController',
 ($scope, $rootScope, $routeParams)->
   $rootScope.title = ""
+)
+
+# recoverController =======================================================
+mainControllers.controller('recoverController',
+($scope, $rootScope, $routeParams, $location, $injector, UserService)->
+
+  $injector.invoke(parentFormController, this, {$scope: $scope})
+  $rootScope.title = "Recover Account"
+  $scope.submit = ->
+    UserService.action(
+      password: $scope.pass
+      hash: $routeParams.hash
+      id: $routeParams.user_id
+      __action: 'recover'
+    ,(value) ->
+      if 'success' of value and value.success
+        $rootScope.flash.push(
+          message: "Successfully changed your password. You're now logged in."
+          timeout: null
+          class: 'alert-success'
+        )
+        $rootScope.user = value.objects[0]
+        $rootScope.logged_in = true
+        $location.path("/home")
+      else
+        $scope.error_report(value)
+    , $scope.error_report)
+)
+
+# sendRecoverController =======================================================
+mainControllers.controller('sendRecoverController',
+($scope, $rootScope, $routeParams, $location, $injector, UserService)->
+
+  $injector.invoke(parentFormController, this, {$scope: $scope})
+  $rootScope.title = "Recover Account"
+  $scope.submit = ->
+    UserService.action(
+      identifier: $scope.identifier
+      __action: 'send_recover'
+      __cls: true
+    ,(value) ->
+      if 'success' of value and value.success
+        $rootScope.flash.push(
+          message: "An email has been sent to #{value.email} with recovery instructions."
+          timeout: null
+          class: 'alert-success'
+        )
+        $location.path("/login")
+      else
+        $scope.error_report(value)
+    , $scope.error_report)
 )
 
 # errorController =======================================================

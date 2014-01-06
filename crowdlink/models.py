@@ -13,6 +13,7 @@ from .acl import acl
 from .oauth import (oauth_retrieve, providers, oauth_profile_populate,
                     check_action_provider, oauth_from_session)
 from .lib import send_email
+from .mail import RecoverEmail, ActivationEmail
 from .api_base import get_joined, APISyntaxError
 
 import valideer as V
@@ -470,35 +471,39 @@ class Comment(base):
 
 
 class Email(base):
-    standard_join = ['address', 'verified', 'primary']
+    standard_join = ['address', 'activated', 'primary']
 
     user = db.relationship('User', backref=db.backref('emails'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     address = db.Column(db.String, primary_key=True)
-    verified = db.Column(db.Boolean, default=False, nullable=False)
+    activated = db.Column(db.Boolean, default=False, nullable=False)
     primary = db.Column(db.Boolean, nullable=False)
     activate_hash = db.Column(db.String)
-    hash_gen = db.Column(db.DateTime)
+    activate_gen = db.Column(db.DateTime)
 
     @classmethod
     def activate_email(self, email, activate_hash="", force=False):
+        current_app.logger.debug(
+            "Activating user with params; email: {}; activate_hash: '{}'"
+            .format(email, activate_hash))
         if force:
             return bool(Email.query
                         .filter_by(address=email)
-                        .update({'verified': True}))
+                        .update({'activated': True}))
         else:
             day_ago = datetime.utcnow() - timedelta(days=1)
-            return bool(Email.query
-                        .filter_by(address=email, activate_hash=activate_hash)
-                        .filter(Email.hash_gen > day_ago)
-                        .update({'verified': True, 'hash_gen': None, 'activate_hash': None}))
+            vals = (Email.query
+                    .filter_by(address=email, activate_hash=activate_hash)
+                    .filter(Email.activate_gen > day_ago)
+                    .update({'activated': True, 'activate_gen': None, 'activate_hash': None}))
+            return bool(vals)
 
     @classmethod
-    def create(cls, address, primary=True, verified=False, user=current_user):
+    def create(cls, address, primary=True, activated=False, user=current_user):
         inst = cls(address=address,
                    user=user,
                    primary=primary,
-                   verified=verified)
+                   activated=activated)
 
         db.session.add(inst)
         return inst
@@ -508,57 +513,11 @@ class Email(base):
         change.  If the commit action is successful, an email will be sent to
         the user """
         self.activate_hash = hashlib.sha256(os.urandom(10)).hexdigest()
-        self.hash_gen = datetime.utcnow()
-
-        db.session.commit()
+        self.activate_gen = datetime.utcnow()
 
         # complicated block that allows force send to either force to send or
         # force to not send. None defers to send_emails config value
-        if (current_app.config.get('send_emails', True) or force_send is True) and force_send is None:
-            return send_email(
-                self.address,
-                'confirm',
-                activate_hash=self.activate_hash,
-                user_id=self.user_id)
-        else:
-            return self.activate_hash, self.hash_gen
-
-
-class Dispute(base, PrivateMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship('User', foreign_keys=[user_id])
-    thing_id = db.Column(db.Integer, db.ForeignKey('thing.id'))
-    thing = db.relationship('Thing', backref='disputes')
-    content = db.Column(db.String)
-
-    standard_join = ['id',
-                     'content',
-                     {'obj': 'user', 'join_prof': 'disp_join'},
-                     {'obj': 'thing', 'join_prof': 'disp_join'}]
-
-    @classmethod
-    def create(cls, thing, content, user=current_user):
-        db.session.rollback()
-
-        if thing.type in ['Project', 'Solution']:
-            current_app.logger.warn(
-                "Someone tried to report a Thing that was of unallowed type"
-                "\nThing ID: {}\nUser ID: {}"
-                .format(thing.id,
-                        user.id))
-            raise AttributeError
-
-        # if they're reporting an issue
-        report = cls(thing=thing,
-                     content=content,
-                     user=user)
-
-        # freeze any earmarks that are in place if they're disputing an Issue
-        if thing.type == "Issue":
-            db.session.flush()
-            user.earmarks.filter(Earmark.thing == thing
-                    ).one().dispute(event_data={'report_id': report.id})
+        return ActivationEmail(self).send(self.address)
 
 
 class User(Thing, SubscribableMixin, ReportableMixin):
@@ -572,6 +531,10 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     gh_token = db.Column(db.String, unique=True)
     tw_token = db.Column(db.String, unique=True)
     go_token = db.Column(db.String, unique=True)
+
+    # recovery
+    recover_hash = db.Column(db.String)
+    recover_gen = db.Column(db.DateTime)
 
     # Event information
     public_events = db.Column(EventJSON, default=list)
@@ -749,25 +712,81 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     @classmethod
     def login(cls, identifier, password):
         user = User.query.filter(
-            sqlalchemy.or_(User.emails.any(Email.address==identifier), User.username==identifier)).first()
+            sqlalchemy.or_(User.emails.any(Email.address==identifier),
+                           User.username==identifier)).first()
         if user and user.check_password(password):
             login_user(user)
             return {'objects': [get_joined(user)]}
         return False
 
+    def recover(self, hash, password):
+        day_ago = datetime.utcnow() - timedelta(days=1)
+        if hash.strip() != self.recover_hash:
+            current_app.logger.debug("Wrong recover hash: {} vs {}"
+                                     .format(hash, self.recover_hash))
+            return {'success': False,
+                    'message':
+                    ('Invalid recovery hash, maybe you copy and pasted the '
+                     'link wrong?')}
+        elif self.recover_gen < day_ago:
+            return {'success': False,
+                    'message':
+                    ('Recovery hash has expired (it\'s too old). Please '
+                     'resend a fresh one from the Account recovery page.')}
+
+        self.password = password
+        login_user(self)
+
+        return {'objects': [get_joined(self)]}
+
+    @classmethod
+    def send_recover(cls, identifier, force_send=None):
+
+        user = User.query.filter(
+            sqlalchemy.or_(User.emails.any(Email.address==identifier),
+                           User.username==identifier)).first()
+        if not user:
+            return {'success': False,
+                    'message': 'Unable to find an account that matched that information'}
+
+        # set their secure recovery hash
+        user.recover_hash = hashlib.sha256(os.urandom(10)).hexdigest()
+        user.recover_gen = datetime.utcnow()
+
+        db.session.commit()
+
+        # if they're recovering via an email address, send it to the requested
+        # address
+        if '@' in identifier:
+            recipient = identifier
+        else:
+            recipient = user.primary_email.address
+
+        # send dat email
+        RecoverEmail(user).send(recipient, force_send=force_send)
+
+        return {'email': recipient}
+
     # User creation logic
     # ========================================================================
     @classmethod
-    def create(cls, username, password, email_address, user=None):
+    def create(cls, username, password, email_address, user=None, force_send=None):
         user = cls(username=username)
         user.password = password
         db.session.add(user)
-        email = Email(address=email_address, user=user, primary=True)
+
+        # create their email and send them an activation email
+        email = Email.create(address=email_address, user=user, primary=True)
+        if not email.send_activation(force_send=force_send):
+            return False
         db.session.add(email)
+
+        db.session.flush()
+        login_user(user)
         return user
 
     @classmethod
-    def oauth_create(cls, username, primary, password=None, cust_email=None):
+    def oauth_create(cls, username, primary, password=None, cust_email=None, force_send=None):
         current_app.logger.debug(
             dict(username=username, password=password, primary=primary, cust_email=cust_email))
 
@@ -796,7 +815,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             email = Email.create(mail['email'],
                                  user=user,
                                  primary=False,
-                                 verified=True)
+                                 activated=True)
             if primary == mail['email']:
                 email.primary = True
                 prim_set = True
@@ -811,6 +830,9 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             if primary == cust_email:
                 email.primary = True
                 prim_set = True
+            # send the activation email to the user
+            if not email.send_activation(force_send=force_send):
+                return False
 
         if prim_set is False:
             raise APISyntaxError(
@@ -852,7 +874,8 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             return ['admin']
         if self.username is None:
             return ['usernameless']
-        if not self.primary_email.verified:
+        print self.username
+        if not self.primary_email.activated:
             return ['noactive_user']
         return ['user']
 
