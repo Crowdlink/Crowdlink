@@ -407,12 +407,14 @@ mainApp.directive "toggleButton", ["$http", "$timeout", ($http, $compile) ->
       if val
         icon.removeClass()
         icon.addClass('fa ' + icon.attr('on'))
-        elem.addClass('active')
+        elem.addClass(attrs.on)
+        elem.removeClass(attrs.off)
         text.html(text.attr('on'))
       else
         icon.removeClass()
         icon.addClass('fa ' + icon.attr('off'))
-        elem.removeClass('active')
+        elem.removeClass(attrs.on)
+        elem.addClass(attrs.off)
         text.html(text.attr('off'))
 
 

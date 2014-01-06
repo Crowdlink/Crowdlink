@@ -7,7 +7,8 @@
           %h4
             %b> Joined:
             {[{ prof_user.created_at | date:'mediumDate' }]} ({[{ prof_user.created_at | date_ago }]})
-          %a.button{"toggle-button" => "prof_user.subscribed",
+          %a.btn.button{"toggle-button" => "prof_user.subscribed",
+            on: "btn-success", off: "btn-info",
             "ng-click" => "swap_save('prof_user.subscribed')"}
             %i{on: "fa-eye-slash", off: "fa-eye"}
             .in-button{on: "Unwatch", off: "Watch"}

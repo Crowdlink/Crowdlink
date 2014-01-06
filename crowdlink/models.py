@@ -110,6 +110,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                              'name',
                              'subscribed',
                              'vote_status',
+                             'desc',
                              {'obj': 'public_events'},
                              {'obj': 'issues', 'join_prof': 'disp_join'},
                              ]

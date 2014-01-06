@@ -101,9 +101,42 @@ pre {
 }
 
 .nav-tabs {
+  border:0px;
+  position:relative;
+  top:-1px;
   >li {
+    cursor: pointer;
+    margin-left:10px;
     &.active a {
-      background-color:#EBEBEB;
+      margin:0px;
+      background:none;
+      background-color:#FFF;
+      border-left:1px solid #EEE;
+      border-right:1px solid #EEE;
+      border-bottom:4px solid white;
+      box-shadow: 2px -2px 2px #DDD;
+      color:#000;
+      &:hover {
+        color: inherit;
+        border-bottom:4px solid white;
+        border-left:1px solid #EEE;
+        border-right:1px solid #EEE;
+      }
+    }
+    a {
+      color:#999999;
+      margin:0px;
+//      background-color:lightgray !important;
+      background: linear-gradient(to top, rgb(246, 246, 246) 0%, rgb(255, 255, 255) 10px);
+      border-left:0px;
+      border-right:0px;
+      border-top:2px solid white;
+      border-bottom:3px solid #EEE;
+      &:hover {
+        color:#000000;
+        border-bottom:3px solid #EEE;
+        border-top:2px solid white;
+      }
     }
   }
 }
