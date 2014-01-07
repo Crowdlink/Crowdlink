@@ -1,11 +1,13 @@
+from flask.ext.login import current_user
+from pprint import pprint
+from copy import copy
+
 from crowdlink.tests import BaseTest, login_required_ctx
 from crowdlink.models import Issue, Project, Solution, Email, User, Thing
 from crowdlink.fin_models import Earmark
 import crowdlink.log_models as log_models
-from pprint import pprint
 
 import datetime
-from copy import copy
 
 
 class EarmarkTests(BaseTest):
@@ -56,13 +58,40 @@ class EmailTests(BaseTest):
         email = Email(user=self.user,
                       address=addr,
                       primary=False).save()
-        hash, date = email.send_activation(force=False)
-        assert isinstance(date, datetime.datetime)
+        email.send_activation(force_send=False)
+        self.db.session.commit()
+        assert isinstance(email.activate_gen, datetime.datetime)
 
-        Email.activate_email(addr, hash)
+        Email.activate_email(email.address, email.activate_hash)
         self.db.session.commit()
         self.db.session.refresh(email)
         print email.to_dict()
-        assert email.verified is True
+        assert email.activated is True
         assert email.activate_hash is None
-        assert email.hash_gen is None
+        assert email.activate_gen is None
+
+
+class UserTests(BaseTest):
+    def test_recover_user(self):
+        # fake the sending of the recover email
+        User.send_recover('velma', force_send=False)
+        self.db.session.commit()
+        user = User.query.filter_by(username='velma').one()
+        assert user.recover_hash is not None
+        assert user.recover_gen is not None
+
+        # now actually run the recover function
+        user.recover(user.recover_hash, 'new_password')
+        self.db.session.commit()
+        assert current_user == user
+
+    def test_login(self):
+        user = User.query.filter_by(username='velma').one()
+        ret = User.login()
+        assert ret['success'] is False
+        assert 'cred' in ret['message']
+        ret = User.login(identifier='velma')
+        assert ret['success'] is False
+        assert 'cred' in ret['message']
+        ret = User.login(identifier='velma', password='testing')
+        assert current_user == user

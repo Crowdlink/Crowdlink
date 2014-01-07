@@ -154,7 +154,7 @@ class TestBasic(TestModelsPrefilled):
     def test_create_duplicate(self):
         """ try creating a new user """
         p = {'username': 'mary', 'password': 'testing'}
-        p = self.post('/api/user', 400, params=p)
+        p = self.post('/api/user', 409, params=p)
 
     # Put Methods
     #########################################################################

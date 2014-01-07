@@ -120,7 +120,7 @@ class ActivationEmail(EmailBase):
         that it be activated. If this wasn't you, you can safely ignore this
         email. Otherwise, please click the link below.
         """
-        activation_href = url_for('activate_email',
+        activation_href = url_for('main.activate_email',
                                   _external=True,
                                   address=email_obj.address,
                                   hash=email_obj.activate_hash)
@@ -150,7 +150,7 @@ class RecoverEmail(EmailBase):
         on Crowdlink.io. To change your password click below and follow the
         link.
         """
-        recovery_href = url_for('angular_root',
+        recovery_href = url_for('main.angular_root',
                                 _external=True,
                                 _anchor='/recover/{hash}/{user_id}'
                                 .format(hash=user_obj.recover_hash,

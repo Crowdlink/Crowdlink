@@ -5,14 +5,13 @@ from enum import Enum
 
 from . import db, crypt, github
 from .model_lib import (base, SubscribableMixin, VotableMixin, EventJSON,
-                        StatusMixin, PrivateMixin, ReportableMixin,
+                        StatusMixin, ReportableMixin,
                         JSONEncodedDict)
-from .fin_models import Mark, Earmark
+from .fin_models import Mark
 from .util import inherit_lst
 from .acl import acl
 from .oauth import (oauth_retrieve, providers, oauth_profile_populate,
-                    check_action_provider, oauth_from_session)
-from .lib import send_email
+                    oauth_from_session)
 from .mail import RecoverEmail, ActivationEmail
 from .api_base import get_joined, APISyntaxError
 
@@ -710,7 +709,13 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     # Action methods
     # ========================================================================
     @classmethod
-    def login(cls, identifier, password):
+    def login(cls, identifier=None, password=None):
+        # by having kwargs we can run this function from angular with no params
+        # and prevent a 400 error... kinda hacky
+        if identifier is None or password is None:
+            return {'message': 'Invalid credentials',
+                    'success': False}
+
         user = User.query.filter(
             sqlalchemy.or_(User.emails.any(Email.address==identifier),
                            User.username==identifier)).first()
@@ -735,6 +740,8 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                      'resend a fresh one from the Account recovery page.')}
 
         self.password = password
+        self.recover_gen = None
+        self.recover_hash = None
         login_user(self)
 
         return {'objects': [get_joined(self)]}

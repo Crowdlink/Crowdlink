@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, url_for, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager
 from flask.ext.oauthlib.client import OAuth
@@ -97,9 +97,9 @@ def create_app(config='/application.json'):
 
     # Route registration
     # =========================================================================
-    from . import api, oauth, views, models, monkey_patch, fin_models, log_models
+    from . import api, views, oauth, models, monkey_patch, fin_models, log_models
     app.register_blueprint(api.api, url_prefix='/api')
-    app.register_blueprint(oauth.oauth, url_prefix='/oauth')
+    app.register_blueprint(views.main)
 
     # tell the session manager how to access the user object
     @lm.user_loader
@@ -108,6 +108,19 @@ def create_app(config='/application.json'):
             return models.User.query.filter_by(id=id).one()
         except sqlalchemy.orm.exc.NoResultFound:
             return None
+
+    def error_handler(e, code):
+        # prevent error loops
+        if request.path == '/':
+            return str(code)
+        return redirect(url_for('main.angular_root', _anchor='/errors/' + str(code)))
+
+    app.register_error_handler(404, lambda e: error_handler(e, 404))
+    app.register_error_handler(400, lambda e: error_handler(e, 400))
+    app.register_error_handler(402, lambda e: error_handler(e, 402))
+    app.register_error_handler(403, lambda e: error_handler(e, 403))
+    app.register_error_handler(409, lambda e: error_handler(e, 409))
+    app.register_error_handler(500, lambda e: error_handler(e, 500))
 
     return app
 

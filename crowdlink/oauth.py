@@ -4,13 +4,11 @@ from flask.ext.login import current_user, login_user
 from flask.ext.oauthlib.client import OAuthException
 
 from . import github, twitter, google, db
+from .views import main
 
 import copy
 import sqlalchemy
 import sys
-
-
-oauth = Blueprint('oauth', __name__)
 
 
 class OAuthAlreadyLinked(OAuthException):
@@ -28,7 +26,7 @@ class OAuthSessionExpired(OAuthException):
 
 
 def go_anchor(anchor):
-    return redirect(url_for('angular_root', _anchor=anchor))
+    return redirect(url_for('main.angular_root', _anchor=anchor))
 
 
 @github.tokengetter
@@ -49,7 +47,7 @@ def get_twitter_oauth_token():
         return None
 
 
-@oauth.errorhandler(OAuthException)
+@main.errorhandler(OAuthException)
 def oauth_error_handler(e):
     """ If any of the oauth views throws an OAuth exception it will be
     redirect the user to a useful error message via this method. """
@@ -63,7 +61,7 @@ def oauth_error_handler(e):
         error = 'oauth_error'
     else:
         error = e.error_key
-    return redirect(url_for('angular_root',
+    return redirect(url_for('main.angular_root',
                             _anchor='/errors/' + error))
 
 
@@ -97,7 +95,7 @@ def check_action_provider(action, provider):
     return (provider_obj, action)
 
 
-@oauth.route("/<provider>/<action>")
+@main.route("/<provider>/<action>")
 def init(provider=None, action=None):
     """ This redirects the user to the OAuth provider after checking that their
     actions are valid to the best of our knowledge. Defines a callback url that
@@ -112,7 +110,7 @@ def init(provider=None, action=None):
                                                    _external=True))
 
 
-@oauth.route("/callback/<provider>/<action>")
+@main.route("/callback/<provider>/<action>")
 def authorize(provider=None, action=None):
     """ The primary oauth logic view. OAuth provider will return the user to
     this URL with either valid token information or empty token depending on

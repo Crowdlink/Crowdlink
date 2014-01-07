@@ -60,10 +60,17 @@ class BaseTest(TestCase):
     def create_app(self):
         app = crowdlink.create_app()
         app.config['TESTING'] = True
-        app.config.from_pyfile('../testing.cfg')
         # Remove flasks stderr handler, replace with stdout so nose can
         # capture properly
         del app.logger.handlers[0]
+        try:
+            config_vars = json.loads(file(root + '/testing.json').read())
+            config_vars = dict(config_vars['public'].items() + config_vars['private'].items())
+            for key, val in config_vars.items():
+                app.config[key] = val
+        except IOError:
+            app.logger.warning("Unable to import testing.json, not using "
+                               "testing overrides", exc_info=True)
         with app.app_context():
             self.db = crowdlink.db
             os.system("psql -U crowdlink -h localhost crowdlink_testing -f " + root + "/assets/test_provision.sql > /dev/null 2>&1")

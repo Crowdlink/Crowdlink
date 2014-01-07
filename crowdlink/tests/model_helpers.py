@@ -25,6 +25,7 @@ from sqlalchemy.orm import sessionmaker
 
 from crowdlink.model_lib import BaseMapper
 from crowdlink.api_base import API, AnonymousUser
+from crowdlink.api import api_error_handler
 from crowdlink import db
 
 
@@ -153,7 +154,9 @@ class TestModels(FlaskTestBase):
             model = User
             session = self.db.session
 
-        self.flaskapp.add_url_rule('/api/user', view_func=UserAPI.as_view('user'))
+        self.flaskapp.add_url_rule('/api/user',
+                                   view_func=UserAPI.as_view('user'))
+        self.flaskapp.register_error_handler(Exception, api_error_handler)
 
         self.User = User
         self.UserAPI = UserAPI

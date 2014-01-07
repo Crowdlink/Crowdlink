@@ -72,8 +72,8 @@
             {[{email.address}]}
           %td.text-center
             %span.label{"ng-class" => "{true: 'label-success', false: 'label-danger'}[email.activated]"}
-              %span{"ng-show" => "email.verified"} Verified
-              %span{"ng-hide" => "email.verified"} Un-Verified
+              %span{"ng-show" => "email.activated"} Verified
+              %span{"ng-hide" => "email.activated"} Un-Verified
           %td.text-center
             %button.btn.btn-primary.btn-xs{"ng-click" => "unlink('acc_user.go_linked')",
               "ng-hide" => "email.primary"}
