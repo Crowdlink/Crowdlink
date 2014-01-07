@@ -25,7 +25,10 @@ login_resolver = (auth_level) ->
     deferred.promise
 
 mainApp.config ["$routeProvider", ($routeProvider) ->
-  $routeProvider.when("/login",
+  $routeProvider.
+  # User Actions
+  # ===========================================================================
+  when("/login",
     templateUrl: "{{ template_path }}login.html"
     controller: "loginController"
     resolve:
@@ -40,9 +43,32 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
     controller: "recoverController"
     resolve:
       login: login_resolver('not_user')
+
+  # Public routes
+  # ===========================================================================
   ).when("/",
     templateUrl: "{{ template_path }}home.html"
     controller: "frontPageController"
+  ).when("/oauth_signup",
+    templateUrl: "{{ template_path }}oauth_signup.html"
+    controller: "oauthSignupController"
+    resolve:
+      login: login_resolver('not_user')
+      providerData: (OAuthService) ->
+        OAuthService.query().$promise
+  ).when("/signup",
+    templateUrl: "{{ template_path }}signup.html"
+    controller: "signupController"
+    resolve:
+      login: login_resolver('not_user')
+  ).when("/tos",
+    templateUrl: "{{ template_path }}tos.html"
+  ).when("/errors/:error",
+    templateUrl: "{{ template_path }}error.html"
+    controller: "errorController"
+
+  # User Routes
+  # ===========================================================================
   ).when("/home",
     templateUrl: "{{ template_path }}user_home.html"
     controller: "homeController"
@@ -59,18 +85,6 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
     controller: "newProjController"
     resolve:
       login: login_resolver('user')
-  ).when("/oauth_signup",
-    templateUrl: "{{ template_path }}oauth_signup.html"
-    controller: "oauthSignupController"
-    resolve:
-      login: login_resolver('not_user')
-      providerData: (OAuthService) ->
-        OAuthService.query().$promise
-  ).when("/signup",
-    templateUrl: "{{ template_path }}signup.html"
-    controller: "signupController"
-    resolve:
-      login: login_resolver('not_user')
   ).when("/account",
     templateUrl: "{{ template_path }}account.html"
     controller: "accountController"
@@ -92,21 +106,9 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
           __filter_by:
             username: $rootScope.user.username
           join_prof: "settings_join").$promise
-  # Error Pages
-  ).when("/errors/:error",
-    templateUrl: "{{ template_path }}error.html"
-    controller: "errorController"
-  # Primary object views
-  ).when("/:username/:url_key",
-    templateUrl: "{{ template_path }}project.html"
-    controller: "projectController"
-    resolve:
-      project: (ProjectService, $route) ->
-        ProjectService.query(
-          __filter_by:
-            maintainer_username: $route.current.params.username
-            url_key: $route.current.params.url_key
-          join_prof: 'page_join').$promise
+
+  # Primary object views (must be at bottom from root view params)
+  # ===========================================================================
   ).when("/:username/:url_key/new_issue",
     templateUrl: "{{ template_path }}new_issue.html"
     controller: "newIssueController"
@@ -125,18 +127,6 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             url_key: $route.current.params.url_key
           __one: true
           join_prof: 'disp_join').$promise
-  ).when("/:username/:url_key/psettings",
-    templateUrl: "{{ template_path }}psettings.html"
-    controller: "projectSettingsController"
-    resolve:
-      login: login_resolver('user')
-      project: (ProjectService, $route) ->
-        ProjectService.query(
-          __filter_by:
-            maintainer_username: $route.current.params.username
-            url_key: $route.current.params.url_key
-          __one: true
-          join_prof: 'page_join').$promise
   ).when("/:username/:purl_key/:url_key",
     templateUrl: "{{ template_path }}issue.html"
     controller: "issueController"
@@ -148,6 +138,14 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             project_url_key: $route.current.params.purl_key
             url_key: $route.current.params.url_key
           __one: true
+          join_prof: "page_join").$promise
+  ).when("/i/:id",
+    templateUrl: "{{ template_path }}issue.html"
+    controller: "issueController"
+    resolve:
+      issue: (IssueService, $route) ->
+        IssueService.query(
+          id: $route.current.params.id
           join_prof: "page_join").$promise
   ).when("/:username/:purl_key/:url_key/new_solution",
     templateUrl: "{{ template_path }}new_solution.html"
@@ -181,9 +179,14 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             project_maintainer_username: $route.current.params.username
           __one: true
           join_prof: "page_join").$promise
-  ).when("/tos",
-    templateUrl: "{{ template_path }}tos.html"
-  # user profile
+  ).when("/s/:id",
+    templateUrl: "{{ template_path }}solution.html"
+    controller: "solutionController"
+    resolve:
+      solution: (SolutionService, $route) ->
+        SolutionService.query(
+          id: $route.current.params.id
+          join_prof: "page_join").$promise
   ).when("/:username",
     templateUrl: "{{ template_path }}profile.html"
     controller: "profileController"
@@ -194,6 +197,32 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
             username: $route.current.params.username
           join_prof: 'page_join'
           __one: true).$promise
+  ).when("/p/:id",
+    templateUrl: "{{ template_path }}project.html"
+    controller: "projectController"
+    resolve:
+      project: (ProjectService, $route) ->
+        ProjectService.query(
+          id: $route.current.params.id
+          join_prof: 'page_join').$promise
+  ).when("/u/:id",
+    templateUrl: "{{ template_path }}profile.html"
+    controller: "profileController"
+    resolve:
+      prof_user: (UserService, $route) ->
+        UserService.query(
+          id: $route.current.params.id
+          join_prof: 'page_join').$promise
+  ).when("/:username/:url_key",
+    templateUrl: "{{ template_path }}project.html"
+    controller: "projectController"
+    resolve:
+      project: (ProjectService, $route) ->
+        ProjectService.query(
+          __filter_by:
+            maintainer_username: $route.current.params.username
+            url_key: $route.current.params.url_key
+          join_prof: 'page_join').$promise
   ).otherwise(
     redirectTo: "/404"
   )
