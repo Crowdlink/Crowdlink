@@ -20,6 +20,8 @@ projects:
             comments:
                 - message: This is a simple test message
                   creator: scrappy
+                - message: '>This is a simple test message'
+                  creator: scooby
           - title: Change log for Improvements
             desc: |
                 Like gists on Github, show a historical revision log for an
@@ -51,3 +53,29 @@ projects:
                 Allow project maintainers to specify a Google Analytics Key
                 and select from a range of events that they would like logged
                 into their GA account
+    - name: Mystery Inc.
+      maintainer: fred
+      website: http://scoobydoo.kidswb.com/
+      url_key: mystery-inc
+      desc: Just a couple people solving mysteries.
+      subscribers:
+          - crowdlink
+          - scrappy
+          - scooby
+          - fred
+          - velma
+          - shaggy
+          - daphne
+      issues:
+          - title: Nowhere to Hyde
+            desc: |
+                Who is this guy?
+            key: pop
+            solutions:
+                - title: It could be Dr. Jekyll
+                  desc: This is a simple test
+            comments:
+                - message: That seems unlikely, Dr. Jekyll is a nice guy!
+                  creator: scrappy
+                - message: 'Ruh Roh'
+                  creator: scooby
