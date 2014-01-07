@@ -112,6 +112,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                              'subscribed',
                              'vote_status',
                              'desc',
+                             {'obj': 'maintainer'},
                              {'obj': 'public_events'},
                              {'obj': 'issues', 'join_prof': 'disp_join'},
                              ]
@@ -587,7 +588,8 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
                  'username',
-                 'get_abs_url']
+                 'get_abs_url',
+                 'avatar']
 
     acl = acl['user']
 

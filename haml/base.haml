@@ -53,8 +53,6 @@
             %img{border: "0", width: "30", height: "30", src: "{{ static_path }}img/logo.svg"}/
             %span.hidden-xs Crowdlink
           %ul.nav.nav-pills.main-nav-pills
-            %li{"ng-show" => "logged_in"}
-              %img{src: "{[{user.avatar}]}&s=40"}
             %li.clickable{"ng-show" => "logged_in"}
               %a{"ng-click" => "logout()"}
                 %i.fa.fa-sign-out
@@ -69,8 +67,8 @@
                 %span.hidden-xs Account
             %li{"ng-class" => "{true: 'active'}[location.path()==profile]", "ng-show" => "logged_in"}
               %a{href: "\#{[{profile}]}"}
-                %i.fa.fa-user
-                %span.hidden-xs Profile
+                %img{src: "{[{user.avatar}]}&s=20", style:"display:inline-block;vertical-align:middle;"}
+                %span.hidden-xs {[{ user.username }]}
             %li.text-center{"ng-class" => "{true: 'active'}[location.path()=='/signup']", "ng-hide" => "logged_in"}
               %a{href: "#/signup"}
                 %i.fa.fa-edit

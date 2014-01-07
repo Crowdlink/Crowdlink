@@ -44,7 +44,7 @@
       %br/
       .row
         %h4
-          %b> Proposed on
+          %b Proposed
           {[{ issue.created_at | date:'medium' }]}
           ({[{ issue.created_at|date_ago }]})
         %br/
@@ -71,7 +71,9 @@
     .row
       %h4 Comments
       %span.fade{"ng-repeat" => "comment in issue.comments"}
-        %b {[{ comment.user.username }]}
+        %b
+          %img{src:"\{[{ comment.user.avatar }]}&s=20"}
+          {[{ comment.user.username }]}
         %b.pull-right {[{ comment.created_at | date:'medium' }]}
         .row.well.well-sm.center-margin
           {[{ comment.message }]}

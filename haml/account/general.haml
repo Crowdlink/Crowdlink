@@ -64,22 +64,23 @@
   %div
     %h3 Email Accounts
     .panel.panel-default
-      %table.table
+      %table.table.email-table
         %tr{"ng-repeat" => "email in acc_user.emails"}
           %th
             %i.fa.fa-envelope-o
             \&nbsp;
             {[{email.address}]}
-          %td.text-center
+          %td
             %span.label{"ng-class" => "{true: 'label-success', false: 'label-danger'}[email.activated]"}
               %span{"ng-show" => "email.activated"} Verified
               %span{"ng-hide" => "email.activated"} Un-Verified
-          %td.text-center
+          %td
             %button.btn.btn-primary.btn-xs{"ng-click" => "unlink('acc_user.go_linked')",
               "ng-hide" => "email.primary"}
               Set Primary
+          %td
             %span.label.label-primary{"ng-show" => "email.primary"}
               Primary
-          %td.pull-right
+          %td.text-center
             %button.btn.btn-danger.btn-xs{"ng-click" => "unlink('acc_user.go_linked')"}
               Remove

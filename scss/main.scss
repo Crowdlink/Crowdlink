@@ -133,6 +133,9 @@ ul.main-list.sub-list {
 .inner-pad {
   padding:15px;
 }
+.margin-left {
+  margin-left: 10px;
+}
 /* Homepage styling */
 .hr-header {
   text-align:center;
@@ -299,6 +302,13 @@ ul.main-nav-pills {
 }
 .navbar-fixed-top {
   border-bottom:3px solid #E0772F;
+}
+table.table.email-table {
+  td, th {
+    .label {
+      line-height:21px;
+    }
+  }
 }
 
 /* Login */

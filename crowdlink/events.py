@@ -86,6 +86,7 @@ class IssueNotif(Event):
         'time',
         'template',
         'uname',
+        'uavatar',
         'user_p',
         'pname',
         'proj_p',
@@ -100,6 +101,7 @@ class IssueNotif(Event):
         notif = cls(
             time=datetime.datetime.utcnow(),
             uname=user.username,
+            uavatar=user.avatar,
             user_p=user.get_dur_url,
             pname=project.name,
             proj_p=project.get_dur_url,
@@ -119,6 +121,7 @@ class NewSolNotif(Event):
         'time',
         'template',
         'uname',
+        'uavatar',
         'user_p',
         'pname',
         'proj_p',
@@ -136,6 +139,7 @@ class NewSolNotif(Event):
         notif = cls(
             time=datetime.datetime.utcnow(),
             uname=user.username,
+            uavatar=user.avatar,
             user_p=user.get_dur_url,
             pname=project.name,
             proj_p=project.get_dur_url,
@@ -157,6 +161,7 @@ class NewCommentNotif(Event):
         'time',
         'template',
         'uname',
+        'uavatar',
         'user_p',
         'tname',
         'thing_p',
@@ -171,6 +176,7 @@ class NewCommentNotif(Event):
         notif = cls(
             time=datetime.datetime.utcnow(),
             uname=user.username,
+            uavatar=user.avatar,
             user_p=user.get_dur_url,
             tname=parent.title,
             thing_p=parent.get_dur_url,
@@ -196,6 +202,7 @@ class NewProjNotif(Event):
         'time',
         'template',
         'uname',
+        'uavatar',
         'user_p',
         'pname',
         'proj_p'
@@ -207,6 +214,7 @@ class NewProjNotif(Event):
         notif = cls(
             time=datetime.datetime.utcnow(),
             uname=user.username,
+            uavatar=user.avatar,
             user_p=user.get_dur_url,
             pname=new_proj.name,
             proj_p=new_proj.get_dur_url)
