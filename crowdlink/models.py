@@ -2,6 +2,7 @@ from flask import session, current_app
 from flask.ext.login import current_user, login_user
 from datetime import datetime, timedelta
 from enum import Enum
+from urlparse import urljoin
 
 from . import db, crypt, github
 from .model_lib import (base, SubscribableMixin, VotableMixin, EventJSON,
@@ -556,6 +557,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                      'get_abs_url',
                      'roles',
                      'profile',
+                     'avatar',
                      '-_password',
                      '-go_token',
                      '-gh_token',
@@ -652,15 +654,15 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             username=unicode(self.username).encode('utf-8'))
 
     @property
-    def avatar_lg(self):
+    def avatar(self):
         # Set your variables here
-        default = "http://www.example.com/default.jpg"
-        size = 180
-
+        default = urljoin(current_app.config['base_url'],
+                          current_app.config['static_path'], "img/profile.jpg")
         # construct the url
         gravatar_url = "http://www.gravatar.com/avatar/"
-        gravatar_url += hashlib.md5(self.primary_email.lower()).hexdigest()
-        gravatar_url += "?" + urllib.urlencode({'d': default, 's': str(size)})
+        gravatar_url += hashlib.md5(self.primary_email.address.lower()).hexdigest()
+        gravatar_url += "?" + urllib.urlencode({'d': default})
+        return gravatar_url
 
     @property
     def linked_accounts(self):

@@ -53,6 +53,8 @@
             %img{border: "0", width: "30", height: "30", src: "{{ static_path }}img/logo.svg"}/
             %span.hidden-xs Crowdlink
           %ul.nav.nav-pills.main-nav-pills
+            %li{"ng-show" => "logged_in"}
+              %img{src: "{[{user.avatar}]}&s=40"}
             %li.clickable{"ng-show" => "logged_in"}
               %a{"ng-click" => "logout()"}
                 %i.fa.fa-sign-out
