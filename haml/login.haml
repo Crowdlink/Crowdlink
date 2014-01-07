@@ -12,11 +12,13 @@
       %img{src: "{{ static_path }}img/logo.svg"}
     .col-lg-8
       %form.form-horizontal{method: "post", "ng-submit" => "submit()"}
-        .alert-danger.alert.fade{"ng-show" => "errors"}
-          %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
-          %span{"ng-show" => "error_header"} {[{ error_header }]}
-          %ul{"ng-show" => "errors.length > 1"}
-            %li{"ng-repeat" => "error in errors"} {[{error}]}
+        .form-group
+          .col-lg-6
+            .alert-danger.alert.fade{"ng-show" => "errors"}
+              %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+              %span{"ng-show" => "error_header"} {[{ error_header }]}
+              %ul{"ng-show" => "errors.length > 1"}
+                %li{"ng-repeat" => "error in errors"} {[{error}]}
         .form-group
           .col-lg-6
             %input.form-control{"ng-model" => "identifier", type: "text", placeholder: "Username or Email"}/
