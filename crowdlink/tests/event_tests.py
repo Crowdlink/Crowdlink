@@ -72,4 +72,5 @@ class EventTests(BaseTest):
         project.subscribed = False
 
         # the user should now have several events
-        assert len(current_user.events) == 0
+        for event in current_user.events:
+            assert event.origin != project.id
