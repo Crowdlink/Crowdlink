@@ -26,23 +26,6 @@ class BaseMapper(object):
     query_class = BaseQuery
     query = None
 
-    def __new__(cls, *args, **kwargs):
-        """ If a valideer validation class is set then validation triggers are
-        set on the object """
-
-        # if there's validation on this object
-        valid = getattr(cls, 'valid_profile', None)
-        if valid:
-            for name, validator in valid._named_validators:
-                func = lambda target, value, oldvalue, initiator: \
-                    valid.validate_attr(initiator, value)
-                event.listen(getattr(cls, name),
-                             'set',
-                             func,
-                             name)
-
-        return super(BaseMapper, cls).__new__(cls, *args, **kwargs)
-
     # Access Control Methods
     # =========================================================================
     def roles(self, user=current_user):

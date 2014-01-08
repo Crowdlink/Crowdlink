@@ -16,7 +16,6 @@ from .oauth import (oauth_retrieve, providers, oauth_profile_populate,
 from .mail import RecoverEmail, ActivationEmail
 from .api_base import get_joined, APISyntaxError
 
-import valideer as V
 import re
 import werkzeug
 import urllib
@@ -72,17 +71,6 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
         db.UniqueConstraint("url_key", "maintainer_username"),
     )
     __mapper_args__ = {'polymorphic_identity': 'Project'}
-
-    # Validation Profile
-    # ======================================================================
-    valid_profile = V.parse({
-        "?created_at": "datetime",
-        #"user": 'testing',
-        "url_key": V.String(max_length=64),
-        "name": V.String(max_length=128),
-        "?website": V.String(max_length=256),
-        "?desc": V.String(),
-    }, required_properties=True)
 
     # Join profiles
     # ======================================================================
