@@ -88,6 +88,7 @@ def provision():
     import yaml
     import time
 
+    current_app.config['send_emails'] = False
     stripe.api_key = current_app.config['stripe_secret_key']
     users = {}
 
