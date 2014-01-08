@@ -94,7 +94,7 @@ class TestEmail(EmailBase):
         rutrum dolor vestibulum. Morbi accumsan et enim hendrerit suscipit.
         Suspendisse eu ante id nunc aliquet congue vel id magna.
         """
-        url = url_for('angular_root', _external=True)
+        url = url_for('main.angular_root', _external=True)
         self.html_context = dict(
             title='This is a simple test email',
             one_button_row=True,
