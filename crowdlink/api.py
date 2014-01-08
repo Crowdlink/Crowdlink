@@ -10,7 +10,6 @@ from .fin_models import Earmark, Recipient, Transfer, Charge, Dispute
 
 from . import oauth
 
-import valideer
 import sqlalchemy
 import decorator
 import stripe
@@ -56,8 +55,6 @@ def api_error_handler(exc):
     elif e is APISyntaxError:
         ret = 400, exc.message
         msg = INFO
-    elif e is valideer.base.ValidationError:
-        ret = 200, "Validation Error"
     elif e is TypeError:
         if meth == 'POST':
             if 'at least' in exc.message:
