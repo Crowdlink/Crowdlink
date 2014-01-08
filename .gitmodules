@@ -1,3 +1,3 @@
-[submodule "docker"]
-	path = docker
-	url = http://code.ibcook.pri/icook/featurelet-docker.git
+[submodule "crowdlink-secrets"]
+	path = crowdlink-secrets
+	url = ssh://git@code.ibcook.pri:4193/icook/crowdlink-secrets.git
