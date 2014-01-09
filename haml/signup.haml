@@ -18,7 +18,7 @@
           .col-lg-8
             %input.form-control{name: "username", "ng-maxlength" => "32",
               "ng-model" => "username", "ng-pattern" => "/^[a-zA-Z0-9-_]+$/",
-              type: "text", required: "", "unique-serverside" => "user/check"}
+              type: "text", required: "", "unique-serverside" => "user"}
             %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "f.username.busy"}
             %i.fa.fa-check.right-float{"ng-show" => "f.username.confirmed && f.username.$valid"}
             .help-block{"ng-show" => "f.username.$error.required"}
@@ -54,7 +54,7 @@
         %label.col-lg-3.control-label{for: "RegisterForm_email"} Email
         .col-lg-8
           %input.form-control{name: "email", "ng-model" => "email",
-            type: "email", required: "", "unique-serverside" => "email/check"}
+            type: "email", required: "", "unique-serverside" => "email"}
           %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "f.email.busy"}
           %i.fa.fa-check.right-float{"ng-show" => "f.email.confirmed && f.email.$valid"}
           .help-block{"ng-show" => "f.email.$error.email"}

@@ -185,6 +185,20 @@ class TransferTests(BaseTest):
         assert isinstance(tran.created_at, datetime.datetime)
 
 
+class ProjectTests(BaseTest):
+    """ Project internal API """
+
+    @login_required_ctx('crowdlink')
+    def test_check_taken(self):
+        """ ensure registration works, and lowercases names """
+        # TODO: XXX: Will need to be changed when case bug is fixed
+        tests = [('crowdlink', True),
+                 ('Crowdlink', False),
+                 ('MYstery-inc', False)]
+        for url_key, result in tests:
+            assert Project.check_taken(url_key)['taken'] is result
+
+
 class EmailTests(BaseTest):
     """ Email internal API """
 
@@ -205,6 +219,16 @@ class EmailTests(BaseTest):
         assert email.activated is True
         assert email.activate_hash is None
         assert email.activate_gen is None
+
+    def test_check_taken(self):
+        """ ensure registration works, and lowercases names """
+        # TODO: XXX: Will need to be changed when case bug is fixed
+        tests = [('velma@crowdlink.io', True),
+                 ('velmA@crowdlink.io', False),
+                 ('dsfglkjdsfg@dflj.com', False),
+                 ('velma@CROWDLINK.io', False)]
+        for email, result in tests:
+            assert Email.check_taken(email)['taken'] is result
 
 
 class UserTests(BaseTest):
@@ -254,3 +278,11 @@ class UserTests(BaseTest):
         assert user.username == 'testing_one'
         assert user.password != 'testing'
         Email.query.filter_by(address='testing@crowdlink.io').one()
+
+    def test_check_taken(self):
+        """ ensure registration works, and lowercases names """
+        tests = [('crowdlink', True),
+                 ('CROWdlink', True),
+                 ('dsfglkj', False)]
+        for username, result in tests:
+            assert User.check_taken(username)['taken'] is result

@@ -413,8 +413,13 @@ mainApp.directive "uniqueServerside",
       ctrl.confirmed = false
 
       # everything is fine -> do nothing
-      $http.post('{{api_path}}' + attrs.uniqueServerside,
-        value: elem.val()
+      $http(
+        url: '{{api_path}}' + attrs.uniqueServerside,
+        method: 'PATCH'
+        data:
+          value: elem.val()
+          __action: 'check_taken'
+          __cls: true
       ).success((data) ->
         $timeout ->
           # display new error message

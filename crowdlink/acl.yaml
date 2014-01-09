@@ -41,6 +41,11 @@ solution:
     issue_creator:
     creator:
         inherit: issue_project_maintainer
+email:
+    # global context roles
+    anonymous:
+        action:
+            - check_taken
 
 user:
     # global context roles
@@ -55,6 +60,7 @@ user:
             - login
             - send_recover
             - recover
+            - check_taken
     noactive_user:
         view:
             - standard_join
@@ -88,6 +94,8 @@ project:
             - page_join
             - issue_page_join
             - disp_join
+        action:
+            - check_taken
     noactive_user:
         inherit: anonymous
         edit: subscribed

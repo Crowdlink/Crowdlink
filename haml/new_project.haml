@@ -30,7 +30,7 @@
             .col-md-4{style: "text-align:center; margin-top:10px;"}
               %b /{[{ user.username }]}/
             .col-md-8.no-gutter
-              %input.form-control{"unique-serverside" => "purl_key/check", name: "url_key", type: "text", "ng-model" => "url_key",
+              %input.form-control{"unique-serverside" => "project", name: "url_key", type: "text", "ng-model" => "url_key",
                 "ng-keydown" => "auto_key=false", "ng-pattern" => "/^[a-zA-Z0-9-_]+$/", "required" => ""}
             .help-block{"ng-show" => "form.url_key.$error.pattern"}
               Can only contain letters, numbers, _, and -.

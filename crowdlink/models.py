@@ -140,6 +140,17 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
 
         return project
 
+    @classmethod
+    def check_taken(cls, value, user=current_user):
+        """ Called by the registration form to check if the email address is
+        taken """
+        try:
+            Project.query.filter_by(url_key=value, maintainer=user.get()).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return {'taken': False}
+        else:
+            return {'taken': True}
+
     # Github Synchronization Logic
     # ========================================================================
     @property
@@ -462,6 +473,8 @@ class Comment(base):
 class Email(base):
     standard_join = ['address', 'activated', 'primary']
 
+    acl = acl['email']
+
     user = db.relationship('User', backref=db.backref('emails'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     address = db.Column(db.String, primary_key=True)
@@ -486,6 +499,17 @@ class Email(base):
                     .filter(Email.activate_gen > day_ago)
                     .update({'activated': True, 'activate_gen': None, 'activate_hash': None}))
             return bool(vals)
+
+    @classmethod
+    def check_taken(cls, value):
+        """ Called by the registration form to check if the email address is
+        taken """
+        try:
+            Email.query.filter_by(address=value).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return {'taken': False}
+        else:
+            return {'taken': True}
 
     @classmethod
     def create(cls, address, primary=True, activated=False, user=current_user):
@@ -713,6 +737,17 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             login_user(user)
             return {'objects': [get_joined(user)]}
         return False
+
+    @classmethod
+    def check_taken(cls, value):
+        """ Called by the registration form to check if the username is taken
+        """
+        try:
+            User.query.filter_by(username=value.lower()).one()
+        except sqlalchemy.orm.exc.NoResultFound:
+            return {'taken': False}
+        else:
+            return {'taken': True}
 
     def recover(self, hash, password):
         day_ago = datetime.utcnow() - timedelta(days=1)

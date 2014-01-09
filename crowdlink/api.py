@@ -136,70 +136,12 @@ def api_error_handler(exc):
         current_app.logger.debug(str(ret), exc_info=True)
     return response
 
-# Check functions for forms
-# =============================================================================
-@decorator.decorator
-def check_catch(func, *args, **kwargs):
-    """ Catches exceptions and None return types """
-    try:
-        ret = func(*args, **kwargs)
-    except KeyError:
-        return jsonify_status_code(400, "Required arguments were missing")
-    except sqlalchemy.orm.exc.NoResultFound:
-        return jsonify(taken=False, success=True)
-    else:
-        if ret is None:
-            return jsonify(taken=True, success=True)
-
-
-@api.route("/user/check", methods=['POST'])
-@check_catch
-def check_user():
-    """ Check if a specific username is taken """
-    js = request.json_dict
-    User.query.filter_by(username=js['value']).one()
-
-
-@api.route("/purl_key/check", methods=['POST'])
-@login_required
-@check_catch
-def check_ptitle():
-    """ Check if a specific project url_key is taken """
-    js = request.json_dict
-    Project.query.filter_by(
-        maintainer_username=current_user.username,
-        url_key=js['value']).one()
-
-
-@api.route("/email/check", methods=['POST'])
-@check_catch
-def check_email():
-    """ Check if a specific email address is taken """
-    js = request.json_dict
-    Email.query.filter_by(address=js['value']).one()
-
 
 @api.route("/logout")
 @login_required
 def logout():
     logout_user()
     return jsonify(access_denied=True)
-
-
-@api.route("/login", methods=['POST'])
-def login():
-    js = request.json_dict
-
-    try:
-        user = User.query.filter_by(username=js['username']).one()
-        if user.check_password(js['password']):
-            login_user(user)
-    except (KeyError, sqlalchemy.orm.exc.NoResultFound):
-        pass
-    else:
-        return jsonify(success=True, user=get_joined(user))
-
-    return jsonify(success=False, message="Invalid credentials")
 
 
 @api.route("/oauth", methods=['GET'])
