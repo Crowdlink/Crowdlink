@@ -1,7 +1,5 @@
-import stripe
-
-from crowdlink.tests import BaseTest, login_required
-from crowdlink.util import stripe_bank_token, stripe_card_token
+from crowdlink.tests import (BaseTest, login_required, stripe_bank_token_real,
+                             stripe_card_token_real)
 from pprint import pprint
 
 
@@ -11,9 +9,8 @@ class PaymentTests(BaseTest):
     @login_required()
     def test_run_charge(self):
         # create a new token via the api. this is usually done via the JS side
-        stripe.api_key = self.app.config['stripe_secret_key']
         data = {'amount': 1500,
-                'token': stripe_card_token()}
+                'token': stripe_card_token_real()}
         pprint(data)
         # run our charge test
         res = self.json_post('/api/charge', data=data)
@@ -27,15 +24,11 @@ class PaymentTests(BaseTest):
     @login_required()
     def test_recipient_create(self):
         """ test recipeint creation """
-        stripe.api_key = self.app.config['stripe_secret_key']
         # run our recipient test
         data = {'name': 'John Doe',
                 'corporation': False,
-                'tax_id': '',
-                'token': stripe_bank_token()}
-        #logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
+                'token': stripe_bank_token_real()}
         res = self.json_post('/api/recipient', data=data)
-        #logging.getLogger('sqlalchemy.engine').setLevel(logging.ERROR)
         pprint(res.json)
         assert res.json['success']
         assert isinstance(res.json['objects'][0]['id'], int)

@@ -218,7 +218,11 @@ class Transfer(Sink, PrivateMixin, base):
     """ An object mirroring a stripe transfer """
     id = db.Column(db.Integer, db.ForeignKey('sink.id'), primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    status_val = db.Column(db.String, nullable=False)
     stripe_id = db.Column(db.String, unique=True, nullable=False)
+    stripe_created_at = db.Column(db.DateTime, nullable=False)
+    livemode = db.Column(db.Boolean, nullable=False)
+
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', foreign_keys=[user_id])
     __mapper_args__ = {'polymorphic_identity': 'Transfer'}
@@ -238,36 +242,45 @@ class Transfer(Sink, PrivateMixin, base):
 
     @classmethod
     def create(cls, amount, recipient, user=current_user):
+        minimum = current_app.config['minimum_transfer']
+        # make sure it's an int, stripe complains about floats
+        amount = int(amount)
+
         if (recipient.user != user or  # Make sure it's going to them
            amount > user.available_marks or  # Ensure they have enough marks
-           user.available_balance < amount):  # ensure the marks are available
+           amount > user.available_balance or
+           amount < minimum):  # ensure the marks are available
             current_app.logger.warn(
                 "Create Transfer was called with invalid pre-conditions"
                 "\nRecp Userid: {}\nAvailable Marks: {}\nAvailable Balance: {}"
-                .format(recipient.user.userid,
+                "\nAmount: {}"
+                .format(recipient.user_id,
                         user.available_marks,
-                        user.available_balance))
+                        user.available_balance,
+                        amount))
             raise AttributeError
+
 
         db.session.rollback()  # for the nervous person
         # lock the user, this action takes money out of their account
         db.session.refresh(user, lockmode='update')
+
         retval = stripe.Transfer.create(
-            bank_account=recipient['stripe_id'],
-            amount=recipient['stripe_id'],
+            currency="usd",
+            recipient=recipient.stripe_id,
+            amount=amount,
             metadata={'username': user.username,
                       'userid': user.id}
         )
 
         # create a new recipient in our db to reflect stripe
         trans = cls(
+            amount=amount,
             livemode=retval['livemode'],
             stripe_id=retval['id'],
-            stripe_created_at=datetime.fromtimestamp(retval['created']),
+            stripe_created_at=datetime.fromtimestamp(retval['date']),
             user=user,
-            last_four=retval['active_account']['last4'],
-            verified=retval['active_account']['verified'],
-            name=retval['name']
+            status_val=retval['status']
         )
 
         # fund the transfer with Marks
@@ -327,11 +340,12 @@ class Dispute(base, PrivateMixin):
                     ).one().dispute(event_data={'report_id': report.id})
 
 
-class Earmark(StatusMixin, Sink, base):
+class Earmark(Sink, base):
     """ Represents a users intent to give money to another member. """
     # status information as it relates to the attached thing
-    StatusVals = Enum('Created', 'Ready', 'Assigned', 'Disputed')
-    _status = db.Column(db.Integer, default=StatusVals.Created.index)
+    status = db.Column(db.Enum('Created', 'Ready', 'Assigned', 'Disputed',
+                               name="earmark_status"),
+                       default='Created')
 
     # financial status information, clear separation of the two was desired
     matured = db.Column(db.Boolean, default=False, nullable=False)
@@ -361,7 +375,7 @@ class Earmark(StatusMixin, Sink, base):
 
     acl = acl['earmark']
 
-    def mature(self, event_data=None):
+    def mature(self, event_data=None, event_blob=None):
         """ Sets the mature toggle on the Earmark, making it available for
         clearing.  Whether it clears or not is still dependent on other
         factors, including disputes, chargebacks (causing freezing),
@@ -369,11 +383,12 @@ class Earmark(StatusMixin, Sink, base):
         log = self.log.create(
             item=self,
             action='mature',
-            data=event_data)
+            data=event_data,
+            blob=event_blob)
         db.session.add(log)
         self.matured = True
 
-    def assign(self, user_tuple, event_data=None):
+    def assign(self, user_tuple, event_data=None, event_blob=None):
         """ Accepts a list of tuples of form (user_object, percentage).
         Creates new Mark objects and links them to the earmark objects.
         Setup to be committed by caller for assigning all earmarks at once. """
@@ -395,7 +410,8 @@ class Earmark(StatusMixin, Sink, base):
         log = self.log.create(
             action='assign',
             item=self,
-            data=event_data
+            data=event_data,
+            blob=event_blob
         )
         db.session.add(log)
 
@@ -450,7 +466,7 @@ class Earmark(StatusMixin, Sink, base):
         """
         pass
 
-    def clear(self, event_data=None):
+    def clear(self, event_data=None, event_blob=None):
         """ Removes the funds from the sender and delivers them to destination
         users. """
         db.session.rollback()  # for the nervous person
@@ -485,7 +501,8 @@ class Earmark(StatusMixin, Sink, base):
         log = self.log.create(
             action='clear',
             item=self,
-            data=event_data
+            data=event_data,
+            blob=event_blob
         )
         db.session.add(log)
 
@@ -513,7 +530,10 @@ class Earmark(StatusMixin, Sink, base):
         return []
 
     @classmethod
-    def create(cls, thing, amount, user=current_user):
+    def create(cls, thing, amount, event_data=None, event_blob=None,
+               user=current_user):
+        if event_data is None:
+            event_data = {}
 
         if thing.type not in ['Issue', 'Solution', 'Project']:
             current_app.logger.warn(
@@ -523,9 +543,14 @@ class Earmark(StatusMixin, Sink, base):
                         thing.id))
             raise AttributeError
 
+        # decrement their available balance along with creation of the object
+        db.session.refresh(user, lockmode='update')
         amount = int(amount)
-        if amount < 50:
-            raise ValueError('Amount is too low to create earmark')
+        minimum = current_app.config['minimum_earmark']
+        if amount < minimum:
+            raise ValueError(
+                "Amount {} is too low to create earmark. Min is {}"
+                .format(amount, minimum))
         if amount > user.available_balance:
             raise FundingException
 
@@ -539,19 +564,32 @@ class Earmark(StatusMixin, Sink, base):
             thing=thing,
         )
         # make a create event for it
+        event_data.update({'amount': str(int(amount))})
         log = EarmarkLog.create(
             action='create',
             item=mark,
-            data={'amount': str(int(amount))}
+            data=event_data,
+            blob=event_blob
         )
-        # decrement their available balance along with creation of the object
-        db.session.refresh(user, lockmode='update')
         user.available_balance -= amount
         db.session.add(mark)
         db.session.add(log)
         db.session.commit()
         return mark
 
+    def __str__(self):
+        return ("<Earmark; id: {}; amount: {}; created_at: {}; creator: {}; "
+                "mature: {}; disputed: {}; frozen: {}>"
+                .format(
+                    self.id,
+                    self.amount,
+                    self.created_at,
+                    self.user_id,
+                    self.matured,
+                    self.disputed,
+                    self.frozen))
+
+    __repr__ = __str__
 
 class Mark(Source, PrivateMixin, base):
     """ A portion of an earmark that is declared to an individual user. Is used
@@ -590,6 +628,16 @@ class Mark(Source, PrivateMixin, base):
 
         return mark
 
+    def __str__(self):
+        return "<Mark; id: {}; amount: {}; remaining: {}; created_at: {}; earmark: {}>".format(
+                self.id,
+                self.amount,
+                self.remaining,
+                self.created_at,
+                self.earmark_id)
+
+    __repr__ = __str__
+
 
 class Recipient(PrivateMixin, base):
     id = db.Column(db.Integer, primary_key=True)
@@ -600,7 +648,7 @@ class Recipient(PrivateMixin, base):
     last_four = db.Column(db.Integer)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     stripe_created_at = db.Column(db.DateTime, nullable=False)
-    user = db.relationship('User')
+    user = db.relationship('User', backref='recipients')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     standard_join = ['created_at',
@@ -611,15 +659,6 @@ class Recipient(PrivateMixin, base):
                      '-stripe_created_at']
 
     acl = acl['recipient']
-
-    def clear(self):
-        """ Pushes pending funds on through to the recipeint. Doesn't commit
-        because it's intended to be called by the earmark clear method """
-        pass
-
-    @property
-    def status(self):
-        return self.StatusVals[self._status]
 
     @classmethod
     def create(cls, token, name, corporation, tax_id=None, user=current_user):

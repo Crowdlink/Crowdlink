@@ -587,8 +587,8 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     @property
     def available_marks(self):
         """ returns the available funds from marks """
-        return sum([m.remaining for m in Mark.query.filter(
-            Mark.user == self and Mark.cleared is True)])
+        return sum([m.remaining for m in Mark.query.filter_by(
+            user_id=self.id, cleared=True)])
 
     # Password wrapping as encrypted value
     # =========================================================================
@@ -668,11 +668,6 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             if email.primary:
                 return email
 
-    def save(self):
-        if self.username:
-            self.username = self.username.lower()
-        super(User, self).save()
-
     # Github Synchronization Logic
     # ========================================================================
     @property
@@ -708,9 +703,12 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             return {'message': 'Invalid credentials',
                     'success': False}
 
-        user = User.query.filter(
-            sqlalchemy.or_(User.emails.any(Email.address==identifier),
-                           User.username==identifier)).first()
+        if '@' in identifier:
+            user = User.query.filter(
+                User.emails.any(Email.address == identifier)).first()
+        else:
+            user = User.query.filter_by(username=identifier.lower()).first()
+
         if user and user.check_password(password):
             login_user(user)
             return {'objects': [get_joined(user)]}
@@ -770,7 +768,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     # ========================================================================
     @classmethod
     def create(cls, username, password, email_address, user=None, force_send=None):
-        user = cls(username=username)
+        user = cls(username=username.lower())
         user.password = password
         db.session.add(user)
 

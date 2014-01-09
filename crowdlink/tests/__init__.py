@@ -1,17 +1,96 @@
 import decorator
 import crowdlink
 import json
-import logging
-import sys
 import os
+import stripe
 
 from pprint import pprint
 from flask.ext.testing import TestCase
 from flask.ext.login import login_user, logout_user
-from crowdlink.util import provision
 from crowdlink import root
 from crowdlink.models import User
 
+
+def stripe_card_token_real(number='4242424242424242'):
+    token = stripe.Token.create(
+        card={
+            "number": number,
+            "exp_month": 12,
+            "exp_year": 2014,
+            "cvc": '123'
+        },
+    )
+    # serialize it
+    dct_token = dict(token)
+    dct_token['card'] = dict(token.card)
+    return dct_token
+
+
+def stripe_bank_token_real(
+        routing_number='110000000', account_number='000123456789'):
+    # create a new token via the api. this is usually done via the JS side
+    token = stripe.Token.create(
+        bank_account={
+            "country": 'US',
+            "routing_number": routing_number,
+            "account_number": account_number
+        },
+    )
+    # serialize it
+    dct_token = dict(token)
+    dct_token['bank_account'] = dict(token.bank_account)
+    return dct_token
+
+
+def stripe_bank_token_mock():
+    return {
+        "id": "btok_36fWMtZ9rbYXu9",
+        "livemode": False,
+        "created": 1386826725,
+        "used": False,
+        "object": "token",
+        "type": "bank_account",
+        "bank_account": {
+            "object": "bank_account",
+            "id": "ba_1036fW27yR8C5wlpBuk8GZNb",
+            "bank_name": "STRIPE TEST BANK",
+            "last4": "6789",
+            "country": "US",
+            "currency": "usd",
+            "validated": False,
+            "verified": False,
+            "fingerprint": "4da146xwbFRdSqcm"
+        }
+    }
+
+
+def stripe_card_token_mock():
+    return {
+        "id": "tok_1039Vc27yR8C5wlpMxrRRy4p",
+        "livemode": False,
+        "created": 1387481788,
+        "used": False,
+        "object": "token",
+        "type": "card",
+        "card": {
+            "id": "card_1039Vc27yR8C5wlpsihVqpZz",
+            "object": "card",
+            "last4": "4242",
+            "type": "Visa",
+            "exp_month": 8,
+            "exp_year": 2014,
+            "fingerprint": "gBSDyxpPKbbCPXqw",
+            "customer": None,
+            "country": "US",
+            "name": None,
+            "address_line1": None,
+            "address_line2": None,
+            "address_city": None,
+            "address_state": None,
+            "address_zip": None,
+            "address_country": None
+        }
+    }
 
 def login_required(username='crowdlink', password='testing'):
     """ Decorator that logs in the user under a request context as well as a
@@ -74,6 +153,7 @@ class BaseTest(TestCase):
         with app.app_context():
             self.db = crowdlink.db
             os.system("psql -U crowdlink -h localhost crowdlink_testing -f " + root + "/assets/test_provision.sql > /dev/null 2>&1")
+            stripe.api_key = app.config['stripe_secret_key']
         return app
 
     def login(self, username, password):
