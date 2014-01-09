@@ -97,7 +97,7 @@ def login_required(username='crowdlink', password='testing'):
     testing cleint """
     def login_required(func, self, *args, **kwargs):
         self.user = self.db.session.query(User).filter_by(username=username).one()
-        self.login(username, password)['user']
+        self.login(username, password)['objects'][0]
         login_user(self.user)
         func(self)
         self.logout()
@@ -120,21 +120,34 @@ def login_required_ctx(username='crowdlink', password='testing'):
 
 
 class BaseTest(TestCase):
+    def tearDown(self):
+        self.db.session.remove()
+        self.db.drop_all()
+
     def json_post(self, url, data):
         return self.client.post(
-            url, data=json.dumps(data), content_type='application/json')
-
-        def tearDown(self):
-            self.db.session.remove()
-            self.db.drop_all()
+            url,
+            data=json.dumps(data),
+            content_type='application/json')
 
     def json_get(self, url, data):
         return self.client.get(
-            url, query_string=data, content_type='application/json')
+            url,
+            query_string=data,
+            content_type='application/json')
 
     def json_put(self, url, data):
         return self.client.put(
-            url, data=json.dumps(data), content_type='application/json')
+            url,
+            data=json.dumps(data),
+            content_type='application/json')
+
+    def json_patch(self, url, data):
+        return self.client.open(
+            url,
+            method='PATCH',
+            data=json.dumps(data),
+            content_type='application/json')
 
     def create_app(self):
         app = crowdlink.create_app()
@@ -158,10 +171,13 @@ class BaseTest(TestCase):
 
     def login(self, username, password):
         data = {
-            'username': username,
-            'password': password
+            'identifier': username,
+            'password': password,
+            '__action': 'login',
+            '__cls': True
         }
-        ret = self.json_post('/api/login', data=data).json
+        ret = self.json_patch('/api/user', data=data).json
+        pprint(ret)
         assert ret['success']
         return ret
 
