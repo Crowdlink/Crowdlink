@@ -93,11 +93,28 @@ def create_app(config='/application.json'):
     oauth_lib.init_app(app)
 
     # Setup the anonymous user to register a single role
+    class AnonymousUser(object):
+        id = -100
+        gh_token = None
+        tw_token = None
+        go_token = None
+
+        def is_anonymous(self):
+            return True
+
+        def global_roles(self):
+            return ['anonymous']
+
+        def is_authenticated(self):
+            return False
+
+        def get(self):
+            return self
     lm.anonymous_user = AnonymousUser
 
     # Route registration
     # =========================================================================
-    from . import api, views, oauth, models, monkey_patch, fin_models, log_models
+    from . import api, views, oauth, models, monkey_patch
     app.register_blueprint(api.api, url_prefix='/api')
     app.register_blueprint(views.main)
 
@@ -123,5 +140,3 @@ def create_app(config='/application.json'):
     app.register_error_handler(500, lambda e: error_handler(e, 500))
 
     return app
-
-from .api_base import AnonymousUser

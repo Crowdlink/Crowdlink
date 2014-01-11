@@ -1,18 +1,14 @@
 from flask import Blueprint, request, current_app, jsonify
-from flask.ext.login import (login_required, logout_user, current_user,
-                             login_user)
+from flask.ext.login import login_required, logout_user
 from flask.ext.oauthlib.client import OAuthException
 
-from .api_base import API, get_joined, jsonify_status_code, APISyntaxError
+from lever import API, LeverException
 from .oauth import oauth_retrieve, oauth_from_session
 from .models import User, Project, Issue, Solution, Email, Comment, Thing
-from .fin_models import Earmark, Recipient, Transfer, Charge, Dispute
 
-from . import oauth
+from . import oauth, db
 
 import sqlalchemy
-import decorator
-import stripe
 
 
 api = Blueprint('api_bp', __name__)
@@ -37,7 +33,6 @@ def api_error_handler(exc):
     e = type(exc)
     msg = None
     ret = None
-    meth = request.method
     # Some custom exceptions have error notices that can be displayed, thus the
     # error_key is sent back to the frontend so they know where to send the
     # user
@@ -46,59 +41,9 @@ def api_error_handler(exc):
     else:
         kwargs = dict(success=False)
 
-    # Common API errors
-    if e is KeyError or e is AttributeError:
-        ret = 400, 'Incorrect syntax or missing key ' + str(exc.message)
-    elif e is AssertionError:
-        ret = 403, "You don't have permission to do that"
-        msg = INFO
-    elif e is APISyntaxError:
-        ret = 400, exc.message
-        msg = INFO
-    elif e is TypeError:
-        if meth == 'POST':
-            if 'at least' in exc.message:
-                ret = 400, "Required arguments missing from API create method"
-            elif 'argument' in exc.message and 'given' in exc.message:
-                ret = 400, "Extra arguments supplied to the API create method"
-            elif 'unexpected' in exc.message:
-                ret = 400, "Invalid keyword argument provided"
-            else:
-                ret = 500, "Unkown internal server error"
-                msg = ERROR
-        else:
-            ret = 500, "Unkown internal server error"
-            msg = ERROR
-
-    # Stripe handling
-    elif e is stripe.InvalidRequestError:
-        ret = 402, 'Invalid request was sent to Stripe'
-        msg = ERROR
-    elif e is stripe.AuthenticationError:
-        ret = 402, 'Our Stripe credentials seem to have expired... Darn.'
-        msg = ERROR
-    elif e is stripe.APIConnectionError:
-        ret = 402, 'Unable to connect to Stripe to process request'
-        msg = WARN
-    elif e is stripe.StripeError:
-        ret = 402, 'Unknown stripe error'
-        msg = ERROR
-
-    # SQLAlchemy exceptions
-    elif e is sqlalchemy.orm.exc.NoResultFound:
-        ret = 404, 'Could not be found'
-    elif e is sqlalchemy.orm.exc.MultipleResultsFound:
-        ret = 400, 'Only one result requested, but MultipleResultsFound'
-    elif e is sqlalchemy.exc.IntegrityError:
-        ret = 409, "A duplicate value already exists in the database"
-    elif e is sqlalchemy.exc.InvalidRequestError:
-        ret = 400, "Client programming error, invalid search sytax used."
-    elif e is sqlalchemy.exc.DataError:
-        ret = 400, "ORM returned invalid data for an argument"
-    elif issubclass(e, sqlalchemy.exc.SQLAlchemyError):
-        ret = 402, "An unknown database operations error has occurred"
-        msg = WARN, 'Uncaught type of database exception'
-
+    if e is LeverException:
+        ret = exc.code, exc.message
+        kwargs.update(exc.end_user)
     # OAuth Exceptions
     elif e is oauth.OAuthAlreadyLinked:
         ret = 400, 'That account is already linked by you'
@@ -121,6 +66,8 @@ def api_error_handler(exc):
                                  "proper information".format(e.__name__))
         ret = 500, "Exception occured in error handling"
 
+    # quick hack to prevent duplicate arguments from lever
+    kwargs.pop('message', None)
     response = jsonify(message=ret[1], **kwargs)
     response.status_code = ret[0]
     # if we should run special logging...
@@ -166,19 +113,23 @@ def oauth_user_data():
     return jsonify(success=False, error='oauth_missing_token')
 
 
-class UserAPI(API):
+class APIBase(API):
+    session = db.session
+
+
+class UserAPI(APIBase):
     model = User
 
 
-class EmailAPI(API):
+class EmailAPI(APIBase):
     model = Email
 
 
-class ProjectAPI(API):
+class ProjectAPI(APIBase):
     model = Project
 
 
-class IssueAPI(API):
+class IssueAPI(APIBase):
     model = Issue
     def create_hook(self):
         # do logic to pick out the parent from the database based on parent
@@ -203,7 +154,7 @@ class IssueAPI(API):
         return self.model.can_cls(action, project=self.params['project'])
 
 
-class SolutionAPI(API):
+class SolutionAPI(APIBase):
     model = Solution
     def create_hook(self):
         # do logic to pick out the parent from the database based on parent
@@ -230,27 +181,7 @@ class SolutionAPI(API):
         return self.model.can_cls(action, issue=self.params['issue'])
 
 
-class TransferAPI(API):
-    model = Transfer
-
-
-class RecipientAPI(API):
-    model = Recipient
-
-
-class ChargeAPI(API):
-    model = Charge
-
-
-class EarmarkAPI(API):
-    model = Earmark
-
-
-class DisputeAPI(API):
-    model = Dispute
-
-
-class CommentAPI(API):
+class CommentAPI(APIBase):
     model = Comment
     def create_hook(self):
         # do logic to pick out the parent from the database based on parent
@@ -268,13 +199,6 @@ class CommentAPI(API):
     def can_cls(self, action):
         return self.model.can_cls(action, thing=self.params['thing'])
 
-
-# activate all the APIs on the blueprint
-TransferAPI.register(api, '/transfer')
-RecipientAPI.register(api, '/recipient')
-DisputeAPI.register(api, '/dispute')
-ChargeAPI.register(api, '/charge')
-EarmarkAPI.register(api, '/earmark')
 
 SolutionAPI.register(api, '/solution')
 IssueAPI.register(api, '/issue')

@@ -3,7 +3,7 @@ from flask import (render_template, send_file, redirect, url_for, session,
 from flask.ext.login import current_user
 
 from . import root, db
-from .api_base import get_joined
+from lever import get_joined
 
 import os
 

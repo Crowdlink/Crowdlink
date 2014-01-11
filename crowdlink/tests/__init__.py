@@ -2,7 +2,7 @@ import decorator
 import crowdlink
 import json
 import os
-import stripe
+import balanced
 
 from pprint import pprint
 from flask.ext.testing import TestCase
@@ -11,8 +11,8 @@ from crowdlink import root
 from crowdlink.models import User
 
 
-def stripe_card_token_real(number='4242424242424242'):
-    token = stripe.Token.create(
+def balanced_card_token_real(number='4242424242424242'):
+    token = balanced.Token.create(
         card={
             "number": number,
             "exp_month": 12,
@@ -26,10 +26,10 @@ def stripe_card_token_real(number='4242424242424242'):
     return dct_token
 
 
-def stripe_bank_token_real(
+def balanced_bank_token_real(
         routing_number='110000000', account_number='000123456789'):
     # create a new token via the api. this is usually done via the JS side
-    token = stripe.Token.create(
+    token = balanced.Token.create(
         bank_account={
             "country": 'US',
             "routing_number": routing_number,
@@ -42,7 +42,7 @@ def stripe_bank_token_real(
     return dct_token
 
 
-def stripe_bank_token_mock():
+def balanced_bank_token_mock():
     return {
         "id": "btok_36fWMtZ9rbYXu9",
         "livemode": False,
@@ -53,7 +53,7 @@ def stripe_bank_token_mock():
         "bank_account": {
             "object": "bank_account",
             "id": "ba_1036fW27yR8C5wlpBuk8GZNb",
-            "bank_name": "STRIPE TEST BANK",
+            "bank_name": "balanced TEST BANK",
             "last4": "6789",
             "country": "US",
             "currency": "usd",
@@ -64,7 +64,7 @@ def stripe_bank_token_mock():
     }
 
 
-def stripe_card_token_mock():
+def balanced_card_token_mock():
     return {
         "id": "tok_1039Vc27yR8C5wlpMxrRRy4p",
         "livemode": False,
@@ -119,7 +119,10 @@ def login_required_ctx(username='crowdlink', password='testing'):
     return decorator.decorator(login_required_ctx)
 
 
-class BaseTest(TestCase):
+class ThinTest(TestCase):
+    """ Represents a set of tests that only need the database iniailized, but
+    no fixture data """
+
     def tearDown(self):
         self.db.session.remove()
         self.db.drop_all()
@@ -165,9 +168,18 @@ class BaseTest(TestCase):
                                "testing overrides", exc_info=True)
         with app.app_context():
             self.db = crowdlink.db
-            os.system("psql -U crowdlink -h localhost crowdlink_testing -f " + root + "/assets/test_provision.sql > /dev/null 2>&1")
-            stripe.api_key = app.config['stripe_secret_key']
+            self.setup_db()
+            balanced.configure(app.config['balanced_secret_key'])
         return app
+
+    def setup_db(self):
+        self.db.drop_all()
+        self.db.create_all()
+
+
+class BaseTest(ThinTest):
+    def setup_db(self):
+        os.system("psql -U crowdlink -h localhost crowdlink_testing -f " + root + "/assets/test_provision.sql > /dev/null 2>&1")
 
     def login(self, username, password):
         data = {
@@ -185,4 +197,3 @@ class BaseTest(TestCase):
         ret = self.client.get('/api/logout', follow_redirects=True)
         assert ret.json['access_denied']
         return ret.json
-

@@ -6,11 +6,9 @@ from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import HSTORE
 from sqlalchemy.types import TypeDecorator, TEXT
-from sqlalchemy import event
 from enum import Enum
 
 from . import db
-
 
 import sqlalchemy
 import json
@@ -392,19 +390,3 @@ class PrivateMixin(object):
             return ['anonymous']
         else:
             return ['user']
-
-
-class StatusMixin(object):
-    @property
-    def status(self):
-        return str(self.StatusVals[self._status])
-
-    @status.setter
-    def status(self, value):
-        """ Let the caller know if it was already set """
-        idx = getattr(self.StatusVals, value).index
-        if self._status == idx:
-            return False
-        else:
-            self._status = idx
-            return True

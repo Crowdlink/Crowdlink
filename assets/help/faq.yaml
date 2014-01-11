@@ -8,7 +8,7 @@ categories:
     - name: Financial
       keys:
           - pledges
-          - pending_earmarks
+          - pending_pledges
           - fees
 
 topics:
@@ -82,7 +82,7 @@ topics:
       title: What happens to a Pledge if a Solution is not accepted?
       body: When a solution is rejected, or simply isn't picked any Pledges attached to it get returned to the contributor.
       brief: Much community. So crowdfund. Wow.
-  pending_earmarks:
+  pending_pledges:
       title: Why are funds pending on my account?
       body: |
           For fraud prevention Crowdlink delays fund from maturing based on a complex set of variables. Because of this

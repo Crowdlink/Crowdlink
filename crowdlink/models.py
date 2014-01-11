@@ -1,20 +1,17 @@
 from flask import session, current_app
 from flask.ext.login import current_user, login_user
 from datetime import datetime, timedelta
-from enum import Enum
 from urlparse import urljoin
 
 from . import db, crypt, github
 from .model_lib import (base, SubscribableMixin, VotableMixin, EventJSON,
-                        StatusMixin, ReportableMixin,
-                        JSONEncodedDict)
-from .fin_models import Mark
+                        ReportableMixin, JSONEncodedDict)
 from .util import inherit_lst
 from .acl import acl
 from .oauth import (oauth_retrieve, providers, oauth_profile_populate,
                     oauth_from_session)
 from .mail import RecoverEmail, ActivationEmail
-from .api_base import get_joined, APISyntaxError
+from lever import get_joined, APISyntaxError
 
 import re
 import werkzeug
@@ -35,8 +32,8 @@ class Thing(base):
 
     @property
     def dispute_percentage(self):
-        return (self.earmarks.count() /
-                self.earmarks.filter(disputed=True).count())
+        return (self.pledges.count() /
+                self.pledges.filter(disputed=True).count())
 
 
 class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
@@ -179,11 +176,10 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
 
 
 class Issue(
-        StatusMixin, Thing, SubscribableMixin, VotableMixin, ReportableMixin):
+        Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
-
-    StatusVals = Enum('Completed', 'Discussion', 'Selected', 'Other')
-    _status = db.Column(db.Integer, default=StatusVals.Discussion.index)
+    status = db.Column(db.Enum('Completed', 'Discussion', 'Selected', 'Other',
+                               name="issue_status"), default='Discussion')
     title = db.Column(db.String(128))
     desc = db.Column(db.Text)
     creator = db.relationship('User')
@@ -242,8 +238,7 @@ class Issue(
                             ['get_project_abs_url',
                              {'obj': 'project', 'join_prof': 'issue_page_join'},
                              {'obj': 'solutions', 'join_prof': 'standard_join'},
-                             {'obj': 'comments', 'join_prof': 'standard_join'},
-                             'StatusVals']
+                             {'obj': 'comments', 'join_prof': 'standard_join'}]
                             )
 
     # used for displaying the project in noifications, etc
@@ -316,7 +311,7 @@ class Issue(
 
 
 class Solution(
-        Thing, SubscribableMixin, VotableMixin, StatusMixin, ReportableMixin):
+        Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     """ A composite of the solution table and the thing table.
 
     Solutions are attributes of Issues that can be voted on, commented on etc
@@ -559,7 +554,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
 
     # total unpaid
     current_balance = db.Column(db.Integer, default=0)
-    # total available for earmarks
+    # total available for pledges
     available_balance = db.Column(db.Integer, default=0)
 
     standard_join = ['id',
@@ -611,7 +606,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     @property
     def available_marks(self):
         """ returns the available funds from marks """
-        return sum([m.remaining for m in Mark.query.filter_by(
+        return sum([m.remaining for m in Leaf.query.filter_by(
             user_id=self.id, cleared=True)])
 
     # Password wrapping as encrypted value
