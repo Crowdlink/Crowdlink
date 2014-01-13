@@ -14,11 +14,11 @@
       .col
         %h3
           Your projects
-          %a.btn.btn-sm.btn-info{href: "#/new_project"}
+          %a.btn.btn-sm.btn-info{href: "new_project"}
             %i.fa.fa-plus
             \ New Project
         %ul.list-group.main-list{"ng-show" => "huser.projects.length > 0"}
-          %a{href: "\#{[{project.get_abs_url }]}", "ng-repeat" => "project in huser.projects"}
+          %a{href: "{[{project.get_abs_url }]}", "ng-repeat" => "project in huser.projects"}
             %li.list-group-item
               %i.fa.fa-tasks
               \  {[{ project.name }]}
@@ -26,7 +26,7 @@
       .col
         %h3 Popular Projects
         %ul.list-group.main-list{"ng-show" => "huser.projects.length > 0"}
-          %a{href: "\#{[{project.get_abs_url }]}", "ng-repeat" => "project in huser.projects"}
+          %a{href: "{[{project.get_abs_url }]}", "ng-repeat" => "project in huser.projects"}
             %li.list-group-item
               %i.fa.fa-flag
               \  {[{ project.name }]}

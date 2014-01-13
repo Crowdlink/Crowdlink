@@ -24,7 +24,8 @@ login_resolver = (auth_level) ->
     deferred.resolve()
     deferred.promise
 
-mainApp.config ["$routeProvider", ($routeProvider) ->
+mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $locationProvider) ->
+  $locationProvider.html5Mode(true).hashPrefix "!"
   $routeProvider.
   # User Actions
   # ===========================================================================
@@ -105,6 +106,7 @@ mainApp.config ["$routeProvider", ($routeProvider) ->
         UserService.query(
           __filter_by:
             username: $rootScope.user.username
+          __one: true
           join_prof: "settings_join").$promise
 
   # Primary object views (must be at bottom from root view params)

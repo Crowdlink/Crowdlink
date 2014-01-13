@@ -1,14 +1,14 @@
 .col-lg-1.text-center.hidden-sm.hidden-xs.hidden-md.no-gutter
-  %a{href: "\#{[{event.user_p}]}"}
+  %a{href: "{[{event.user_p}]}"}
     %i.fa.fa-puzzle-piece.fa-2x
 .col-lg-11.no-gutter
   .col-lg-10
-    %a{href: "\#{[{event.user_p}]}"}
-      %img{src:"\{[{ event.uavatar }]}&s=20"}
+    %a{href: "{[{event.user_p}]}"}
+      %img{src:"{[{ event.uavatar }]}&s=20"}
       {[{ event.uname }]}
     created the issue
-    %a{href: "\#{[{event.issue_p}]}"}{[{event.iname}]}
+    %a{href: "{[{event.issue_p}]}"}{[{event.iname}]}
     on
-    %a{href: "\#{[{event.proj_p}]}"} {[{event.pname}]}
+    %a{href: "{[{event.proj_p}]}"} {[{event.pname}]}
   .col-lg-2
     .pull-right.text-muted {[{event.time | date_ago}]}

@@ -238,7 +238,9 @@ class Issue(
                             ['get_project_abs_url',
                              {'obj': 'project', 'join_prof': 'issue_page_join'},
                              {'obj': 'solutions', 'join_prof': 'standard_join'},
-                             {'obj': 'comments', 'join_prof': 'standard_join'}]
+                             {'obj': 'comments', 'join_prof': 'standard_join'},
+                             'StatusVals',
+                             {'obj': 'creator', 'join_prof': 'disp_join'}]
                             )
 
     # used for displaying the project in noifications, etc
@@ -352,6 +354,10 @@ class Solution(
         foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_maintainer_username]',
         backref='solutions')
     creator = db.relationship('User', foreign_keys='Solution.creator_id')
+    comments = db.relationship(
+        'Comment',
+        order_by='Comment.created_at',
+        primaryjoin='Comment.thing_id == Thing.id and Comment.banned == False and Comment.hidden == False')
     __mapper_args__ = {'polymorphic_identity': 'Solution'}
 
     acl = acl['solution']
@@ -362,11 +368,13 @@ class Solution(
                      'user_acl',
                      'created_at',
                      '-public_events',
-                     'id'
+                     'id',
+                     'vote_status',
+                     {'obj': 'creator', 'join_prof': 'disp_join'},
+                     {'obj': 'comments', 'join_prof': 'standard_join'}
                      ]
     page_join = inherit_lst(standard_join,
-                            [{'obj': 'issue',
-                              'join_prof': 'page_join'},
+                            [{'obj': 'issue', 'join_prof': 'page_join'},
                              'vote_status'
                              ]
                             )

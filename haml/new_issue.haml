@@ -3,9 +3,9 @@
     .col-lg-12
       %ol.breadcrumb
         %li
-          %a{href: "#/{[{project.maintainer_username}]}"} {[{project.maintainer_username}]}
+          %a{href: "{[{project.maintainer_username}]}"} {[{project.maintainer_username}]}
         %li
-          %a{href: "#\{[{project.get_abs_url}]}"} {[{ project.name }]}
+          %a{href: "{[{project.get_abs_url}]}"} {[{ project.name }]}
         %li
           %a{href: ""} Issues
         %li.active {[{title}]}
@@ -49,6 +49,6 @@
                 %ul.list-group.main-list.sub-list
                   %div.fade{"ng-repeat" => "issue in issues | fuseImpFilter:raw_issue_title"}
                     %li
-                      %a{:href => "\#{[{ issue.get_abs_url }]}"}
+                      %a{:href => "{[{ issue.get_abs_url }]}"}
                         %i.fa.fa-puzzle-piece &nbsp;
                         %span{"ng-bind-html" => "issue.title | searchFilter:raw_issue_title"}

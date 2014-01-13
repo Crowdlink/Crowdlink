@@ -19,14 +19,14 @@
     / Showdown
     %script{src: "//cdnjs.cloudflare.com/ajax/libs/showdown/0.3.1/showdown.min.js"}
     / Angular
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-resource.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-route.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-sanitize.min.js"}
-    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-animate.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.8/angular.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.8/angular-resource.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.8/angular-route.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.8/angular-sanitize.min.js"}
+    %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.8/angular-animate.min.js"}
     / Bootstrap
     %script{src: "//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.7.0/ui-bootstrap-tpls.min.js"}
-    / Strip
+    / Stripe
     %script{src: "https://checkout.stripe.com/checkout.js", type: ""}
     / Internally managed =====================================================
     {% if production and production == True %}
@@ -49,7 +49,7 @@
     {% raw %}#wrap{"ng-init" => "root_init({{logged_in}}, '{{user | tojson | urlencode}}', '{{ messages | tojson | urlencode}}')"}{% endraw %}
       .navbar.navbar-inverse.navbar-fixed-top
         .container.no-gutter
-          %a.navbar-brand.logo{href: "\#{[{home}]}"}
+          %a.navbar-brand.logo{href: "{[{home}]}"}
             %img{border: "0", width: "30", height: "30", src: "{{ static_path }}img/logo.svg"}/
             %span.hidden-xs Crowdlink
           %ul.nav.nav-pills.main-nav-pills
@@ -58,19 +58,19 @@
                 %i.fa.fa-sign-out
                 %span.hidden-xs Logout
             %li{"ng-class" => "{true: 'active'}[location.path()=='/login']", "ng-hide" => "logged_in"}
-              %a{href: "#/login"}
+              %a{href: "login"}
                 %i.fa.fa-sign-in
                 %span.hidden-xs Login
             %li{"ng-class" => "{true: 'active'}[location.path().lastIndexOf('/account', 0) === 0]", "ng-show" => "logged_in"}
-              %a{href: "#/account"}
+              %a{href: "account"}
                 %i.fa.fa-gear
                 %span.hidden-xs Account
             %li{"ng-class" => "{true: 'active'}[location.path()==profile]", "ng-show" => "logged_in"}
-              %a{href: "\#{[{profile}]}"}
+              %a{href: "{[{profile}]}"}
                 %img{src: "{[{user.avatar}]}&s=20", style:"display:inline-block;vertical-align:middle;"}
                 %span.hidden-xs {[{ user.username }]}
             %li.text-center{"ng-class" => "{true: 'active'}[location.path()=='/signup']", "ng-hide" => "logged_in"}
-              %a{href: "#/signup"}
+              %a{href: "signup"}
                 %i.fa.fa-edit
                 %span.hidden-xs Sign Up
 

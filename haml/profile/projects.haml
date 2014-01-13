@@ -6,6 +6,6 @@
     %tbody
       %tr.fade{"ng-repeat" => "project in prof_user.projects"}
         %td
-          %a{:href => "\#{[{ project.get_abs_url }]}"}
+          %a{:href => "{[{ project.get_abs_url }]}"}
             %i.fa.fa-flag &nbsp;
             %span{"ng-bind" => "project.name"}

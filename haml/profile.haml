@@ -2,7 +2,7 @@
   .container
     .row{style:"padding-top:15px;"}
       .col-md-2.text-center.no-gutter
-        %img.profile-logo{src: "{{ static_path }}img/logo.svg"}
+        %img.profile-logo{src: "{[{ prof_user.avatar }]}"}
       .col-md-10
         .row
           .col-md-7

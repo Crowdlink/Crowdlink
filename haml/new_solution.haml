@@ -3,9 +3,9 @@
     .col-lg-12
       %ol.breadcrumb
         %li
-          %a{href: "#/{[{project.maintainer_username}]}"} {[{project.maintainer_username}]}
+          %a{href: "{[{project.maintainer_username}]}"} {[{project.maintainer_username}]}
         %li
-          %a{href: "#\{[{project.get_abs_url}]}"} {[{ project.name }]}
+          %a{href: "{[{project.get_abs_url}]}"} {[{ project.name }]}
         %li
           %a{href: ""} {[{ issue }]}
         %li.active {[{title}]}
@@ -49,6 +49,6 @@
                 %ul.list-group.main-list.sub-list
                   %div.fade{"ng-repeat" => "sol in sols | fuseImpFilter:raw_sol_title"}
                     %li
-                      %a{:href => "\#{[{ sol.get_abs_url }]}"}
+                      %a{:href => "{[{ sol.get_abs_url }]}"}
                         %i.fa.fa-lightbulb-o &nbsp;
                         %span{"ng-bind-html" => "sol.title | searchFilter:raw_sol_title"}

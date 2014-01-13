@@ -12,7 +12,7 @@ $brand-success:         #1A9958;
 $brand-warning:         #F39C12;
 $brand-danger:          #E74C3C;
 $brand-info:            #3498DB;
-$green:                 #619532;
+$green:                 #3A9C4A;
 $brand:                 #204967;
 $red:                   #BB463E;
 
@@ -133,8 +133,45 @@ ul.main-list.sub-list {
 .inner-pad {
   padding:15px;
 }
-.margin-left {
-  margin-left: 10px;
+.issue-heading {
+  padding: 8px 8px 8px 0px;
+  background-color:#F9F9F9;
+  border-bottom:1px solid #DDD;
+}
+.no-margin {
+  margin:0px !important;
+}
+.cursor {
+  &:hover {
+    cursor:pointer;
+  }
+}
+.comments-row {
+  padding:8px;
+  line-height:25px;
+  border-bottom:1px solid #EEE;
+  &:nth-child(even) {
+    background-color: #F9F9F9;
+  }
+}
+.extra-comments-row {
+  padding:8px;
+  line-height:25px;
+  border-bottom:1px solid #EEE;
+  &:nth-child(odd) {
+    background-color: #F9F9F9;
+  }
+}
+.new-comment-text {
+  height:30px;
+  width:85%;
+  margin-right:10px;
+  margin-top:2px;
+}
+
+.comments-heading {
+  padding: 8px 8px 8px 8px;
+  background-color:#FFFFFF;
 }
 /* Homepage styling */
 .hr-header {

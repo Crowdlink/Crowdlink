@@ -287,7 +287,18 @@ mainControllers.controller('solutionController',
 
 # IssueController =============================================================
 mainControllers.controller('issueController',
-($scope, $routeParams, $rootScope, issue, $injector, $timeout, CommentService) ->
+($scope, $routeParams, $rootScope, issue, $injector, $timeout, CommentService, $location, $anchorScroll) ->
+
+  $scope.toggle_comments = (s) ->
+    $scope.$eval("view_comments.#{s} = !view_comments.#{s}")
+
+  $scope.scrollTo = (id) ->
+    old = $location.hash()
+    $location.hash id
+    $anchorScroll()
+
+    #reset to old to keep any additional routing logic from kicking in
+    $location.hash old
 
   $injector.invoke(parentEditController, this, {$scope: $scope})
   $scope.issue = issue.objects[0]
@@ -297,6 +308,8 @@ mainControllers.controller('issueController',
     issue:
       title: false
       desc: false
+      solutions: []
+
   $scope.saving =
     issue:
       title: false
@@ -305,6 +318,17 @@ mainControllers.controller('issueController',
       vote_status: false
       subscribed: false
       report_status: false
+      solutions: []
+
+  for solution in $scope.issue.solutions
+    $scope.editing.issue.solutions.push(
+      desc: false
+      title: false
+    )
+    $scope.saving.issue.solutions.push(
+      desc: false
+      title: false
+    )
 
   $scope.$watch('issue.title',(val) ->
     if val
@@ -683,7 +707,7 @@ mainControllers.controller('newSolutionController',
       project_maintainer_username: $routeParams.username
       project_url_key: $routeParams.purl_key
       issue_url_key: $routeParams.url_key
-      desc: $scope.desc
+      desc: $scope.description
       title: $scope.sol_title
     ,(value) ->
       if 'success' of value and value.success

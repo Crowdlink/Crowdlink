@@ -1,6 +1,6 @@
 %h3
   Issues
-  %a.button.btn.btn-info.pull-right{:href => "\#{[{project.get_abs_url}]}new_issue"}
+  %a.button.btn.btn-info.pull-right{:href => "{[{project.get_abs_url}]}new_issue"}
     %i.fa.fa-large.fa-plus
     Add a new Issue
 %hr.feed
@@ -27,7 +27,7 @@
             %ng-pluralize{:count => "issue.votes",
               :when => "{'0': 'No votes', 'one': '1 vote', 'other': '{} votes'}"}
         %td
-          %a{:href => "\#{[{ issue.get_abs_url }]}"}
+          %a{:href => "{[{ issue.get_abs_url }]}"}
             %i.fa.fa-puzzle-piece &nbsp;
             %span{"ng-bind-html" => "issue.title | searchFilter:filter"}
 

@@ -18,15 +18,15 @@
           %td Maintainer:
           %td
             %img{src:"\{[{ project.maintainer.avatar }]}&s=20"}
-            %a{:href => "#/{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
+            %a{:href => "{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
         %tr{"ng-repeat" => "admin in project.admins"}
           %td Admin
           %td
-            %a{:href => "#/{[{ admin.username }]}"} {[{ admin.username }]}
+            %a{:href => "{[{ admin.username }]}"} {[{ admin.username }]}
         %tr{"ng-repeat" => "repo in project.repos"}
           %td Linked with {[{repo.name }]} Repository
           %td
-            %a{:href => "#/{[{ repo.project_url }]}"} {[{ repo.project_title }]}
+            %a{:href => "{[{ repo.project_url }]}"} {[{ repo.project_title }]}
         %tr
           %td Donations Recieved:
           %td
