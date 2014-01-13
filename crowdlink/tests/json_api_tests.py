@@ -3,7 +3,6 @@ import json
 
 from crowdlink.tests import BaseTest, login_required, login_required_ctx
 from crowdlink.models import Issue, Project, Solution, User, Comment
-from crowdlink.fin_models import Charge, Mark, Earmark
 
 from pprint import pprint
 from flask.ext.login import current_user
@@ -90,8 +89,6 @@ class TestAnonymousPermissions(BaseTest):
                (Project, 'project'),
                (Solution, 'solution'),
                (Comment, 'comment'),
-               (Charge, 'charge'),
-               (Earmark, 'earmark'),
                (User, 'user')]
         for cls, url_key in lst:
             obj = self.db.session.query(cls).first()
