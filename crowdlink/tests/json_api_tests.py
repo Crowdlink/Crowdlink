@@ -5,6 +5,7 @@ from crowdlink.tests import BaseTest, login_required, login_required_ctx
 from crowdlink.models import Issue, Project, Solution, User, Comment
 
 from pprint import pprint
+from lever import jsonize
 from flask.ext.login import current_user
 
 
@@ -92,7 +93,7 @@ class TestAnonymousPermissions(BaseTest):
                (User, 'user')]
         for cls, url_key in lst:
             obj = self.db.session.query(cls).first()
-            values = obj.jsonize(obj.to_dict().keys(), raw=True)
+            values = jsonize(obj, obj.to_dict().keys(), raw=True)
             for key, val in values.items():
                 if key == 'id' or 'event' in key:
                     continue

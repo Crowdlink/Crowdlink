@@ -11,7 +11,7 @@ from .acl import acl
 from .oauth import (oauth_retrieve, providers, oauth_profile_populate,
                     oauth_from_session)
 from .mail import RecoverEmail, ActivationEmail
-from lever import get_joined, APISyntaxError
+from lever import get_joined, LeverSyntaxError
 
 import re
 import werkzeug
@@ -862,7 +862,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                 return False
 
         if prim_set is False:
-            raise APISyntaxError(
+            raise LeverSyntaxError(
                 "Primary email was not any one of provided emails")
 
         db.session.flush()

@@ -102,56 +102,6 @@ class BaseMapper(object):
         # then we return their values in a dict
         return dict((c, getattr(model, c)) for c in columns)
 
-    def jsonize(self, args, raw=False):
-        """ Used to join attributes or functions to an objects json
-        representation.  For passing back object state via the api """
-        dct = {}
-        for key in args:
-            attr = getattr(self, key)
-            # if it's a callable function call it, then do the parsing below
-            if callable(attr):
-                try:
-                    attr = attr()
-                except TypeError:
-                    current_app.logger.warn(
-                        ("{} callable requires argument on obj "
-                         "{}").format(str(attr), self.__class__.__name__))
-                    continue
-
-            # If it's being joined this way, just use the id
-            if isinstance(attr, BaseMapper):
-                try:
-                    attr = str(attr.id)
-                except AttributeError:
-                    current_app.logger.warn(
-                        ("{} object join doesn't have an id on obj "
-                         "{}").format(str(attr), self.__class__.__name__))
-            # convert an enum to a dict for easy parsing
-            elif isinstance(attr, Enum):
-                attr = dict({str(x): x.index for x in attr})
-            # convert datetime to seconds since epoch, much more universal
-            elif isinstance(attr, datetime):
-                attr = calendar.timegm(attr.utctimetuple()) * 1000
-            # don't convert these common types to strings
-            elif (isinstance(attr, bool) or
-                  isinstance(attr, int) or
-                  isinstance(attr, dict) or
-                  attr is None or
-                  isinstance(attr, list)):
-                pass
-            # convert set (user_acl list) to a dictionary for easy conditionals
-            elif isinstance(attr, set):
-                attr = {x: True for x in attr}
-            else:  # if we don't know what it is, stringify it
-                attr = str(attr)
-
-            dct[key] = attr
-
-        if raw:
-            return dct
-        else:
-            return json.dumps(dct)
-
 
 # setup our base mapper and database metadata
 metadata = db.MetaData()

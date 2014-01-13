@@ -5,6 +5,7 @@ from .util import trunc
 
 from sqlalchemy.orm import joinedload
 from flask import current_app
+from lever import jsonize
 
 import flask_sqlalchemy
 import datetime
@@ -15,7 +16,7 @@ class Event(BaseMapper):
         self.__dict__.update(kwargs)
 
     def to_dict(self):
-        ret = self.jsonize(self.__dict__.keys(), raw=True)
+        ret = jsonize(self, self.__dict__.keys(), raw=True)
         ret["_cls"] = self.__class__.__name__
         return ret
 

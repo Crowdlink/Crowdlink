@@ -1,7 +1,8 @@
-from flask import Blueprint, request, current_app, jsonify
-from flask.ext.login import login_required, logout_user
+from flask import Blueprint, current_app, jsonify
+from flask.ext.login import login_required, logout_user, current_user
 from flask.ext.oauthlib.client import OAuthException
 
+from pprint import pformat
 from lever import API, LeverException
 from .oauth import oauth_retrieve, oauth_from_session
 from .models import User, Project, Issue, Solution, Email, Comment, Thing
@@ -16,71 +17,62 @@ api = Blueprint('api_bp', __name__)
 
 @api.errorhandler(Exception)
 def api_error_handler(exc):
-    """ This handles all exceptions that can be thrown by the API and takes
-    care of logging them and reporting to the end user.
+    # set some defaults
+    log = 'debug'
+    msg = "Exception occured in error handling"
+    code = 500
+    extra = {}
+    end_user = {}
 
-    Each branch must define ret to be a tuple
-    (status_code, message back to the user).
-    Msg can be defined as optional logging information that shouldn't be
-    reported to the user. By default the message will be logged in debug
-    mode if no msg is specified"""
-    # debug constants
-    ERROR = 0
-    WARN = 1
-    INFO = 2
-    DEBUG = 3
+    try:
+        raise exc
+    except LeverException as e:
+        code = e.code
+        msg = e.message
+        end_user = e.end_user
+        extra = e.extra
 
-    e = type(exc)
-    msg = None
-    ret = None
-    # Some custom exceptions have error notices that can be displayed, thus the
-    # error_key is sent back to the frontend so they know where to send the
-    # user
-    if hasattr(e, 'error_key'):
-        kwargs = dict(error_key=e.error_key, success=False)
-    else:
-        kwargs = dict(success=False)
-
-    if e is LeverException:
-        ret = exc.code, exc.message
-        kwargs.update(exc.end_user)
     # OAuth Exceptions
-    elif e is oauth.OAuthAlreadyLinked:
-        ret = 400, 'That account is already linked by you'
-    elif e is oauth.OAuthLinkedOther:
-        ret = 400, 'That account is already linked by another user'
-    elif e is oauth.OAuthEmailPresent:
-        ret = 400, 'That email already exists in our system'
-    elif e is oauth.OAuthCommError:
-        ret = 400, 'Error communicating with the OAuth provider'
-    elif e is oauth.OAuthDenied:
-        ret = 400, 'OAuth session information expired or you denied the OAuth request'
-    elif issubclass(e, OAuthException):
-        ret = 400, 'Unkown OAuth error occured'
-        msg = WARN
-    else:
-        ret = 500, "Internal Server error"
-
-    if ret is None:
+    except oauth.OAuthAlreadyLinked:
+        msg = 'That account is already linked by you'
+        code = 400
+    except oauth.OAuthLinkedOther:
+        msg = 'That account is already linked by another user'
+        code = 400
+    except oauth.OAuthEmailPresent:
+        msg = 'That email already exists in our system'
+        code = 400
+    except oauth.OAuthCommError:
+        msg = 'Error communicating with the OAuth provider'
+        code = 400
+    except oauth.OAuthDenied:
+        msg = 'OAuth session information expired or you denied the OAuth request'
+        code = 400
+    except OAuthException:
+        msg = 'Unkown OAuth error occured'
+        code = 400
+        log = 'warn'
+    except Exception:
         current_app.logger.error("Error handler for type {} failed to return "
                                  "proper information".format(e.__name__))
-        ret = 500, "Exception occured in error handling"
 
-    # quick hack to prevent duplicate arguments from lever
-    kwargs.pop('message', None)
-    response = jsonify(message=ret[1], **kwargs)
-    response.status_code = ret[0]
-    # if we should run special logging...
-    if msg is not None:
-        # allow the user to just change the log level by changing msg
-        if isinstance(msg, int):
-            msg = msg, ret[1]
-        attr_map = {0: 'error', 1: 'warn', 2: 'info', 3: 'debug'}
-        # log the message using flasks logger. In the future this will use
-        # logstash and other methods
-        getattr(current_app.logger, attr_map[msg[0]])(msg[1], exc_info=True)
-    else:
-        current_app.logger.debug(str(ret), exc_info=True)
+    if hasattr(e, 'error_key'):
+        end_user['error_key'] = e.error_key
+    end_user['success'] = False
+
+    # ensure the message of the exception gets passed on
+    end_user['message'] = msg
+    response = jsonify(**end_user)
+    response.status_code = code
+
+    # logging
+
+    # log the message using flasks logger. In the future this will use
+    # logstash and other methods
+    message = ('Extra: {}\nEnd User: {}'
+               .format(pformat(extra), pformat(end_user)))
+    getattr(current_app.logger, log)(message, exc_info=True)
+
     return response
 
 
@@ -115,6 +107,7 @@ def oauth_user_data():
 
 class APIBase(API):
     session = db.session
+    current_user = current_user
 
 
 class UserAPI(APIBase):
