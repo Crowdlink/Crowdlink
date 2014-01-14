@@ -16,17 +16,17 @@ def test_403(action=None):
     """ Allows simple testing of the various error display systems """
     if action == 'flash':
         send_message('This is a test of the automated flash alert system!', 'alert-danger')
-        return redirect(url_for('main.angular_root', _anchor='/'))
+        return redirect('/')
     if action == 'mflash':
         send_message('This is a test of the automated flash alert system!', 'alert-success')
         send_message('This is another test of the automated flash alert system!', 'alert-info')
-        return redirect(url_for('main.angular_root', _anchor='/'))
+        return redirect('/')
     if action == 'lflash':
         send_message('This is a test of the long automated flash alert system!', 'alert-primary', 10000)
-        return redirect(url_for('main.angular_root', _anchor='/'))
+        return redirect('/')
     if action == 'sflash':
         send_message('This is a test of the long automated flash alert system!', 'alert-warning', page_stay=3)
-        return redirect(url_for('main.angular_root', _anchor='/'))
+        return redirect('/')
     elif action == '403':
         abort(403)
     elif action == '400':
