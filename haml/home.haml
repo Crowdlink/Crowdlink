@@ -15,12 +15,12 @@
               %span.ng-binding.ng-hide{"ng-show" => "error_header"}
               %ul.ng-hide{"ng-show" => "errors.length > 1"}
                 / ngRepeat: error in errors
-            .form-group
-              .col-lg-8.col-lg-offset-2
-                %input.form-control.ng-pristine.ng-valid{"ng-model" => "username", type: "text", placeholder:"Username"}/
-            .form-group
-              .col-lg-8.col-lg-offset-2
-                %input.form-control.ng-pristine.ng-valid{"ng-model" => "password", type: "password", placeholder:"Password"}/
+            -#.form-group
+            -#  .col-lg-8.col-lg-offset-2
+            -#    %input.form-control.ng-pristine.ng-valid{"ng-model" => "username", type: "text", placeholder:"Username"}/
+            -#.form-group
+            -#  .col-lg-8.col-lg-offset-2
+            -#    %input.form-control.ng-pristine.ng-valid{"ng-model" => "password", type: "password", placeholder:"Password"}/
             .form-group
               .col-lg-8.col-lg-offset-2
                 %input.form-control.ng-pristine.ng-valid{"ng-model" => "password", type: "password", placeholder:"Email"}/
@@ -28,9 +28,9 @@
               .col-lg-8.col-lg-offset-2
                 %button.btn.btn-info.fill-link{"ng-click" => "submit()", type: "submit"}
                   %i.fa.fa-edit
-                  Sign up for Crowdlink
+                  Register for updates
                 %p.text-muted
-                  By clicking "Sign up for Crowdlink", you agree to our
+                  By clicking "Register for updates", you agree to our
                   %a{href: "tos", target: "_blank"} terms of service
                   and
                   %a{href: "privacy", target: "_blank"} privacy policy
@@ -41,7 +41,7 @@
 
         .row
           .col-lg-8.col-lg-offset-2.text-center
-            Sign up with Oauth
+            Register with Oauth
         .row
           %form.form-horizontal
             .form-group
@@ -83,7 +83,7 @@
           .col-md-4
             %h3
               .text-center
-                %i.fa.fa-comment.fa-3x
+                %i.fa.fa-group.fa-3x
                 %br
                 Microdonation based
 
@@ -93,7 +93,7 @@
               Vote and make microdonations towards projects you like, or make your vote really count by making a Pledge towards an issue.
           .col-md-4
             %p
-              Pledges let you tell project developers which issues matter, and help motivate work being done in the most
+              Pledges tell project developers which issues matter, and help motivate work being done in the most
               needed areas
           .col-md-4
             %p
