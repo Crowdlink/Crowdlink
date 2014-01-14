@@ -215,12 +215,16 @@ div h4.subtext {
 div.home-body {
   background-color:#3A9C4A;
   color:#fff;
-  h2 {
+  padding-top:75px;
+  padding-bottom:75px;
+  h3 {
     color:#fff;
+    font-size:26px;
   }
   p {
     font-size:14pt;
     line-height:30px;
+    padding:15px;
   }
 }
 .btn-oauth {
