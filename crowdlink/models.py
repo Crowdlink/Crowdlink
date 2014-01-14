@@ -131,7 +131,8 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
 
         db.session.add(project)
 
-
+        # flush after finishing creation
+        db.session.flush()
         # send a notification to all subscribers
         events.NewProjNotif.generate(project)
 
@@ -305,6 +306,8 @@ class Issue(
         issue.create_key()
         db.session.add(issue)
 
+        # flush after finishing creation
+        db.session.flush()
         # send a notification to all subscribers
         events.IssueNotif.generate(issue)
 
@@ -421,6 +424,8 @@ class Solution(
         sol.create_key()
         db.session.add(sol)
 
+        # flush after finishing creation
+        db.session.flush()
         # send a notification to all subscribers
         events.NewSolNotif.generate(sol)
 
@@ -674,7 +679,6 @@ class User(Thing, SubscribableMixin, ReportableMixin):
         # Set your variables here
         default = urljoin(current_app.config['base_url'],
                           current_app.config['static_path'], "img/logo_sm.jpg")
-        current_app.logger.debug(default)
         # construct the url
         gravatar_url = "http://www.gravatar.com/avatar/"
         gravatar_url += hashlib.md5(self.primary_email.address.lower()).hexdigest()
