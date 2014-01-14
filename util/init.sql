@@ -6,6 +6,10 @@ CREATE DATABASE crowdlink_testing;
 GRANT ALL PRIVILEGES ON DATABASE crowdlink to crowdlink;
 -- Add HSTORE to both databases
 \c crowdlink
+drop schema public cascade;
+create schema public;
 CREATE EXTENSION hstore;
 \c crowdlink_testing
+drop schema public cascade;
+create schema public;
 CREATE EXTENSION hstore;

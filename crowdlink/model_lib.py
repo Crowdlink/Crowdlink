@@ -6,7 +6,6 @@ from flask.ext.sqlalchemy import (_BoundDeclarativeMeta, BaseQuery,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import HSTORE
 from sqlalchemy.types import TypeDecorator, TEXT
-from enum import Enum
 
 from . import db
 
