@@ -1,4 +1,5 @@
-Flask-Testing
+git+https://github.com/jarus/flask-testing.git#egg=Flask-Testing
+flask-debugtoolbar
 mock
 nose
 nose-progressive

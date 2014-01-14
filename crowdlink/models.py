@@ -1,7 +1,11 @@
 from flask import session, current_app
 from flask.ext.login import current_user, login_user
 from datetime import datetime, timedelta
-from urlparse import urljoin
+try:
+    from urlparse import urljoin
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urljoin, urlencode
 
 from . import db, crypt, github
 from .model_lib import (base, SubscribableMixin, VotableMixin, EventJSON,
@@ -15,10 +19,10 @@ from lever import get_joined, LeverSyntaxError
 
 import re
 import werkzeug
-import urllib
 import hashlib
 import sqlalchemy
 import os
+import six
 
 
 # our parent table for issues, projects, solutions and users
@@ -532,7 +536,7 @@ class Email(base):
         """ Regenerates activation hashes and time markers and commits the
         change.  If the commit action is successful, an email will be sent to
         the user """
-        self.activate_hash = hashlib.sha256(os.urandom(10)).hexdigest()
+        self.activate_hash = hashlib.sha256(six.u(os.urandom(10))).hexdigest()
         self.activate_gen = datetime.utcnow()
 
         # complicated block that allows force send to either force to send or
@@ -629,7 +633,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
 
     @password.setter
     def password(self, val):
-        self._password = unicode(crypt.encode(val))
+        self._password = six.u(crypt.encode(val))
 
     def check_password(self, password):
         return crypt.check(self._password, password)
@@ -672,7 +676,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
 
     def get_abs_url(self):
         return "/{username}".format(
-            username=unicode(self.username).encode('utf-8'))
+            username=six.u(self.username).encode('utf-8'))
 
     @property
     def avatar(self):
@@ -681,8 +685,9 @@ class User(Thing, SubscribableMixin, ReportableMixin):
                           current_app.config['static_path'], "img/logo_sm.jpg")
         # construct the url
         gravatar_url = "http://www.gravatar.com/avatar/"
-        gravatar_url += hashlib.md5(self.primary_email.address.lower()).hexdigest()
-        gravatar_url += "?" + urllib.urlencode({'d': default})
+        gravatar_url += hashlib.md5(
+            self.primary_email.address.lower().encode('utf8')).hexdigest()
+        gravatar_url += "?" + urlencode({'d': default})
         return gravatar_url
 
     @property
@@ -900,7 +905,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
         return False
 
     def get_id(self):
-        return unicode(self.id)
+        return six.u(self.id)
 
     def roles(self, user=current_user):
         if self.id == getattr(user, 'id', None):
@@ -913,7 +918,6 @@ class User(Thing, SubscribableMixin, ReportableMixin):
             return ['admin']
         if self.username is None:
             return ['usernameless']
-        print self.username
         if not self.primary_email.activated:
             return ['noactive_user']
         return ['user']

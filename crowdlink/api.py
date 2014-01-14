@@ -28,7 +28,7 @@ def api_error_handler(exc):
         raise exc
     except LeverException as e:
         code = e.code
-        msg = e.message
+        msg = str(e)
         end_user = e.end_user
         extra = e.extra
 
@@ -53,10 +53,10 @@ def api_error_handler(exc):
         code = 400
         log = 'warn'
     except Exception:
-        current_app.logger.error("Error handler for type {} failed to return "
-                                 "proper information".format(e.__name__))
+        current_app.logger.error(
+            "Unhadled API error of type {0} raised".format(e.__name__))
 
-    if hasattr(e, 'error_key'):
+    if hasattr(exc, 'error_key'):
         end_user['error_key'] = e.error_key
     end_user['success'] = False
 

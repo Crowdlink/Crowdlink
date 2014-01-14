@@ -39,7 +39,7 @@ class EmailTests(BaseTest):
         Email.activate_email(email.address, email.activate_hash)
         self.db.session.commit()
         self.db.session.refresh(email)
-        print email.to_dict()
+        print(email.to_dict())
         assert email.activated is True
         assert email.activate_hash is None
         assert email.activate_gen is None
@@ -98,7 +98,7 @@ class UserTests(BaseTest):
                            force_send=False)
         self.db.session.commit()
         self.db.session.refresh(user)
-        print user.to_dict()
+        print(user.to_dict())
         assert user.username == 'testing_one'
         assert user.password != 'testing'
         Email.query.filter_by(address='testing@crowdlink.io').one()

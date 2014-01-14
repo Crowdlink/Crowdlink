@@ -37,7 +37,7 @@ def provision():
 
     # Create projects, issues, comments, etc from a template file
     # =========================================================================
-    pdata = yaml.load(file(root + '/assets/provision.yaml'))
+    pdata = yaml.load(open(root + '/assets/provision.yaml'))
     projects = {}
     for project in pdata['projects']:
         # create a sweet new project...

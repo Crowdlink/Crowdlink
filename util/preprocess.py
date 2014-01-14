@@ -30,7 +30,7 @@ for root, _, filenames in os.walk(args.folder):
         pass
     else:
         if args.verbose:
-            print "Created " + folder
+            print("Created " + folder)
     for filename in fnmatch.filter(filenames, '*.' + args.filetype):
         outfile = os.path.join(folder, filename)
         infile = os.path.join(rel_root, filename)
@@ -44,10 +44,10 @@ for root, _, filenames in os.walk(args.folder):
                 open(outfile, 'w').write(
                     env.get_template(infile).render(**env_vars).encode('utf-8'))
             except Exception:
-                print "Error parsing file " + outfile
+                print("Error parsing file " + outfile)
                 raise
             if args.verbose:
-                print "Parsed " + outfile
+                print("Parsed " + outfile)
         else:
             if args.verbose:
-                print "Not changed " + outfile
+                print("Not changed " + outfile)

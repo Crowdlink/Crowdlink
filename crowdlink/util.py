@@ -1,3 +1,5 @@
+import six
+
 def flatten(tpl):
     """ Makes a list of values prefixed by the first value of a tuple """
     if isinstance(tpl, tuple):
@@ -23,7 +25,7 @@ def flatten_dict(dct):
     Recursively safe so nesting tuples works as expected.
     """
 
-    return {key: flatten(value) for (key, value) in dct.iteritems()}
+    return {key: flatten(value) for (key, value) in six.iteritems(dct)}
 
 
 def inherit_dict(*args):

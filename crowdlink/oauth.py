@@ -1,11 +1,11 @@
-from flask import (Blueprint, request, redirect, url_for, current_app,
-                   abort, session)
+from flask import request, redirect, url_for, current_app, abort, session
 from flask.ext.login import current_user, login_user
 from flask.ext.oauthlib.client import OAuthException
 
 from . import github, twitter, google, db
 from .views import main
 
+import six
 import copy
 import sqlalchemy
 import sys
@@ -46,12 +46,12 @@ def get_twitter_oauth_token():
 @main.errorhandler(OAuthException)
 def oauth_error_handler(e):
     """ If any of the oauth views throws an OAuth exception it will be
-    redirect the user to a useful error message via this method. """
-    current_app.logger.debug(e.message, exc_info=True)
+    redirect the user to a ≡jedi=0, useful ≡ (*obj*) ≡jedi≡error message via this method. """
+    current_app.logger.debug(str(e), exc_info=True)
     if isinstance(e, OAuthDenied):
         # notify the user
         send_message('Session has expired or you denied the OAuth request',
-              'alert-danger')
+                     'alert-danger')
         return redirect('/')
     elif type(e) is OAuthException:
         error = 'oauth_error'
@@ -137,7 +137,7 @@ def authorize(provider=None, action=None):
     try:
         if provider == 'tw':  # OAuth v1.0a
             raw_token = '{}:{}'.format(data['oauth_token'],
-                                   data['oauth_token_secret'])
+                                       data['oauth_token_secret'])
         else:
             raw_token = data['access_token']
     except (KeyError, TypeError):
@@ -176,8 +176,9 @@ def authorize(provider=None, action=None):
         except sqlalchemy.exc.IntegrityError:
             # edge case is that someone registers with an emails address
             # that is being added in this transaction, very unlikely.
-            raise OAuthLinkedOther(
-                "Another user has already linked that account"), None, sys.exc_info()[2]
+            exc = OAuthLinkedOther(
+                "Another user has already linked that account")
+            six.reraise(OAuthLinkedOther, exc, tb=sys.exc_info()[2])
 
         return redirect('/account')
     elif action == 'link':  # can't link if not logged in
@@ -256,8 +257,9 @@ def oauth_retrieve(provider, raw_token, email_only=False):
     except KeyError:  # if one of the responses didn't have what we needed
         pass
 
-    raise OAuthCommError(
-        "Populating user information from the provider failed"), None, sys.exc_info()[2]
+    exc = OAuthCommError(
+        "Populating user information from the provider failed")
+    six.reraise(OAuthCommError, exc, tb=sys.exc_info()[2])
 
 
 def oauth_profile_populate(provider, user=current_user):
@@ -293,8 +295,9 @@ def oauth_profile_populate(provider, user=current_user):
                              'id': data['id']}
         user.profile = profile
     except KeyError:
-        raise OAuthCommError(
-            "Problem populating profile data from provider"), None, sys.exc_info()[2]
+        exc = OAuthCommError(
+            "Problem populating profile data from provider")
+        six.reraise(exc, OAuthCommError, tb=sys.exc_info()[2])
 
     return False
 
@@ -317,8 +320,9 @@ def oauth_from_session(action):
                 'provider_obj': provider_obj,
                 'provider': provider}
     except KeyError:
-        raise OAuthSessionExpired(
-            "Problem populating profile data from provider"), None, sys.exc_info()[2]
+        exc = OAuthSessionExpired(
+            "Problem populating profile data from provider")
+        six.reraise(exc, OAuthCommError, tb=sys.exc_info()[2])
 
 
 def oauth_to_session(provider, token):

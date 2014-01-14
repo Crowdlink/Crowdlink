@@ -22,7 +22,7 @@ class EventTests(BaseTest):
         self.db.session.refresh(issue)
         self.db.session.refresh(issue.project)
         self.db.session.refresh(issue.creator)
-        print issue.title
+        print(issue.title)
         for event in issue.project.public_events:
             pprint(event.to_dict())
         assert issue.project.public_events[-1].iname == issue.title

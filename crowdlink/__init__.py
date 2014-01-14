@@ -1,4 +1,4 @@
-from flask import Flask, request, url_for, redirect
+from flask import Flask, request, redirect
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.login import LoginManager
 from flask.ext.oauthlib.client import OAuth
@@ -6,6 +6,7 @@ from flask.ext.oauthlib.client import OAuth
 from jinja2 import FileSystemLoader
 
 import os
+import six
 import json
 import logging
 import cryptacular.bcrypt
@@ -45,9 +46,11 @@ def create_app(config='/application.json'):
 
     # set our template path and configs
     app.jinja_loader = FileSystemLoader(os.path.join(root, 'templates'))
-    config_vars = json.loads(file(root + config).read())
+    config_vars = json.load(open(root + config))
     # merge the public and private keys
-    config_vars = dict(config_vars['public'].items() + config_vars['private'].items())
+    public = list(six.iteritems(config_vars['public']))
+    private = list(six.iteritems(config_vars['private']))
+    config_vars = dict(private + public)
     for key, val in config_vars.items():
         app.config[key] = val
     app.config['github'] = dict(

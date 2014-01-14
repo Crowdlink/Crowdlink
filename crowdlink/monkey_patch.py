@@ -1,3 +1,5 @@
+import six
+
 # Monkey patch the login managers error function
 # =========================================================================
 from flask.ext.login import LoginManager, user_unauthorized
@@ -23,7 +25,7 @@ LoginManager.unauthorized = unauthorized
 from flask import Request
 @property
 def dict_args(self):
-    return {one: two for one, two in self.args.iteritems()}
+    return {one: two for one, two in six.iteritems(self.args)}
 
 @property
 def json_dict(self):

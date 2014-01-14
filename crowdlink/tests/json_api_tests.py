@@ -34,8 +34,8 @@ class TestMixinsJSONAPI(BaseTest):
                 res = self.json_put('/api/' + key,
                                     {'id': obj.id, 'vote_status': val}).json
                 if res['success']:
-                    print res
-                    print obj.to_dict()
+                    print(res)
+                    print(obj.to_dict())
                 assert not res['success']
 
     @login_required()
@@ -77,8 +77,8 @@ class TestMixinsJSONAPI(BaseTest):
                 res = self.json_put('/api/' + key,
                                     {'id': obj.id, 'report_status': val}).json
                 if not res['success']:
-                    print res
-                    print obj.to_dict()
+                    print(res)
+                    print(obj.to_dict())
                 assert res['success']
 
 class TestAnonymousPermissions(BaseTest):
@@ -100,10 +100,10 @@ class TestAnonymousPermissions(BaseTest):
                 res = self.json_put('/api/' + url_key, {'id': obj.id, key: val})
                 dat = res.json
                 if dat['success']:
-                    print dat
-                    print obj.to_dict()
-                    print ("Damn, was able to change {} for obj type {}"
-                           .format(key, url_key))
+                    print(dat)
+                    print(obj.to_dict())
+                    print("Damn, was able to change {} for obj type {}"
+                          .format(key, url_key))
                 assert not dat['success']
                 assert res.status_code == 403
 

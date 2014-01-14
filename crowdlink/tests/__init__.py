@@ -2,7 +2,7 @@ import decorator
 import crowdlink
 import json
 import os
-import balanced
+import six
 
 from pprint import pprint
 from flask.ext.testing import TestCase
@@ -10,87 +10,6 @@ from flask.ext.login import login_user, logout_user
 from crowdlink import root
 from crowdlink.models import User
 
-
-def balanced_card_token_real(number='4242424242424242'):
-    token = balanced.Token.create(
-        card={
-            "number": number,
-            "exp_month": 12,
-            "exp_year": 2014,
-            "cvc": '123'
-        },
-    )
-    # serialize it
-    dct_token = dict(token)
-    dct_token['card'] = dict(token.card)
-    return dct_token
-
-
-def balanced_bank_token_real(
-        routing_number='110000000', account_number='000123456789'):
-    # create a new token via the api. this is usually done via the JS side
-    token = balanced.Token.create(
-        bank_account={
-            "country": 'US',
-            "routing_number": routing_number,
-            "account_number": account_number
-        },
-    )
-    # serialize it
-    dct_token = dict(token)
-    dct_token['bank_account'] = dict(token.bank_account)
-    return dct_token
-
-
-def balanced_bank_token_mock():
-    return {
-        "id": "btok_36fWMtZ9rbYXu9",
-        "livemode": False,
-        "created": 1386826725,
-        "used": False,
-        "object": "token",
-        "type": "bank_account",
-        "bank_account": {
-            "object": "bank_account",
-            "id": "ba_1036fW27yR8C5wlpBuk8GZNb",
-            "bank_name": "balanced TEST BANK",
-            "last4": "6789",
-            "country": "US",
-            "currency": "usd",
-            "validated": False,
-            "verified": False,
-            "fingerprint": "4da146xwbFRdSqcm"
-        }
-    }
-
-
-def balanced_card_token_mock():
-    return {
-        "id": "tok_1039Vc27yR8C5wlpMxrRRy4p",
-        "livemode": False,
-        "created": 1387481788,
-        "used": False,
-        "object": "token",
-        "type": "card",
-        "card": {
-            "id": "card_1039Vc27yR8C5wlpsihVqpZz",
-            "object": "card",
-            "last4": "4242",
-            "type": "Visa",
-            "exp_month": 8,
-            "exp_year": 2014,
-            "fingerprint": "gBSDyxpPKbbCPXqw",
-            "customer": None,
-            "country": "US",
-            "name": None,
-            "address_line1": None,
-            "address_line2": None,
-            "address_city": None,
-            "address_state": None,
-            "address_zip": None,
-            "address_country": None
-        }
-    }
 
 def login_required(username='crowdlink', password='testing'):
     """ Decorator that logs in the user under a request context as well as a
@@ -159,8 +78,10 @@ class ThinTest(TestCase):
         # capture properly
         del app.logger.handlers[0]
         try:
-            config_vars = json.loads(file(root + '/testing.json').read())
-            config_vars = dict(config_vars['public'].items() + config_vars['private'].items())
+            config_vars = json.load(open(root + '/testing.json'))
+            public = list(six.iteritems(config_vars['public']))
+            private = list(six.iteritems(config_vars['private']))
+            config_vars = dict(private + public)
             for key, val in config_vars.items():
                 app.config[key] = val
         except IOError:
@@ -169,7 +90,6 @@ class ThinTest(TestCase):
         with app.app_context():
             self.db = crowdlink.db
             self.setup_db()
-            balanced.configure(app.config['balanced_secret_key'])
         return app
 
     def setup_db(self):
@@ -179,7 +99,9 @@ class ThinTest(TestCase):
 
 class BaseTest(ThinTest):
     def setup_db(self):
-        os.system("psql -U crowdlink -h localhost crowdlink_testing -f " + root + "/assets/test_provision.sql > /dev/null 2>&1")
+        os.system("psql -U crowdlink -h localhost crowdlink_testing -f "
+                  "{0}/assets/test_provision.sql > /dev/null 2>&1"
+                  .format(root))
 
     def login(self, username, password):
         data = {
