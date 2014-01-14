@@ -3,7 +3,7 @@
     .row
       %ol.breadcrumb
         %li
-          %a{href: "{[{sol.issue.project.username}]}"} {[{sol.issue.project.username}]}
+          %a{href: "/{[{sol.issue.project.maintainer_username}]}"} {[{sol.issue.project.maintainer_username}]}
         %li
           %a{href: "{[{sol.issue.project.get_abs_url}]}"} {[{ sol.issue.project.name }]}
         %li
@@ -11,57 +11,168 @@
         %li.active {[{sol.title}]}
     %div
       .row
-        .col-md-8.no-gutter
-          %h2
-            %span{"ng-show" => "sol.user_acl.edit_title"}
-              %span{"ng-show" => "editing.sol.title"}
-                .input-group
-                  %input.form-control{"ng-model" => "sol.title", type: "text"}/
-                  %span.btn.btn-info.input-group-addon{"ng-click" => "save('sol.title')"}
-                    %i.fa.fa-save{"ng-hide" => "saving.sol.title"}
-                    %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.sol.title"}
-                  %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('sol.title')"}
-                    %i.fa.fa-times-circle
-              %span{"ng-hide" => "editing.sol.title"}
-                {[{ sol.title }]} 
-                %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('sol.title')"}
-            %span{"ng-hide" => "sol.user_acl.edit_title"}
-              {[{ sol.title }]}
+        .col-md-6.no-gutter
+          %h4.col-lg-6
+            %i.fa.fa-lightbulb-o
+            %span
+              Solution #21
+
+            -#%span{"ng-show" => "sol.user_acl.edit_title"}
+            -#  %span{"ng-show" => "editing.sol.title"}
+            -#    .input-group
+            -#      %input.form-control{"ng-model" => "sol.title", type: "text"}/
+            -#      %span.btn.btn-info.input-group-addon{"ng-click" => "save('sol.title')"}
+            -#        %i.fa.fa-save{"ng-hide" => "saving.sol.title"}
+            -#        %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.sol.title"}
+            -#      %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('sol.title')"}
+            -#        %i.fa.fa-times-circle
+            -#  %span{"ng-hide" => "editing.sol.title"}
+            -#    {[{ sol.title }]} 
+            -#    %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('sol.title')"}
+            -#%span{"ng-hide" => "sol.user_acl.edit_title"}
+            -#  {[{ sol.title }]}
             %br
-            %a.button{"toggle-button" => "sol.subscribed",
-            "ng-click" => "swap_save('sol.subscribed')"}
-              %i{off: "fa-eye", on: "fa-eye-slash"}
-              .in-button{off: "Watch", on: "Unwatch"}
-            %a.button{"toggle-button" => "sol.vote_status",
-            "ng-click" => "swap_save('sol.vote_status')"}
-              %i{on: "fa-minus-circle", off: "fa-plus-circle"}
-              .in-button{off: "Vote", on: "Unvote"}
-            %report-dropdown{"var" => "sol.report_status", "reasons" => "['Spam', 'Fraudulent']"}
-      %br/
+        .col-md-6.no-gutter
+          %a.btn.button.btn-default.pull-right{"toggle-button" => "sol.subscribed",
+          on: "active", off: "",
+          "ng-click" => "swap_save('sol.subscribed')"}
+            %i{off: "fa-eye", on: "fa-eye"}
+            .in-button{off: "Watch", on: "Watch"}
+          %a.btn.button.btn-default.pull-right{"toggle-button" => "sol.vote_status",
+          on: "active", off: "",
+          "ng-click" => "swap_save('sol.vote_status')"}
+            %i{on: "fa-thumbs-up", off: "fa-thumbs-up"}
+            .in-button{off: "Props", on: "Props"}
+          %a.btn.button.btn-default.pull-right{:href => "n"}
+            %i.fa.fa-large.fa-exclamation
+            \ Report
+          %br
       .row
-        %h4
-          %b> Proposed on
-          {[{ sol.created_at | date:'medium' }]}
-          ({[{ sol.created_at|date_ago }]})
-        %br/
-        %div.btn.btn-default.pull-right{"ng-click" => "toggle('sol.desc')",
-          "ng-show" => "sol.user_acl.edit_desc", "ng-hide" => "editing.sol.desc"}
-          Edit
-        .row.well.well-lg.center-margin
-          .row.col-lg-11{"ng-show" => "editing.sol.desc"}
-            %textarea{"mark-it-up" => "", "ng-model" => "sol.desc"}
-            %span.btn.btn-info{"ng-click" => "save('sol.desc')", "ng-disabled" => "saving.sol.desc"}
-              %i.fa.fa-save{"ng-hide" => "saving.sol.desc"}
-              %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.sol.desc"}
-              \ Save
-            %span.btn.btn-primary{"ng-click" => "revert('sol.desc')", "ng-disabled" => "saving.sol.desc"}
-              %i.fa.fa-times-circle
-              \ Discard
-          %div{"ng-hide" => "editing.sol.desc"}
-            %span{"btf-markdown" => "sol.desc"}
-    .row{"ng-show" => "sol.events.length > 0"}
-      %h3 Events
-      %div{"ng-repeat" => "event in project.events"}
-        %span{"ng-include" => "'{{template_path}}' + event.template"}
-    .row{"ng-show" => "logged_in"}
-      %textarea{"mark-it-up" => "", "ng-model" => "new_comment.body"}
+        .col-lg-1.text-right
+          %img{src:"http://placehold.it/48x48"}
+        .col-lg-11.no-gutter
+          -#sol container
+          .round-box
+            .issue-heading
+              .col-lg-1.no-gutter
+                %img{src:"\{[{ sol.creator.avatar }]}&s=38", style:"padding-left:12px;"}
+              .col-lg-11
+              %small
+                .text-muted
+                  %b{style:"color:#000"}
+                    %a{href: "{[{ sol.creator.get_abs_url }]}"}
+                      {[{ sol.creator.username }]}
+                  \ tagline
+                  .pull-right
+                    \ {[{ sol.created_at | date:'medium' }]}
+                    %i.fa.fa-edit.cursor{"ng-click" => "toggle('sol.desc')",
+                "ng-show" => "sol.user_acl.edit_desc"}
+                %h4.no-margin
+                  %span{"ng-show" => "sol.user_acl.edit_title"}
+                    %span{"ng-show" => "editing.sol.title"}
+                      .input-group
+                        %input.form-control{"ng-model" => "sol.title", type: "text"}/
+                        %span.btn.btn-info.input-group-addon{"ng-click" => "save('sol.title')"}
+                          %i.fa.fa-save{"ng-hide" => "saving.sol.title"}
+                          %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.sol.title"}
+                        %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('sol.title')"}
+                          %i.fa.fa-times-circle
+                    %span{"ng-hide" => "editing.sol.title"}
+                      {[{ sol.title }]} 
+                      %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('sol.title')"}
+                  %span{"ng-hide" => "sol.user_acl.edit_title"}
+                    {[{ sol.title }]}
+            %hr.no-margin
+            .row.center-margin{style:"padding:8px;"}
+              .row.col-lg-12.no-margin{"ng-show" => "editing.sol.desc"}
+                %textarea{"mark-it-up" => "", "ng-model" => "sol.desc"}
+                %span.btn.btn-info{"ng-click" => "save('sol.desc')", "ng-disabled" => "saving.sol.desc"}
+                  %i.fa.fa-save{"ng-hide" => "saving.sol.desc"}
+                  %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.sol.desc"}
+                  \ Save
+                %span.btn.btn-primary{"ng-click" => "revert('sol.desc')", "ng-disabled" => "saving.sol.desc"}
+                  %i.fa.fa-times-circle
+                  \ Discard
+              %div{"ng-hide" => "editing.sol.desc"}
+                %span{"btf-markdown" => "sol.desc"}
+          -# sols comments container
+          .comments-heading
+            .row.inner-pad
+              .col-lg-1
+                %img{src:"\{[{ user.avatar }]}&s=36"}
+              .col-lg-11
+                .row{"ng-show" => "logged_in"}
+                  %textarea.new-comment-text{"ng-model" => "new_comment"}
+                  %a.btn.btn-info.btn-sm{"ng-click" => "comment(new_comment, sol)"}
+                    Comment
+            %div{"ng-show" => "sol.comments.length > 0"}
+              .row.comments-row{"ng-repeat" => "comment in sol.comments | limitTo: 3"}
+                .col-lg-1.no-gutter.text-center
+                  %img{src:"\{[{ comment.user.avatar }]}&s=36"}
+                .col-lg-11
+                  .row
+                    %h5.no-margin{style:"font-weight:500"}
+                      %a{href: "{[{ comment.user.get_abs_url }]}"}
+                        {[{ comment.user.username }]}
+                      %small.pull-right
+                        %em.text-muted {[{ comment.created_at | date_ago }]}
+                    %small
+                      {[{ comment.message }]}
+              -# if more than 5 comments show a div to toggle more comments display
+              .row{"ng-show" => "sol.comments.length > 3"}
+                .col-lg-12.text-center.inner-pad{"ng-hide" => "view_comments.more_comments", style:"background:#EEE"}
+                  %a.text-muted.cursor{"ng-click" => "toggle_comments('more_comments')"}
+                    show {[{ sol.comments.length-3 }]} more comments
+              -# Extra comments contained here
+              .row.extra-comments-row{"ng-show" => "view_comments.more_comments",
+              "ng-repeat" => "comment in sol.comments | limitTo: -(sol.comments.length-3)"}
+                .col-lg-1.no-gutter.text-center
+                  %img{src:"{[{ comment.user.avatar }]}&s=32"}
+                .col-lg-11
+                  .row
+                    %h5.no-margin{style:"font-weight:500"}
+                      %a{href: "{[{ comment.user.get_abs_url }]}"}
+                        {[{ comment.user.username }]}
+                      %small.pull-right
+                        %em.text-muted {[{ comment.created_at | date_ago }]}
+                    %small
+                      {[{ comment.message }]}
+
+
+
+
+
+
+
+
+
+
+
+
+
+    -#    %h4
+    -#      %b> Proposed on
+    -#      {[{ sol.created_at | date:'medium' }]}
+    -#      ({[{ sol.created_at|date_ago }]})
+    -#    %br/
+    -#    %div.btn.btn-default.pull-right{"ng-click" => "toggle('sol.desc')",
+    -#      "ng-show" => "sol.user_acl.edit_desc", "ng-hide" => "editing.sol.desc"}
+    -#      Edit
+    -#    .row.well.well-lg.center-margin
+    -#      .row.col-lg-11{"ng-show" => "editing.sol.desc"}
+    -#        %textarea{"mark-it-up" => "", "ng-model" => "sol.desc"}
+    -#        %span.btn.btn-info{"ng-click" => "save('sol.desc')", "ng-disabled" => "saving.sol.desc"}
+    -#          %i.fa.fa-save{"ng-hide" => "saving.sol.desc"}
+    -#          %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.sol.desc"}
+    -#          \ Save
+    -#        %span.btn.btn-primary{"ng-click" => "revert('sol.desc')", "ng-disabled" => "saving.sol.desc"}
+    -#          %i.fa.fa-times-circle
+    -#          \ Discard
+    -#      %div{"ng-hide" => "editing.sol.desc"}
+    -#        %span{"btf-markdown" => "sol.desc"}
+    -#.row{"ng-show" => "sol.events.length > 0"}
+    -#  %h3 Events
+    -#  %div{"ng-repeat" => "event in project.events"}
+    -#    %span{"ng-include" => "'{{template_path}}' + event.template"}
+    -#.row{"ng-show" => "logged_in"}
+    -#  %textarea{"mark-it-up" => "", "ng-model" => "new_comment.body"}
