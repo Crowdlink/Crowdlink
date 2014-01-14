@@ -402,6 +402,10 @@ mainControllers.controller('projectController',
   $injector.invoke(parentEditController, this, {$scope: $scope})
   $scope.project = project.objects[0]
   $rootScope.title = "Project '#{$scope.project.name}'"
+  if 'subsection' of $routeParams
+    $scope.view = $routeParams.subsection
+  else
+    $scope.view = 'recent'
   $scope.prev =
     project: $.extend({}, project.objects[0])
   $scope.filter = ""
@@ -413,7 +417,6 @@ mainControllers.controller('projectController',
       subscribed: false
       vote_status: false
       name: false
-  $scope.view = 'recent'
 
   $scope.vote = (issue) ->
     issue.vote_status = !issue.vote_status

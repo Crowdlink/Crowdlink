@@ -130,7 +130,7 @@ def create_app(config='/application.json'):
         # prevent error loops
         if request.path == '/':
             return str(code)
-        return redirect(url_for('main.angular_root', _anchor='/errors/' + str(code)))
+        return redirect('/errors/' + str(code))
 
     app.register_error_handler(404, lambda e: error_handler(e, 404))
     app.register_error_handler(400, lambda e: error_handler(e, 400))

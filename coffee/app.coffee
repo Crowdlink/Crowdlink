@@ -129,6 +129,17 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
             url_key: $route.current.params.url_key
           __one: true
           join_prof: 'disp_join').$promise
+  ).when("/:username/:url_key/issues",
+    templateUrl: "{{ template_path }}project.html"
+    controller: "projectController"
+    resolve:
+      project: (ProjectService, $route) ->
+        $route.current.params.subsection = 'issues'
+        ProjectService.query(
+          __filter_by:
+            maintainer_username: $route.current.params.username
+            url_key: $route.current.params.url_key
+          join_prof: 'page_join').$promise
   ).when("/:username/:purl_key/:url_key",
     templateUrl: "{{ template_path }}issue.html"
     controller: "issueController"

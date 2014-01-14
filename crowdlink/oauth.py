@@ -25,10 +25,6 @@ class OAuthSessionExpired(OAuthException):
     error_key = 'oauth_error'
 
 
-def go_anchor(anchor):
-    return redirect(url_for('main.angular_root', _anchor=anchor))
-
-
 @github.tokengetter
 def get_github_oauth_token():
     return (current_user.gh_token, '')
@@ -56,13 +52,12 @@ def oauth_error_handler(e):
         # notify the user
         send_message('Session has expired or you denied the OAuth request',
               'alert-danger')
-        return go_anchor('/')
+        return redirect('/')
     elif type(e) is OAuthException:
         error = 'oauth_error'
     else:
         error = e.error_key
-    return redirect(url_for('main.angular_root',
-                            _anchor='/errors/' + error))
+    return redirect('/errors/' + error)
 
 
 oauth_actions = ['login', 'signup', 'link']
@@ -95,7 +90,9 @@ def check_action_provider(action, provider):
     return (provider_obj, action)
 
 
-@main.route("/<provider>/<action>")
+@main.route("/gh/<action>")
+@main.route("/tw/<action>")
+@main.route("/go/<action>")
 def init(provider=None, action=None):
     """ This redirects the user to the OAuth provider after checking that their
     actions are valid to the best of our knowledge. Defines a callback url that
@@ -182,7 +179,7 @@ def authorize(provider=None, action=None):
             raise OAuthLinkedOther(
                 "Another user has already linked that account"), None, sys.exc_info()[2]
 
-        return go_anchor('/account')
+        return redirect('/account')
     elif action == 'link':  # can't link if not logged in
         abort(403)
     elif current_user.is_anonymous():  # ensure they're logged out
@@ -200,7 +197,7 @@ def authorize(provider=None, action=None):
         if user:
             current_app.logger.debug("Logging in a user with a matching token")
             login_user(user)
-            return go_anchor('/home')
+            return redirect('/home')
         else:
             oauth_to_session(provider, raw_token)
             current_app.logger.debug(
@@ -212,9 +209,9 @@ def authorize(provider=None, action=None):
                 send_message(
                     "No account is linked with that OAuth provider, please "
                     "signup.", cls='alert-danger')
-                return go_anchor('/login')
+                return redirect('/login')
 
-            return go_anchor('/oauth_signup')
+            return redirect('/oauth_signup')
 
 
 def oauth_retrieve(provider, raw_token, email_only=False):

@@ -7,29 +7,27 @@
         %li
           %a{href: "{[{issue.get_project_abs_url}]}"} {[{ issue.project.name }]}
         %li
-          %a{href: "."} Issues
+          %a{href: "issues"} Issues
         %li.active {[{issue.title}]}
 
     .row
       .col-lg-2
-        .bs-sidebar.hidden-print.affix{style: "position: fixed; top: 80px;"}
+        .bs-sidebar.hidden-print.affix{style: "position: fixed; top: 100px;"}
           %ul.nav.bs-sidenav
             %li
               %a{"ng-click" =>"scrollTo('issue')"} Issue
               %ul.nav
                 %li
-                  %a{"ng-click" =>"scrollTo('comment-issue')"} Add comment
+                  %a{"ng-click" =>"scrollTo('issue-new-comment')"} Add comment
                 %li
-                  %a{href: "#modals-usage"} Usage
-            %li
-              %a{href: "#asides"} Aside
+                  %a{"ng-show"=> "issue.comments", "ng-click" =>"scrollTo('issue-comments')"} Issue Comments
+            %li{"ng-repeat" => "solution in issue.solutions"}
+              %a{"ng-click" =>"scrollTo('sol' + $index + '')"} Solution # {[{ $index+1 }]}
               %ul.nav
                 %li
-                  %a{href: "#asides-examples"} Examples
+                  %a{"ng-click" =>"scrollTo('sol' + $index +'-new-comment')"} Add Comment
                 %li
-                  %a{href: "#asides-usage"} Usage
-            %li
-              %a{href: "#alerts"} Alert
+                  %a{"ng-show"=> "solution.comments", "ng-click" =>"scrollTo('sol' + $index +'-comments')"} Comments
 
       .col-lg-10
         .row
@@ -110,11 +108,11 @@
                 .col-lg-1
                   %img{src:"\{[{ user.avatar }]}&s=36"}
                 .col-lg-11
-                  .row{"ng-show" => "logged_in", id:"comment-issue"}
+                  .row{"ng-show" => "logged_in", id:"issue-new-comment"}
                     %textarea.new-comment-text{"ng-model" => "new_comment"}
                     %a.btn.btn-info.btn-sm{"ng-click" => "comment(new_comment, issue)"}
                       Comment
-              %div{"ng-show" => "issue.comments.length > 0"}
+              %div{"ng-show" => "issue.comments.length > 0", id:"issue-comments"}
                 .row.comments-row{"ng-repeat" => "comment in issue.comments | limitTo: 3"}
                   .col-lg-1.no-gutter.text-center
                     %img{src:"\{[{ comment.user.avatar }]}&s=36"}
@@ -133,7 +131,8 @@
                     %a.text-muted.cursor{"ng-click" => "toggle_comments('more_comments')"}
                       show {[{ issue.comments.length-3 }]} more comments
                 -# Extra comments contained here
-                .row.extra-comments-row{"ng-show" => "view_comments.more_comments", "ng-repeat" => "comment in issue.comments | limitTo: -(issue.comments.length-3)"}
+                .row.extra-comments-row{"ng-show" => "view_comments.more_comments",
+                "ng-repeat" => "comment in issue.comments | limitTo: -(issue.comments.length-3)"}
                   .col-lg-1.no-gutter.text-center
                     %img{src:"{[{ comment.user.avatar }]}&s=32"}
                   .col-lg-11
@@ -155,7 +154,7 @@
             .col-lg-8
               %h4.col-lg-7
                 %i.fa.fa-lightbulb-o
-                %span{id:"sol\{[{ $index+1 }]}"}
+                %span{id:"sol\{[{ $index }]}"}
                   Solution # {[{ $index+1 }]}
 
             .col-lg-4
@@ -194,18 +193,20 @@
                     %hr.no-margin
                       .row.col-lg-12.no-margin{"ng-show" => "editing.issue.solutions[$index].desc"}
                         %textarea{"mark-it-up" => "", "ng-model" => "solution.desc"}
-                        %span.btn.btn-info{"ng-click" => "save('issue.solutions[' + $index + '].desc')", "ng-disabled" => "saving.issue.solutions[$index].desc"}
+                        %span.btn.btn-info{"ng-click" => "save('issue.solutions[' + $index + '].desc')",
+                        "ng-disabled" => "saving.issue.solutions[$index].desc"}
                           %i.fa.fa-save{"ng-hide" => "saving.issue.solutions[$index].desc"}
                           %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.issue.solutions[$index].desc"}
                           \ Save
-                        %span.btn.btn-primary{"ng-click" => "revert('issue.solutions[' + $index + '].desc')", "ng-disabled" => "saving.issue.solutions[$index].desc"}
+                        %span.btn.btn-primary{"ng-click" => "revert('issue.solutions[' + $index + '].desc')",
+                        "ng-disabled" => "saving.issue.solutions[$index].desc"}
                           %i.fa.fa-times-circle
                           \ Discard
                       %div.center-margin{"ng-hide" => "editing.issue.solutions[$index].desc", style:"padding:8px;"}
                         %span{"btf-markdown" => "solution.desc"}
                   -# Issues comments container
                   .comments-heading
-                    %div
+                    %div{id:"sol\{[{ $index }]}-new-comment"}
                       .row.inner-pad
                         .col-lg-1
                           %img{src:"\{[{ user.avatar }]}&s=32"}
@@ -214,7 +215,8 @@
                             %textarea.new-comment-text{"ng-model" => "new_comment"}
                             %a.btn.btn-info.btn-sm{"ng-click" => "comment(new_comment, issue)"}
                               Comment
-                      .row.comments-row{"ng-repeat" => "comment in solution.comments | limitTo: 1"}
+                      .row.comments-row{"ng-repeat" => "comment in solution.comments | limitTo: 1",
+                      id:"sol\{[{ $index }]}-comments"}
                         .col-lg-1.no-gutter.text-center
                           %img{src:"\{[{ comment.user.avatar }]}&s=32"}
                         .col-lg-11
@@ -229,10 +231,12 @@
                       -# if more than 5 comments show a div to toggle more comments display
                       .row{"ng-show" => "solution.comments.length > 1"}
                         .col-lg-12.text-center
-                          %a.text-muted.cursor{"ng-click" => "toggle_comments('solution' + $index)", "ng-hide" => "view_comments.solution$index"}
+                          %a.text-muted.cursor{"ng-click" => "toggle_comments('solution' + $index)",
+                          "ng-hide" => "view_comments.solution$index"}
                             show {[{ solution.comments.length-1 }]} more comments
                       -# Extra comments contained here
-                      .row.extra-comments-row{"ng-show" => "view_comments.solution$index", "ng-repeat" => "comment in solution.comments | limitTo: -(solution.comments.length-1)"}
+                      .row.extra-comments-row{"ng-show" => "view_comments.solution$index",
+                      "ng-repeat" => "comment in solution.comments | limitTo: -(solution.comments.length-1)"}
                         .col-lg-1.no-gutter.text-center
                           %img{src:"\{[{ comment.user.avatar }]}&s=32"}
                         .col-lg-11.no-gutter

@@ -239,7 +239,6 @@ class Issue(
                              {'obj': 'project', 'join_prof': 'issue_page_join'},
                              {'obj': 'solutions', 'join_prof': 'standard_join'},
                              {'obj': 'comments', 'join_prof': 'standard_join'},
-                             'StatusVals',
                              {'obj': 'creator', 'join_prof': 'disp_join'}]
                             )
 
@@ -674,7 +673,8 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     def avatar(self):
         # Set your variables here
         default = urljoin(current_app.config['base_url'],
-                          current_app.config['static_path'], "img/profile.jpg")
+                          current_app.config['static_path'], "img/logo_sm.jpg")
+        current_app.logger.debug(default)
         # construct the url
         gravatar_url = "http://www.gravatar.com/avatar/"
         gravatar_url += hashlib.md5(self.primary_email.address.lower()).hexdigest()
