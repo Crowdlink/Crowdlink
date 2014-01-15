@@ -46,7 +46,7 @@ def get_twitter_oauth_token():
 @main.errorhandler(OAuthException)
 def oauth_error_handler(e):
     """ If any of the oauth views throws an OAuth exception it will be
-    redirect the user to a ≡jedi=0, useful ≡ (*obj*) ≡jedi≡error message via this method. """
+    redirect the user to a error message via this method. """
     current_app.logger.debug(str(e), exc_info=True)
     if isinstance(e, OAuthDenied):
         # notify the user
