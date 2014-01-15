@@ -1,0 +1,23 @@
+box: wercker/python
+services:
+    - wercker/postgresql9.2
+# Build definition
+build:
+  # The steps that will be executed on build
+  steps:
+    # A step that executes `pip install` command
+    - pip-install
+    - pip-install
+      requirements_file: "dev-requirements.txt"
+    - script:
+        name: setup database schema
+        code: |
+            ./util/reset_db.sh
+            python manage.py generate_trans
+
+    # A custom script step, name value is used in the UI
+    # and the code value contains the command that get executed
+    - script:
+        name: nosetests with coverage
+        code: |
+            nosetests --with-coverage --cover-package=crowdlink
