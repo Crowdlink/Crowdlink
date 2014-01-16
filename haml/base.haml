@@ -55,26 +55,6 @@
           %ul.nav.nav-pills.main-nav-pills
             %li
               %a Coming soon!
-            -#%li{"ng-show" => "logged_in"}
-            -#  %a{"ng-click" => "logout()"}
-            -#    %i.fa.fa-sign-out
-            -#    %span.hidden-xs Logout
-            -#%li{"ng-class" => "{true: 'active'}[location.path()=='/login']", "ng-hide" => "logged_in"}
-            -#  %a{href: "login"}
-            -#    %i.fa.fa-sign-in
-            -#    %span.hidden-xs Login
-            -#%li{"ng-class" => "{true: 'active'}[location.path().lastIndexOf('/account', 0) === 0]", "ng-show" => "logged_in"}
-            -#  %a{href: "account"}
-            -#    %i.fa.fa-gear
-            -#    %span.hidden-xs Account
-            -#%li{"ng-class" => "{true: 'active'}[location.path()==profile]", "ng-show" => "logged_in"}
-            -#  %a{href: "{[{profile}]}"}
-            -#    %img{src: "{[{user.avatar}]}&s=20", style:"display:inline-block;vertical-align:middle;"}
-            -#    %span.hidden-xs {[{ user.username }]}
-            -#%li.text-center{"ng-class" => "{true: 'active'}[location.path()=='/signup']", "ng-hide" => "logged_in"}
-            -#  %a{href: "signup"}
-            -#    %i.fa.fa-edit
-            -#    %span.hidden-xs Sign Up
 
       .main-cont
         %div{"ng-repeat" => "message in messages"}

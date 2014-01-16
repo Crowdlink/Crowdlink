@@ -5,7 +5,7 @@ from flask.ext.oauthlib.client import OAuthException
 from pprint import pformat
 from lever import API, LeverException
 from .oauth import oauth_retrieve, oauth_from_session
-from .models import User, Project, Issue, Solution, Email, Comment, Thing
+from .models import User, Project, Issue, Solution, Email, Comment, Thing, EmailList
 
 from . import oauth, db
 
@@ -115,7 +115,7 @@ class UserAPI(APIBase):
 
 
 class EmailAPI(APIBase):
-    model = Email
+    model = EmailList
 
 
 class ProjectAPI(APIBase):
@@ -198,5 +198,5 @@ IssueAPI.register(api, '/issue')
 ProjectAPI.register(api, '/project')
 CommentAPI.register(api, '/comment')
 
-EmailAPI.register(api, '/email')
+EmailAPI.register(api, '/email_list')
 UserAPI.register(api, '/user')

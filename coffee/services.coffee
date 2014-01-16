@@ -93,3 +93,10 @@ mainServices.factory("OAuthService", ($resource) ->
       timeout: 10000
       isArray: false
 )
+
+mainServices.factory("EmailService2", ($resource) ->
+  $resource "{{ api_path }}email_list", {},
+    create:
+      method: "PATCH"
+      timeout: 10000
+)
