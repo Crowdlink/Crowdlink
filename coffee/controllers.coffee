@@ -107,7 +107,7 @@ ProjectService, SolutionService, UserService) ->
 
 # RootController ==============================================================
 mainControllers.controller('rootController',
-($scope, $location, $rootScope, $http, $modal, $timeout, UserService)->
+($scope, $location, $rootScope, $http, $modal, $timeout)->
 
   $scope.root_init = (logged_in, user, flashes) ->
     $rootScope.logged_in = logged_in
