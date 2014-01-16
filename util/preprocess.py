@@ -7,7 +7,7 @@ import time
 
 from jinja2 import Environment, FileSystemLoader
 
-parser = argparse.ArgumentParser(description='Process some integers.')
+parser = argparse.ArgumentParser(description='Preprocess all our templates')
 parser.add_argument('folder',
                     help='folder in which to run preprocessor')
 parser.add_argument('filetype',

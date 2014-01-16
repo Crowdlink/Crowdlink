@@ -12,7 +12,7 @@ build:
         - script:
             name: setup database schema
             code: |
-                ./util/reset_db.sh
+                ./util/env.py application.json.wercker application.json
                 python manage.py generate_trans
 
         # A custom script step, name value is used in the UI

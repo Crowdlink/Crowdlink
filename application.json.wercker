@@ -1,7 +1,7 @@
 {
 "private":
   {
-  "SQLALCHEMY_DATABASE_URI": "postgresql://crowdlink:testing@localhost:5432/crowdlink",
+  "SQLALCHEMY_DATABASE_URI": "{{ WERCKER_POSTGRESQL_URL }}",
   "SECRET_KEY": "very_secret",
   "DEBUG_TB_INTERCEPT_REDIRECTS": false,
   "stripe_secret_key": "",
