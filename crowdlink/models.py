@@ -536,7 +536,7 @@ class Email(base):
         """ Regenerates activation hashes and time markers and commits the
         change.  If the commit action is successful, an email will be sent to
         the user """
-        self.activate_hash = hashlib.sha256(six.u(os.urandom(10))).hexdigest()
+        self.activate_hash = hashlib.sha256(os.urandom(10)).hexdigest()
         self.activate_gen = datetime.utcnow()
 
         # complicated block that allows force send to either force to send or
@@ -905,7 +905,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
         return False
 
     def get_id(self):
-        return six.u(self.id)
+        return six.u(str(self.id))
 
     def roles(self, user=current_user):
         if self.id == getattr(user, 'id', None):

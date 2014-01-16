@@ -5,6 +5,7 @@ app = create_app()
 manager = Manager(app)
 
 import os
+import sqlalchemy
 
 from crowdlink.mail import TestEmail
 from crowdlink import db, root
@@ -14,6 +15,13 @@ from flask import current_app
 
 @manager.command
 def init_db():
+    try:
+        db.engine.execute("CREATE EXTENSION hstore")
+    except sqlalchemy.exc.ProgrammingError as e:
+        if 'already exists' in str(e):
+            pass
+        else:
+            raise Exception("Unable to enable HSTORE extension")
     db.drop_all()
     db.create_all()
 
