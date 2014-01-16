@@ -17,6 +17,10 @@ build:
 
         # A custom script step, name value is used in the UI
         # and the code value contains the command that get executed
+        - npm-install
+        - bundle-install
+        - grunt:
+            tasks: dev
         - script:
             name: nosetests with coverage
             code: |
