@@ -21,6 +21,13 @@ build:
             name: update npm
             code: curl https://npmjs.org/install.sh | sudo clean=y sh
         - npm-install
+        - script:
+            name: print versions
+            code: |
+                npm --version || true
+                node --version || true
+                nodejs --version || true
+                grunt --version || true
         - bundle-install
         - grunt:
             tasks: dev
