@@ -18,6 +18,7 @@ assets/help/*.json
 .idea
 node_modules
 application.json
+testing.json
 testing.cfg
 .cake_task_cache
 
