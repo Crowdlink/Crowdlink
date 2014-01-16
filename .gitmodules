@@ -1,3 +1,0 @@
-[submodule "crowdlink-secrets"]
-	path = crowdlink-secrets
-	url = ssh://git@code.ibcook.pri:4193/icook/crowdlink-secrets.git
