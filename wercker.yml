@@ -28,6 +28,7 @@ build:
                 node --version || true
                 nodejs --version || true
                 grunt --version || true
+                source ~/.bashrc
         - bundle-install
         - grunt:
             tasks: dev
