@@ -56,9 +56,12 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Misc dot files
 .ropeproject
 .sass-cache
 .noseids
+.wercker
 tags
 
 uwsgi.pid
