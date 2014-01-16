@@ -8,7 +8,7 @@
           Use donations, pledges, and votes to gauge user opinions.
       .col-lg-5
         .row
-          %form.form-horizontal.ng-pristine.ng-valid.landing-sign-up{method: "post", "ng-submit" => "submit()", name: "f"}
+          %form.form-horizontal.ng-pristine.ng-valid.landing-sign-up{method: "post", "ng-submit" => "submit()", name: "f", "novalidate" => ""}
             .form-group
               %div{style:"height:72px;"}
                 .col-lg-8.col-lg-offset-2
@@ -21,10 +21,11 @@
                       %li{"ng-repeat" => "error in errors"} {[{error}]}
             .form-group{"valid-class" => "f.address"}
               .col-lg-8.col-lg-offset-2
-                %input.form-control.ng-pristine.ng-valid{"ng-model" => "address", name: "address", type: "email", placeholder:"Email"}/
+                %input.form-control.ng-pristine.ng-valid{"ng-model" => "address", name: "address", type: "email",
+                placeholder:"Email", "unique-serverside" => "address", required: ""}
             .form-group
               .col-lg-8.col-lg-offset-2
-                %button.btn.btn-info.fill-link{type: "submit"}
+                %button.btn.btn-info.fill-link{type: "submit", "ng-disabled" => "!f.$valid"}
                   %i.fa.fa-edit
                   Register for updates
                 %p.text-muted

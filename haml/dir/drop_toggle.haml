@@ -1,9 +1,0 @@
-.btn-group
-  %a.button.dropdown-toggle{"ng-class" => "{disabled: attr_val}",
-    "ng-click" => "attr_val && update(attr, false)"}
-    %i
-    .in-button
-    %span.caret{"ng-hide" => "attr_val"}
-  %ul.dropdown-menu
-    %li{"ng-repeat" => "reason in reasons"}
-      %a{"ng-click" => "update(attr, reason)"} {[{ reason }]}

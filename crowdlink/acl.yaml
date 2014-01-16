@@ -50,6 +50,7 @@ email_list:
     anonymous:
         action:
             - create
+            - check_taken
 user:
     # global context roles
     anonymous:

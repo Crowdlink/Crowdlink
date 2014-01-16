@@ -112,42 +112,6 @@ base.query = _QueryProperty(db)
 db.Model = base
 
 
-class Report(base):
-    """ associative table for voting on things """
-    reporter_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    reporter = db.relationship('User', foreign_keys=[reporter_id])
-
-    reportee_id = db.Column(
-        db.Integer, db.ForeignKey("thing.id"), primary_key=True)
-    reportee = db.relationship('Thing')
-
-    reason = db.Column(db.String(255))
-
-
-class Vote(base):
-    """ associative table for voting on things """
-    voter_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    voter = db.relationship('User', foreign_keys=[voter_id])
-
-    votee_id = db.Column(
-        db.Integer, db.ForeignKey("thing.id"), primary_key=True)
-    votee = db.relationship('Thing')
-
-
-class Subscription(base):
-    """ associative table for subscribing to things. Includes an HSTORE column
-    for rules on subscription """
-    rules = db.Column(HSTORE)
-    subscriber_id = db.Column(
-        db.Integer, db.ForeignKey("user.id"), primary_key=True)
-    subscriber = db.relationship('User', foreign_keys=subscriber_id)
-
-    subscribee_id = db.Column(
-        db.Integer, db.ForeignKey("thing.id"), primary_key=True)
-    subscribee = db.relationship('Thing')
-
 
 class SubscribableMixin(object):
     """ A Mixin providing data model utils for subscribing new users. Maintain
