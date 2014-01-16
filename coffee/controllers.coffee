@@ -737,8 +737,23 @@ mainControllers.controller('homeController',
 
 # frontpageController =======================================================
 mainControllers.controller('frontPageController',
-($scope, $rootScope, $routeParams)->
+($scope, $rootScope, $routeParams, EmailService2, $injector)->
+  $injector.invoke(parentFormController, this, {$scope: $scope})
   $rootScope.title = ""
+  $scope.submit = () ->
+    $scope.errors = []
+
+    EmailService2.create(
+      address: $scope.address
+      __cls: true
+      __action: 'create'
+    ,(value) ->
+      if 'success' of value and value.success
+        $scope.register_success = true
+        $scope.errors = false
+      else
+        $scope.error_report({'message': 'Email address taken'})
+    , $scope.error_report)
 )
 
 # recoverController =======================================================

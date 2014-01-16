@@ -46,7 +46,10 @@ email:
     anonymous:
         action:
             - check_taken
-
+email_list:
+    anonymous:
+        action:
+            - create
 user:
     # global context roles
     anonymous:

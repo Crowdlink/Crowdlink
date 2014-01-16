@@ -6,27 +6,25 @@
           Crowdsource your project direction.
         %h3
           Use donations, pledges, and votes to gauge user opinions.
-          -#Get user feedback on issues and features through donations, voting, and suggestions.
       .col-lg-5
         .row
-          %form.form-horizontal.ng-pristine.ng-valid.landing-sign-up{method: "post", "ng-submit" => "submit()"}
-            .alert-danger.alert.fade.ng-hide{"ng-show" => "errors"}
-              %span.ng-binding.ng-hide{"ng-show" => "errors.length === 1"}
-              %span.ng-binding.ng-hide{"ng-show" => "error_header"}
-              %ul.ng-hide{"ng-show" => "errors.length > 1"}
-                / ngRepeat: error in errors
-            -#.form-group
-            -#  .col-lg-8.col-lg-offset-2
-            -#    %input.form-control.ng-pristine.ng-valid{"ng-model" => "username", type: "text", placeholder:"Username"}/
-            -#.form-group
-            -#  .col-lg-8.col-lg-offset-2
-            -#    %input.form-control.ng-pristine.ng-valid{"ng-model" => "password", type: "password", placeholder:"Password"}/
+          %form.form-horizontal.ng-pristine.ng-valid.landing-sign-up{method: "post", "ng-submit" => "submit()", name: "f"}
+            .form-group
+              %div{style:"height:72px;"}
+                .col-lg-8.col-lg-offset-2
+                  %span.alert-success.alert.fade{"ng-show" => "register_success && !errors", style:"padding:8px;font-size:18px;"}
+                    All setup, thanks!
+                  %span.alert-danger.alert.fade{"ng-show" => "errors", style:"padding:8px;font-size:18px;"}
+                    %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+                    %span{"ng-show" => "error_header"} {[{ error_header }]}
+                    %ul{"ng-show" => "errors.length > 1"}
+                      %li{"ng-repeat" => "error in errors"} {[{error}]}
+            .form-group{"valid-class" => "f.address"}
+              .col-lg-8.col-lg-offset-2
+                %input.form-control.ng-pristine.ng-valid{"ng-model" => "address", name: "address", type: "email", placeholder:"Email"}/
             .form-group
               .col-lg-8.col-lg-offset-2
-                %input.form-control.ng-pristine.ng-valid{"ng-model" => "password", type: "password", placeholder:"Email"}/
-            .form-group
-              .col-lg-8.col-lg-offset-2
-                %button.btn.btn-info.fill-link{"ng-click" => "submit()", type: "submit"}
+                %button.btn.btn-info.fill-link{type: "submit"}
                   %i.fa.fa-edit
                   Register for updates
                 %p.text-muted
@@ -34,24 +32,6 @@
                   %a{href: "tos", target: "_blank"} terms of service
                   and
                   %a{href: "privacy", target: "_blank"} privacy policy
-
-        .row
-          .col-lg-10.col-lg-offset-1.text-center
-            %hr.hr-header
-
-        .row
-          .col-lg-8.col-lg-offset-2.text-center
-            Register with Oauth
-        .row
-          %form.form-horizontal
-            .form-group
-              .col-lg-8.col-lg-offset-2.text-center
-                %a.btn.btn-oauth.btn-github.btn-large{href: "/oauth/gh/signup", type: "button"}
-                  %i.fa.fa-github.fa-large
-                %a.btn.btn-oauth.btn-twitter.btn-large{href: "/oauth/tw/signup", type: "button"}
-                  %i.fa.fa-twitter.fa-large
-                %a.btn.btn-oauth.btn-google.btn-large{href: "/oauth/go/signup", type: "button"}
-                  %i.fa.fa-google-plus.fa-large
 
 
 %div.addthis-container

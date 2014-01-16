@@ -544,6 +544,38 @@ class Email(base):
         return ActivationEmail(self).send(self.address)
 
 
+class EmailList(base):
+
+    acl = acl['email_list']
+
+    address = db.Column(db.String, primary_key=True)
+    date = db.Column(db.DateTime)
+
+    # @classmethod
+    # def check_taken(cls, value):
+    #     """ Called by the registration form to check if the email address is
+    #     taken """
+    #     try:
+    #         Email_list.query.filter_by(address=value).one()
+    #     except sqlalchemy.orm.exc.NoResultFound:
+    #         return {'taken': False}
+    #     else:
+    #         return {'taken': True}
+
+    @classmethod
+    def create(cls, address):
+        try:
+            inst = cls(address=address,
+                       date=datetime.now())
+
+            db.session.add(inst)
+            db.session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            db.session.rollback()
+            return {'message': 'Email address already registered!',
+                    'success': False}
+        return {'message': 'Win'}
+
 class User(Thing, SubscribableMixin, ReportableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
     username = db.Column(db.String(32), unique=True)
