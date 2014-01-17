@@ -106,6 +106,8 @@ class BaseTest(ThinTest):
             host = url.split('@')[1].split(':')[0]
         else:
             host = 'localhost'
+        if 'WERCKER_POSTGRESQL_PASSWORD' in os.environ:
+            os.environ['PGPASSWORD'] = os.environ['WERCKER_POSTGRESQL_PASSWORD']
         os.system("psql -U {username} -h {host} {database} -f "
                   "{root}/assets/test_provision.sql > /dev/null 2>&1"
                   .format(root=root,

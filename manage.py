@@ -55,6 +55,9 @@ def generate_trans():
         host = url.split('@')[1].split(':')[0]
     else:
         host = 'localhost'
+    if 'WERCKER_POSTGRESQL_PASSWORD' in os.environ:
+        print "Setting pgpass env variable..."
+        os.environ['PGPASSWORD'] = os.environ['WERCKER_POSTGRESQL_PASSWORD']
     cmd = ("pg_dump -c -U {username} -h {host} {database} -f "
            "{root}/assets/test_provision.sql"
            .format(username=username,
