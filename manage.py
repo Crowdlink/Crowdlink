@@ -55,12 +55,15 @@ def generate_trans():
         host = url.split('@')[1].split(':')[0]
     else:
         host = 'localhost'
-    os.system("pg_dump -c -U {username} -h {host} {database} -f "
-              "{root}/assets/test_provision.sql"
-              .format(username=username,
-                      database=database,
-                      host='localhost',
-                      root=root))
+    cmd = ("pg_dump -c -U {username} -h {host} {database} -f "
+           "{root}/assets/test_provision.sql"
+           .format(username=username,
+                   database=database,
+                   host='localhost',
+                   root=root))
+    print cmd
+    print os.environ
+    os.system(cmd)
 
 
 if __name__ == "__main__":
