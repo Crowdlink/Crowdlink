@@ -1,5 +1,6 @@
 box: alasershark/python-coffee@0.0.2
 services:
+    - icook/lots-frontend@0.1.0
     - wercker/postgresql9.2
 # Build definition
 build:
@@ -18,7 +19,6 @@ build:
         # A custom script step, name value is used in the UI
         # and the code value contains the command that get executed
         - npm-install
-        - bundle-install
         - grunt:
             tasks: dev
         - script:
