@@ -50,6 +50,11 @@ def generate_trans():
     provision()
     username = os.environ.get('WERCKER_POSTGRESQL_USERNAME', 'crowdlink')
     database = os.environ.get('WERCKER_POSTGRESQL_DATABASE', 'crowdlink')
+    url = os.environ.get('WERCKER_POSTGRESQL_URL')
+    if url:
+        host = url.split('@')[1].split(':')[0]
+    else:
+        host = 'localhost'
     os.system("pg_dump -c -U {username} -h {host} {database} -f "
               "{root}/assets/test_provision.sql"
               .format(username=username,

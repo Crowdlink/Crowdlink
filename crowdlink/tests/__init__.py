@@ -101,6 +101,11 @@ class BaseTest(ThinTest):
     def setup_db(self):
         username = os.environ.get('WERCKER_POSTGRESQL_USERNAME', 'crowdlink')
         database = os.environ.get('WERCKER_POSTGRESQL_DATABASE', 'crowdlink')
+        url = os.environ.get('WERCKER_POSTGRESQL_URL')
+        if url:
+            host = url.split('@')[1].split(':')[0]
+        else:
+            host = 'localhost'
         os.system("psql -U {username} -h {host} {database} -f "
                   "{root}/assets/test_provision.sql > /dev/null 2>&1"
                   .format(root=root,
