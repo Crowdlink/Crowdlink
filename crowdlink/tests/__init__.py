@@ -111,7 +111,7 @@ class BaseTest(ThinTest):
                   .format(root=root,
                           username=username,
                           database=database,
-                          host='localhost'))
+                          host=host))
 
     def login(self, username, password):
         data = {

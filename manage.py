@@ -59,7 +59,7 @@ def generate_trans():
            "{root}/assets/test_provision.sql"
            .format(username=username,
                    database=database,
-                   host='localhost',
+                   host=host,
                    root=root))
     print cmd
     print os.environ
