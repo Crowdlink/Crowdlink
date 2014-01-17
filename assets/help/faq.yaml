@@ -23,25 +23,29 @@ topics:
   issue_tracker:
       title: Is Crowdlink an issue tracker?
       body: |
-          <b>Not in the traditional sense.</b> Although you could certainly use it that way.
-          Crowdlink is designed to offer a logical workflow with community involvement integrated
-          throughout the process. The idea is to target issues at a much higher level than
-          traditional issue trackers, IE. users may note a specific symptom of a bug they would really like
-          fixed, without necessarily having any idea as to the cause or solution. The goal is
-          to support decision making and project direction, rather than focusing on implementation details.
+          No, not really. Although it could be used that way.
+          <p><br>
+          Crowdlink is designed to focus on communicating which improvements are the most valued by users.
+          Towards that end, Crowdlink offers a logical workflow with community involvement integrated
+          throughout the process.
+          <br><p>The general idea is to have proposals function at a higher level than
+          traditional issue tracker items, e.g. users may note that they are really frustrated with the support
+          offered. The goal is
+          to support decision making and project direction, rather than focusing on specific implementation details.
       brief: Crowdlink is designed to allow developers to make informed project direction decisions, rather than focusing on specific implementation details.
   how_works:
       title: How does Crowdlink work?
       body: |
-          Crowdlink is built to by quite flexible, but a typical use case might be as follows:
-          <br>
+          Crowdlink is built to be quite flexible, but a typical use case might be as follows:
+          <br><p>
           <ul>
           <li>A user has a great idea to improve a project</li>
-          <li>This user locates the project on Crowdlink and they create a new issue + solution for their idea</li>
+          <li>This user locates the project on Crowdlink and they create a proposal for their idea</li>
           <li>The user makes a pledge towards its completion</li>
-          <li>While viewing the project the user notices a couple other ideas he really likes, and pledges towards those too</li>
-          <li>Developers, excited by the interest in the project, take note of popular issues.</li>
-          <li>After careful consideration they select or reject an issue or solution to let users know how they are going forward.</li>
+          <li>Other users agree the idea is great and also contribute</li>
+          <li>Developers, excited by the interest in the project, have a clear view of which improvements users value most.</li>
+          <li>For particularly challenging ideas developers gain a route to communicate the difficulties</li>
+          <li>After weighing the pros and cons they accept or reject an idea to let users know how they are going forward.</li>
           <li>If a solution is completed the developers receive the pledges.</li>
           </ul>
       brief: Users make pledges towards issues or solutions. Developers may complete those to receive the pledges.
@@ -50,9 +54,10 @@ topics:
       body: |
           <ul>
           <li>Watch projects you are interested in and see what direction they are moving</li>
-          <li>Easily determine which issues are most important to end users</li>
+          <li>Easily determine which issues are most important to your project's users</li>
           <li>Encourage & motivate developers who see interest in their project</li>
-          <li>Maintain a logical workflow of issues</li>
+          <li>Contribute your ideas to other projects</li>
+          <li>Maintain a logical workflow on public proposals</li>
           <li>Help developers make financial ends meet</li>
           </ul>
       brief: Crowdlink helps motivate developers, increases communication between devs and end users, and helps starving devs pay their bills.
@@ -74,38 +79,36 @@ topics:
   pledges:
       title: What are Pledges and how do they work?
       body: |
-          A Pledge is a monetary endorsement of an idea. Crowdlink allows Pledges to be placed on both Proposed Solutions (ideas for improving a project)
-          and Accepted Solutions (Solutions that have been approved by project admins). Once a Solution is marked as completed the funds in a Pledge are
-          dispursed by a project admin.
+          A Pledge is a monetary endorsement of an idea. Once marked complete, Pledges are distributed by a project admin.
+          Crowdlink allows Pledges to be placed on both Proposed Solutions (ideas for improving a project)
+          and Accepted Solutions (Solutions that have been approved by project admins).
       brief: Much community. So crowdfund. Wow.
   unused_solutions:
       title: What happens to a Pledge if a Solution is not accepted?
       body: When a solution is rejected, or simply isn't picked any Pledges attached to it get returned to the contributor.
       brief: Much community. So crowdfund. Wow.
   pending_pledges:
-      title: Why are funds pending on my account?
+      title: Why are some funds unable to be withdrawn?
       body: |
-          For fraud prevention Crowdlink delays fund from maturing based on a complex set of variables. Because of this
-          it will sometimes be the case that funds will be recieved but not yet be available. After funds mature they
-          may then be withdrawn or contributed towards other projects.
+          For fraud prevention Crowdlink delays some funds from maturing based on a complex set of variables.
+          <br><p><p>Because of this
+          it will sometimes be the case that funds will be recieved, and available to be sent to others in Crowdlink's network,
+          but not yet be available to withdraw.
+          Currently, since Crowdlink is very new, we have set maturation to occur after a longer (safer) time period, and
+          are working to build a model to hopefully shorten this period for most cases.
       brief: Much community. So crowdfund. Wow.
   fees:
       title: What is your fee structure?
       body: |
-          <p>There are two types of fees possible on Crowdlink. The first is incurred when depositing or withdrawing money from Crowdlink.
-          The other happens during the donation/pledge process.
-          <p>For the first type of fee, the thought process is to pass payment processor fees on to the user when they deposit/withdraw from their account. This
-          gives the user more control, and potentially allows them to reduce these transaction fees or increase convenience. At the moment Stripe is
-          the only way to transfer money in or out of Crowdlink, although we plan to offer other payment processors soon.
-          For now, this means there is a
-          fee of 2.9% + $0.30 per transaction, because that is what Stripe charges. For withdrawl Stripe charge $0.50 per transaction.</p>
-          <p>Payment processor fees are represented immediately after putting money in a Crowdlink account. For example, if a user puts a $20 charge towards his Crowdlink
-          account the available balance will be $19.12.</p>
-          <p>The other type of fee supports Crowdlink. It is a flat 4% fee for pledges and donations.
-          This fee occurs any time funds move between Crowdlink users, and may change.
-          For example, if a user Pledges $2.00 towards a solution then when that issue is completed the project maintainer will split
-          $1.92 between users who contributed towards the solution.</p>
-          <p>Our intent is to make the fee structure as straightforward as possible, and encourage people to make small but meaningful
-          contributions, potentially donating a little bit to many different projects. If you have any questions please
-          contact support, and suggestions are always welcome on our project page.
+          <b>Incoming fees.</b> We pass along fees from payment processors. We are currently only setup to accept
+          payments through Balanced Payments. Their fee structure:
+          <p>
+          <ul>
+           <li>Credit cards: 2.9% + $0.30 per transaction</li>
+           <li>Bank ACH debits: 1% + $0.30 per transaction, max $5</li>
+          </ul>
+          <b>In-network fees.</b> We charge a 6% fee for transactions between users, e.g. Pledges or Donations to
+          projects. This fee will likely change as we get a better feel for the traffic level.
+          <br><p><p>
+          <b>Exiting fees.</b> We pass along fees for this. Balanced charges $0.25 for a (next day) bank deposit
       brief: Much community. So crowdfund. Wow.
