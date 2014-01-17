@@ -1,6 +1,6 @@
 box: alasershark/python-coffee@0.0.2
 services:
-    - icook/lots-frontend@0.1.0
+    - icook/python-grunt-haml
     - wercker/postgresql9.2
 # Build definition
 build:
