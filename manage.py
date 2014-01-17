@@ -48,7 +48,14 @@ def generate_trans():
     """ Generates testing database fixtures """
     init_db()
     provision()
-    os.system("pg_dump -c -U crowdlink -h localhost crowdlink -f " + root + "/assets/test_provision.sql")
+    username = os.environ.get('WERCKER_POSTGRESQL_USERNAME', 'crowdlink')
+    database = os.environ.get('WERCKER_POSTGRESQL_DATABASE', 'crowdlink')
+    os.system("pg_dump -c -U {username} -h {host} {database} -f "
+              "{root}/assets/test_provision.sql"
+              .format(username=username,
+                      database=database,
+                      host='localhost',
+                      root=root))
 
 
 if __name__ == "__main__":

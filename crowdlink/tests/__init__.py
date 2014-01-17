@@ -99,9 +99,14 @@ class ThinTest(TestCase):
 
 class BaseTest(ThinTest):
     def setup_db(self):
-        os.system("psql -U crowdlink -h localhost crowdlink_testing -f "
-                  "{0}/assets/test_provision.sql > /dev/null 2>&1"
-                  .format(root))
+        username = os.environ.get('WERCKER_POSTGRESQL_USERNAME', 'crowdlink')
+        database = os.environ.get('WERCKER_POSTGRESQL_DATABASE', 'crowdlink')
+        os.system("psql -U {username} -h {host} {database} -f "
+                  "{root}/assets/test_provision.sql > /dev/null 2>&1"
+                  .format(root=root,
+                          username=username,
+                          database=database,
+                          host='localhost'))
 
     def login(self, username, password):
         data = {
