@@ -64,12 +64,8 @@ topics:
   differences:
       title: How is Crowdlink different from other Crowdfunding sites, like BountySource or Gittip?
       body: |
-          Crowdlink is a paradigm shift from other sites. Most other sites focus on incenting/rewarding devs,
-          and we agree that aspect is important, but what really makes a project great (or horrible) is the community.
-          Crowdlink is designed to grow that community. Involve users in the decision making process. Give developers
-          valuable information about what the users want. Philosophy aside, there are also several key
-          architectural differences
-          <br><ul>
+          Several key differences:
+          <br><p><ul>
           <li><b>Microtransactions</b> - Its simple to make one, non-recurring donation or pledge.</li>
           <li><b>Project focused</b> - Supporting developers is important, and Crowdlink does that,
           but the focus is really on getting everyone working together</li>
