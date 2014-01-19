@@ -64,6 +64,8 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
       login: login_resolver('not_user')
   ).when("/tos",
     templateUrl: "{{ template_path }}tos.html"
+  ).when("/privacy",
+    templateUrl: "{{ template_path }}privacy.html"
   ).when("/errors/:error",
     templateUrl: "{{ template_path }}error.html"
     controller: "errorController"

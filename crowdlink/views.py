@@ -58,7 +58,7 @@ def send_message(message, cls='alert-danger', timeout=5000, page_stay=1):
 @main.route("/", methods=['GET', 'POST'])
 def angular_root(path=None):
     logged_in = "true" if current_user.is_authenticated() else "false"
-    user = get_joined(current_user) if current_user.is_authenticated() else "undefined"
+    user = get_joined(current_user.get()) if current_user.is_authenticated() else "undefined"
     # re-encode our flash messages and pass them to angular for display
     messages = session.pop('_messages', None)
     if messages is None:

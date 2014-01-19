@@ -51,6 +51,7 @@ module.exports = (grunt) ->
           "static/templates/user_home.html": "processed/haml/user_home.haml"
           "static/templates/psettings.html": "processed/haml/psettings.haml"
           "static/templates/tos.html": "processed/haml/tos.haml"
+          "static/templates/privacy.html": "processed/haml/privacy.haml"
           "static/templates/send_recover.html": "processed/haml/send_recover.haml"
           "static/templates/recover.html": "processed/haml/recover.haml"
           "static/templates/dir/drop_toggle.html": "processed/haml/dir/drop_toggle.haml"
