@@ -124,10 +124,7 @@ def create_app(config='/application.json'):
     # tell the session manager how to access the user object
     @lm.user_loader
     def user_loader(id):
-        try:
-            return models.User.query.filter_by(id=id).one()
-        except sqlalchemy.orm.exc.NoResultFound:
-            return None
+        return None
 
     def error_handler(e, code):
         # prevent error loops
