@@ -265,6 +265,7 @@ mainFilters.filter('fuseImpFilter', ->
     if query
       f = new Fuse(input,
         keys: ['title']
+        threshold: 0.8
       )
       return f.search(query).slice(0,15)
     else
