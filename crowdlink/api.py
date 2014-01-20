@@ -4,6 +4,8 @@ from flask.ext.oauthlib.client import OAuthException
 
 from pprint import pformat
 from lever import API, LeverException
+import six
+import sys
 from .oauth import oauth_retrieve, oauth_from_session
 from .models import User, Project, Issue, Solution, Email, Comment, Thing
 
@@ -25,7 +27,7 @@ def api_error_handler(exc):
     end_user = {}
 
     try:
-        raise exc
+        six.reraise(type(exc), exc, tb=sys.exc_info()[2])
     except LeverException as e:
         code = e.code
         msg = str(e)
@@ -52,9 +54,9 @@ def api_error_handler(exc):
         msg = 'Unkown OAuth error occured'
         code = 400
         log = 'warn'
-    except Exception:
+    except Exception as e:
         current_app.logger.error(
-            "Unhadled API error of type {0} raised".format(e.__name__))
+            "Unhadled API error of type {0} raised".format(type(e)))
 
     if hasattr(exc, 'error_key'):
         end_user['error_key'] = e.error_key

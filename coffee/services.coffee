@@ -53,6 +53,9 @@ mainServices.factory("ProjectService", ($resource) ->
     update:
       method: "PUT"
       timeout: 10000
+    action:
+      method: "PATCH"
+      timeout: 10000
     create:
       method: "POST"
       timeout: 10000

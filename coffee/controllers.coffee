@@ -397,9 +397,8 @@ mainControllers.controller('accountController',
 
 # ProjectController============================================================
 mainControllers.controller('projectController',
-($scope, $rootScope, project, $injector, $routeParams, $timeout)->
-
-  $injector.invoke(parentEditController, this, {$scope: $scope})
+($scope, $rootScope, project, $injector, $routeParams, $timeout, ProjectService)->
+  $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.project = project.objects[0]
   $rootScope.title = "Project '#{$scope.project.name}'"
   if 'subsection' of $routeParams
@@ -430,8 +429,21 @@ mainControllers.controller('projectController',
       id: $scope.project.id
     if frag == 'name'
       data.name = $scope.project.name
-
     return data
+
+  $scope.new_admin = ->
+    $scope.error_header = ""
+    $scope.errors = []
+    ProjectService.action(
+      username: $scope.username
+      id: $scope.project.id
+      __action: 'add_admin'
+    ,(value) ->
+      if 'success' of value and value.success
+        $scope.project.admins.push value.objects[0]
+      else
+        $scope.error_report(value)
+    , $scope.error_report)
 
 )
 
@@ -719,13 +731,6 @@ mainControllers.controller('newSolutionController',
       else
         $scope.error_report(value)
     , $scope.error_report)
-)
-
-# projectSettingsController ====================================================
-mainControllers.controller('projectSettingsController',
-($scope, $rootScope, $routeParams, project)->
-  $rootScope.title = "Project Settings"
-  $rootScope.project = project.objects[0]
 )
 
 # homeController =======================================================

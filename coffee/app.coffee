@@ -438,12 +438,22 @@ mainApp.directive "uniqueServerside",
           __cls: true
       ).success((data) ->
         $timeout ->
-          # display new error message
-          if data.taken
-            ctrl.$setValidity "taken", false
-            ctrl.confirmed = false
+          # display a new error message
+          # if there is an inverse attr switch things up a bit
+          if attrs.inverse
+            if data.taken
+              ctrl.confirmed = true
+              ctrl.$setValidity "notTaken", true
+            else
+              ctrl.confirmed = false
+              ctrl.$setValidity "notTaken", false
+          # if no inverse attr, operate normally
           else
-            ctrl.confirmed = true
+            if data.taken
+              ctrl.$setValidity "taken", false
+              ctrl.confirmed = false
+            else
+              ctrl.confirmed = true
           ctrl.busy = false
         , 500
       ).error (data) ->

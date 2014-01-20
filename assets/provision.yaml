@@ -55,6 +55,10 @@ projects:
                 into their GA account
     - name: Mystery Inc.
       maintainer: fred
+      admins:
+          - scrappy
+          - scooby
+          - daphne
       website: http://scoobydoo.kidswb.com/
       url_key: mystery-inc
       desc: Just a couple people solving mysteries.

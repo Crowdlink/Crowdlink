@@ -39,6 +39,29 @@ class Thing(base):
         return (self.pledges.count() /
                 self.pledges.filter(disputed=True).count())
 
+class ProjectAdmin(base):
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    acl = db.Column(db.Integer)
+    user = db.relationship("User")
+
+        # Join profiles
+    # ======================================================================
+    standard_join = ['user_id'
+                     ]
+
+    @classmethod
+    def create(cls, user, project):
+
+        project_admin = cls(project_id=project.id,
+                      user_id=user.id,
+                      acl=1,
+                      user=user)
+
+        db.session.add(project_admin)
+        # flush after finishing creation
+        db.session.flush()
+
 
 class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     """ This class is a composite of thing and project tables """
@@ -59,6 +82,10 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
 
     # Event log
     public_events = db.Column(EventJSON, default=list)
+
+    # project admins
+    admins_objs = db.relationship("ProjectAdmin", backref="admin_powers")
+    admins = db.relationship("User", secondary='project_admin', backref="admin_projects")
 
     # Github Syncronization information
     gh_repo_id = db.Column(db.Integer, default=-1)
@@ -83,7 +110,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                      'maintainer_username',
                      'id',
                      '-vote_list',
-                     '-public_events'
+                     '-public_events',
                      ]
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
@@ -101,6 +128,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                              'subscribed',
                              'vote_status',
                              'desc',
+                             {'obj': 'admins'},
                              {'obj': 'maintainer'},
                              {'obj': 'public_events'},
                              {'obj': 'issues', 'join_prof': 'disp_join'},
@@ -125,6 +153,12 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
             username=self.maintainer_username,
             url_key=self.url_key)
 
+    def add_admin(self, username):
+        # grab user object from username
+        user = User.query.filter_by(username=username.lower()).one()
+
+        ProjectAdmin.create(user, self)
+        return {'objects': [get_joined(user)]}
     @classmethod
     def create(cls, name, url_key, website="", desc="", user=current_user):
         project = cls(name=name,

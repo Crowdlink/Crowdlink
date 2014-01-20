@@ -67,8 +67,8 @@ user:
             - page_join
             - disp_join
         edit: subscribed
-    usernameless:
-        inherit: noactive_user
+        action:
+            - check_taken
     user:
         inherit: noactive_user
         edit:
@@ -83,7 +83,8 @@ user:
             - go_linked
             - gh_linked
             - tw_linked
-        action: refresh_provider
+        action:
+            - refresh_provider
         view:
             - home_join
             - settings_join
@@ -113,6 +114,8 @@ project:
     # Object context roles
     maintainer:
         inherit: user
+        action:
+            - add_admin
         edit:
             - name
             - website

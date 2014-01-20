@@ -1,1 +1,56 @@
-%h3 Project Settings
+%h3
+  Project Settings
+  %a.button.btn.btn-danger.pull-right.disabled{:href => ""}
+    %i.fa.fa-large.fa-minus
+    Scrap Project
+%hr.feed
+.container
+  .col-lg-5.col-lg-offset2
+    %h3 Privileges
+    %table.table-hover.info-table
+      %tbody
+        %tr
+          %td Maintainer:
+          %td
+            %img{src:"\{[{ project.maintainer.avatar }]}&s=20"}
+            %a{:href => "{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
+          %td Full rights
+        %tr{"ng-repeat" => "admin in project.admins"}
+          %td Admin:
+          %td
+            %a{:href => "/{[{ admin.username }]}"} {[{ admin.username }]}
+          %td Full rights
+          %td
+        %tr
+          %td{"colspan" => "4"}
+            %form.form-horizontal{method: "post", "ng-submit" => "new_admin()", name: "f", novalidate: ""}
+              .row
+                .col-lg-12
+                  .alert-danger.alert.fade{"ng-show" => "errors"}
+                    %span{"ng-show" => "errors.length === 1"} {[{ errors[0] }]}
+                    %span{"ng-show" => "error_header"} {[{ error_header }]}
+                    %ul{"ng-show" => "errors.length > 1"}
+                      %li{"ng-repeat" => "error in errors"} {[{error}]}
+              .form-group.no-margin{"valid-class" => "f.username"}
+                .row
+                  .col-lg-9{style:"height:40px;"}
+                    %input.form-control{name: "username", "ng-maxlength" => "32",
+                      "ng-model" => "$parent.username", "ng-pattern" => "/^[a-zA-Z0-9-_]+$/",
+                      type: "text", required: "", "unique-serverside" => "user", "inverse" => "true",
+                      "placeholder" => "Add new Admin"}
+                      %i.fa.fa-spinner.fa-spin.right-float{"ng-show" => "f.username.busy"}
+                      %i.fa.fa-check.right-float{"ng-show" => "f.username.confirmed && f.username.$valid"}
+                  .col-lg-3.text-right
+                    %button.btn.btn-info{"ng-disabled" => "!f.$valid", type: "submit"}
+                      %i.fa.fa-large.fa-plus
+                .row
+                  .col-lg-12
+                    .help-block{"ng-show" => "f.username.$error.required", style:"margin-bottom:0px;"}
+                      Please enter a Username
+                    .help-block{"ng-show" => "f.username.$error.pattern", style:"margin-bottom:0px;"}
+                      Use only alphanumeric, underscores and hypens
+                    .help-block{"ng-show" => "f.username.$error.maxlength", style:"margin-bottom:0px;"}
+                      Cannot be longer than 32 characters
+                    .help-block{"ng-show" => "f.username.$error.notTaken", style:"margin-bottom:0px;"}
+                      That name is not taken
+
