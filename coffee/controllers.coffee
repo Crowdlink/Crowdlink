@@ -433,7 +433,7 @@ mainControllers.controller('projectController',
     return data
 
   $scope.new_admin = ->
-    $scope.remove_admin_error = ""
+    $scope.remove_admin_error = null
     $scope.error_header = ""
     $scope.errors = []
     ProjectService.action(
@@ -443,12 +443,13 @@ mainControllers.controller('projectController',
     ,(value) ->
       if 'success' of value and value.success
         $scope.project.admins.push value.objects[0]
+        $scope.f.$setPristine
       else
         $scope.error_report(value)
     , $scope.error_report)
 
   $scope.remove_admin = (idx, user_id) ->
-    $scope.remove_admin_error = ""
+    $scope.remove_admin_error = null
     $scope.error_header = ""
     $scope.errors = []
     ProjectService.action(
@@ -460,8 +461,8 @@ mainControllers.controller('projectController',
         $scope.project.admins.splice(idx, 1);
       else
         $scope.remove_admin_error = idx
-    , $scope.remove_admin_error)
-
+    , () ->
+      $scope.remove_admin_error = null)
 )
 
 # NewChargeController ============================================================

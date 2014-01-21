@@ -141,6 +141,10 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     def roles(self, user=current_user):
         if self.owner == user:
             return ['owner']
+        # else:
+        #     for admin in self.admins:
+        #         if admin == user:
+        #             return ['maintainer']
         return []
 
     @property
