@@ -398,6 +398,7 @@ mainControllers.controller('accountController',
 # ProjectController============================================================
 mainControllers.controller('projectController',
 ($scope, $rootScope, project, $injector, $routeParams, $timeout, ProjectService)->
+  $injector.invoke(parentEditController, this, {$scope: $scope})
   $injector.invoke(parentFormController, this, {$scope: $scope})
   $scope.project = project.objects[0]
   $rootScope.title = "Project '#{$scope.project.name}'"
