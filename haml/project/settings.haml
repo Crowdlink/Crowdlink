@@ -5,7 +5,7 @@
     Scrap Project
 %hr.feed
 .container
-  .col-lg-5.col-lg-offset2
+  .col-lg-8.col-lg-offset2
     %h3 Privileges
     %table.table-hover.info-table
       %tbody
@@ -21,6 +21,12 @@
             %a{:href => "/{[{ admin.username }]}"} {[{ admin.username }]}
           %td Full rights
           %td
+            %form{method: "post", "ng-submit" => "remove_admin($index, admin.id)", name: "f", novalidate: ""}
+              .alert-danger.alert.fade{"ng-show" => "remove_admin_error == $index"}
+                %span Removal failed, please try again later!
+              %div{"ng-hide" => "remove_admin_error == $index"}
+                %button.btn.btn-danger{type: "submit", "ng-click" => "tog=1"}
+                  %i.fa{"ng-class" => "{false: 'fa-minus', true: 'fa-spin fa-spinner'}[tog==1]"}
         %tr
           %td{"colspan" => "4"}
             %form.form-horizontal{method: "post", "ng-submit" => "new_admin()", name: "f", novalidate: ""}

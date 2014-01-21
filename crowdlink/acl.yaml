@@ -116,6 +116,7 @@ project:
         inherit: user
         action:
             - add_admin
+            - remove_admin
         edit:
             - name
             - website

@@ -445,6 +445,19 @@ mainControllers.controller('projectController',
         $scope.error_report(value)
     , $scope.error_report)
 
+  $scope.remove_admin = (idx, user_id) ->
+    $scope.remove_admin_error = 0
+    ProjectService.action(
+      user_id: user_id
+      id: $scope.project.id
+      __action: 'remove_admin'
+    ,(value) ->
+      if 'success' of value and value.success
+        $scope.project.admins.splice(idx, 1);
+      else
+        $scope.remove_admin_error = idx
+    , $scope.remove_admin_error = idx)
+
 )
 
 # NewChargeController ============================================================

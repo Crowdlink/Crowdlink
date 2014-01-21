@@ -159,6 +159,12 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
 
         ProjectAdmin.create(user, self)
         return {'objects': [get_joined(user)]}
+
+    def remove_admin(self, user_id):
+        # grab user object from username
+        user = ProjectAdmin.query.filter_by(user_id=user_id).filter_by(project_id=self.id).one()
+        db.session.delete(user)
+
     @classmethod
     def create(cls, name, url_key, website="", desc="", user=current_user):
         project = cls(name=name,
