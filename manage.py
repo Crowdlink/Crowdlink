@@ -15,13 +15,6 @@ from flask import current_app
 
 @manager.command
 def init_db():
-    try:
-        db.engine.execute("CREATE EXTENSION hstore")
-    except sqlalchemy.exc.ProgrammingError as e:
-        if 'already exists' in str(e):
-            pass
-        else:
-            raise Exception("Unable to enable HSTORE extension")
     db.drop_all()
     db.create_all()
 
@@ -36,6 +29,21 @@ def provision():
 def test_email(template=None):
     recipient = current_app.config['email_test_address']
     TestEmail().send_email(recipient)
+
+
+@manager.command
+def print_emails(template=None):
+    from crowdlink.models import EmailList
+    count = EmailList.query
+    for mail in count[0:100]:
+        print mail.address
+
+
+@manager.command
+def count_emails(template=None):
+    from crowdlink.models import EmailList
+    count = EmailList.query.count()
+    print count
 
 
 @manager.command

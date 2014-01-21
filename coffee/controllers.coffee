@@ -752,7 +752,7 @@ mainControllers.controller('frontPageController',
         $scope.register_success = true
         $scope.errors = false
       else
-        $scope.error_report({'message': 'Email address taken'})
+        $scope.error_report({'message': 'Already signed up for updates'})
     , $scope.error_report)
 )
 
@@ -869,7 +869,7 @@ mainControllers.controller('errorController', ($scope, $routeParams, $rootScope)
 mainControllers.controller('helpModalController', ($sce, $scope, $modalInstance, $rootScope, $http, topic) ->
   $scope.init = () ->
     $rootScope.loading = true
-    $http.get('assets/help/faq.json').success((data) ->
+    $http.get('{{ static_path }}faq.json').success((data) ->
       $scope.cats = data['categories']
       $scope.topics = data['topics']
       for c_topic, vals of $scope.topics

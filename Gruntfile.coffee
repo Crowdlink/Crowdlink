@@ -41,6 +41,7 @@ module.exports = (grunt) ->
           "static/templates/home.html": "processed/haml/home.haml"
           "static/templates/error.html": "processed/haml/error.haml"
           "static/templates/tos.html": "processed/haml/tos.haml"
+          "static/templates/privacy.html": "processed/haml/privacy.haml"
           # Modals
           "static/templates/help_modal.html": "processed/haml/help_modal.haml"
 
@@ -105,7 +106,7 @@ module.exports = (grunt) ->
       proc_sass:
         command: './util/preprocess.py scss scss -v'
       compile_yaml:
-        command: 'yaml2json ./assets/help/faq.yaml > ./assets/help/faq.json'
+        command: 'yaml2json ./assets/help/faq.yaml > ./static/faq.json'
 
     inlinecss:
       main:
