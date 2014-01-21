@@ -112,14 +112,18 @@ project:
         inherit: maintainer
         class: create_other
     # Object context roles
-    maintainer:
+    project_admin:
         inherit: user
-        action:
-            - add_admin
-            - remove_admin
         edit:
             - name
             - website
+        view:
+            - project_settings
+    maintainer:
+        inherit: project_admin
+        action:
+            - add_admin
+            - remove_admin
 issue:
     # global context roles
     anonymous:
