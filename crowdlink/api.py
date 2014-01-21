@@ -130,12 +130,12 @@ class IssueAPI(APIBase):
         # do logic to pick out the parent from the database based on parent
         # keys
         purl_key = self.params.pop('project_url_key', None)
-        puser = self.params.pop('project_maintainer_username', None)
+        puser = self.params.pop('project_owner_username', None)
         pid = self.params.pop('project_id', None)
         # try this method first, most common
         if puser and purl_key:
             project = Project.query.filter(
-                Project.maintainer_username == puser,
+                Project.owner_username == puser,
                 Project.url_key == purl_key).one()
         elif pid:
             project = Project.query.filter(Project.id == pid).one()
@@ -155,13 +155,13 @@ class SolutionAPI(APIBase):
         # do logic to pick out the parent from the database based on parent
         # keys
         purl_key = self.params.pop('project_url_key', None)
-        puser = self.params.pop('project_maintainer_username', None)
+        puser = self.params.pop('project_owner_username', None)
         iurl_key = self.params.pop('issue_url_key', None)
         iid = self.params.pop('issue_id', None)
         # try this method first, most common
         if puser and purl_key and iurl_key:
             issue = Issue.query.filter(
-                Issue.project_maintainer_username == puser,
+                Issue.project_owner_username == puser,
                 Issue.project_url_key == purl_key,
                 Issue.url_key == iurl_key).one()
         elif iid:

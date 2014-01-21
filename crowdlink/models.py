@@ -68,7 +68,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    maintainer_username = db.Column(db.String, db.ForeignKey('user.username'))
+    owner_username = db.Column(db.String, db.ForeignKey('user.username'))
     url_key = db.Column(db.String)
 
     # description info
@@ -92,22 +92,22 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     gh_repo_path = db.Column(db.String)
     gh_synced_at = db.Column(db.DateTime)
     gh_synced = db.Column(db.Boolean, default=False)
-    maintainer = db.relationship('User',
-                                 foreign_keys='Project.maintainer_username',
+    owner = db.relationship('User',
+                                 foreign_keys='Project.owner_username',
                                  backref='projects')
     __table_args__ = (
-        db.UniqueConstraint("url_key", "maintainer_username"),
+        db.UniqueConstraint("url_key", "owner_username"),
     )
     __mapper_args__ = {'polymorphic_identity': 'Project'}
 
     # Join profiles
     # ======================================================================
     standard_join = ['get_abs_url',
-                     'maintainer',
+                     'owner',
                      'user_acl',
                      'report_status',
                      'created_at',
-                     'maintainer_username',
+                     'owner_username',
                      'id',
                      '-vote_list',
                      '-public_events',
@@ -116,11 +116,11 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     disp_join = ['__dont_mongo',
                  'name',
                  'get_abs_url',
-                 'maintainer_username']
+                 'owner_username']
 
     issue_page_join = ['__dont_mongo',
                        'name',
-                       'maintainer_username',
+                       'owner_username',
                        'get_abs_url']
     page_join = inherit_lst(standard_join,
                             ['__dont_mongo',
@@ -129,7 +129,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                              'vote_status',
                              'desc',
                              {'obj': 'admins'},
-                             {'obj': 'maintainer'},
+                             {'obj': 'owner'},
                              {'obj': 'public_events'},
                              {'obj': 'issues', 'join_prof': 'disp_join'},
                              ]
@@ -139,8 +139,8 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     acl = acl['project']
 
     def roles(self, user=current_user):
-        if self.maintainer == user:
-            return ['maintainer']
+        if self.owner == user:
+            return ['owner']
         return []
 
     @property
@@ -150,7 +150,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     @property
     def get_abs_url(self):
         return "/{username}/{url_key}/".format(
-            username=self.maintainer_username,
+            username=self.owner_username,
             url_key=self.url_key)
 
     def add_admin(self, username):
@@ -171,7 +171,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                       url_key=url_key,
                       website=website,
                       desc=desc,
-                      maintainer=user)
+                      owner=user)
 
         db.session.add(project)
 
@@ -187,7 +187,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
         """ Called by the registration form to check if the email address is
         taken """
         try:
-            Project.query.filter_by(url_key=value, maintainer=user.get()).one()
+            Project.query.filter_by(url_key=value, owner=user.get()).one()
         except sqlalchemy.orm.exc.NoResultFound:
             return {'taken': False}
         else:
@@ -240,18 +240,18 @@ class Issue(
     # our project relationship and keys
     url_key = db.Column(db.String, unique=True)
     project_url_key = db.Column(db.String)
-    project_maintainer_username = db.Column(db.String)
+    project_owner_username = db.Column(db.String)
     __table_args__ = (
         db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username],
-            [Project.url_key, Project.maintainer_username]),
+            [project_url_key, project_owner_username],
+            [Project.url_key, Project.owner_username]),
         db.UniqueConstraint("url_key",
-                            "project_maintainer_username",
+                            "project_owner_username",
                             "project_url_key"),
         {})
     project = db.relationship(
         'Project',
-        foreign_keys='[Issue.project_url_key, Issue.project_maintainer_username]',
+        foreign_keys='[Issue.project_url_key, Issue.project_owner_username]',
         backref='issues')
     creator = db.relationship('User', foreign_keys='Issue.creator_id')
 
@@ -315,13 +315,13 @@ class Issue(
     def get_abs_url(self):
         return "/{username}/{purl_key}/{url_key}".format(
             purl_key=self.project_url_key,
-            username=self.project_maintainer_username,
+            username=self.project_owner_username,
             url_key=self.url_key)
 
     @property
     def get_project_abs_url(self):
         return "/{username}/{url_key}/".format(
-            username=self.project_maintainer_username,
+            username=self.project_owner_username,
             url_key=self.project_url_key)
 
     def create_key(self):
@@ -381,23 +381,23 @@ class Solution(
     # our project relationship and all keys
     url_key = db.Column(db.String, unique=True)
     project_url_key = db.Column(db.String)
-    project_maintainer_username = db.Column(db.String)
+    project_owner_username = db.Column(db.String)
     issue_url_key = db.Column(db.String)
     __table_args__ = (
         db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username],
-            [Project.url_key, Project.maintainer_username]),
+            [project_url_key, project_owner_username],
+            [Project.url_key, Project.owner_username]),
         db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username, issue_url_key],
-            [Issue.project_url_key, Issue.project_maintainer_username, Issue.url_key]),
+            [project_url_key, project_owner_username, issue_url_key],
+            [Issue.project_url_key, Issue.project_owner_username, Issue.url_key]),
         {})
 
     project = db.relationship(
         'Project',
-        foreign_keys='[Solution.project_url_key, Solution.project_maintainer_username]')
+        foreign_keys='[Solution.project_url_key, Solution.project_owner_username]')
     issue = db.relationship(
         'Issue',
-        foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_maintainer_username]',
+        foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_owner_username]',
         backref='solutions')
     creator = db.relationship('User', foreign_keys='Solution.creator_id')
     comments = db.relationship(
@@ -447,7 +447,7 @@ class Solution(
     @property
     def get_abs_url(self):
         return "/{username}/{purl_key}/{iurl_key}/{url_key}".format(
-            username=self.project_maintainer_username,
+            username=self.project_owner_username,
             purl_key=self.project_url_key,
             iurl_key=self.issue_url_key,
             url_key=self.url_key)

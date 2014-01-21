@@ -433,6 +433,7 @@ mainControllers.controller('projectController',
     return data
 
   $scope.new_admin = ->
+    $scope.remove_admin_error = ""
     $scope.error_header = ""
     $scope.errors = []
     ProjectService.action(
@@ -447,7 +448,9 @@ mainControllers.controller('projectController',
     , $scope.error_report)
 
   $scope.remove_admin = (idx, user_id) ->
-    $scope.remove_admin_error = 0
+    $scope.remove_admin_error = ""
+    $scope.error_header = ""
+    $scope.errors = []
     ProjectService.action(
       user_id: user_id
       id: $scope.project.id
@@ -457,7 +460,7 @@ mainControllers.controller('projectController',
         $scope.project.admins.splice(idx, 1);
       else
         $scope.remove_admin_error = idx
-    , $scope.remove_admin_error = idx)
+    , $scope.remove_admin_error)
 
 )
 
@@ -707,7 +710,7 @@ IssueService)->
     $scope.errors = []
     IssueService.create(
       project_url_key: $routeParams.url_key
-      project_maintainer_username: $routeParams.username
+      project_owner_username: $routeParams.username
       desc: $scope.description
       title: $scope.issue_title
     ,(value) ->
@@ -733,7 +736,7 @@ mainControllers.controller('newSolutionController',
     $scope.error_header = ""
     $scope.errors = []
     SolutionService.create(
-      project_maintainer_username: $routeParams.username
+      project_owner_username: $routeParams.username
       project_url_key: $routeParams.purl_key
       issue_url_key: $routeParams.url_key
       desc: $scope.description

@@ -10,20 +10,20 @@
     %table.table-hover.info-table
       %tbody
         %tr
-          %td Maintainer:
+          %td Owner:
           %td
-            %img{src:"\{[{ project.maintainer.avatar }]}&s=20"}
-            %a{:href => "{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
+            %img{src:"\{[{ project.owner.avatar }]}&s=20"}
+            %a{:href => "{[{ project.owner_username }]}"} {[{ project.owner_username }]}
           %td Full rights
         %tr{"ng-repeat" => "admin in project.admins"}
-          %td Admin:
+          %td Maintainer:
           %td
             %a{:href => "/{[{ admin.username }]}"} {[{ admin.username }]}
           %td Full rights
           %td{"ng-show" => "project.user_acl.action_remove_admin"}
             %form{method: "post", "ng-submit" => "remove_admin($index, admin.id)", name: "f", novalidate: ""}
-              .alert-danger.alert.fade{"ng-show" => "remove_admin_error == $index"}
-                %span Removal failed, please try again later!
+              .alert-danger.alert.fade{"ng-show" => "remove_admin_error === $index"}
+                %span Removal failed, please try again later! {[{ $index }]}
               %div{"ng-hide" => "remove_admin_error == $index"}
                 %button.btn.btn-danger{type: "submit", "ng-click" => "tog=1"}
                   %i.fa{"ng-class" => "{false: 'fa-minus', true: 'fa-spin fa-spinner'}[tog==1]"}

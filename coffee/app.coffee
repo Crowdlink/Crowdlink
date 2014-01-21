@@ -121,13 +121,13 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
       issues: (IssueService, $route) ->
         IssueService.query(
           __filter_by:
-            project_maintainer_username: $route.current.params.username
+            project_owner_username: $route.current.params.username
             project_url_key: $route.current.params.url_key
           join_prof: 'brief_join').$promise
       project: (ProjectService, $route) ->
         ProjectService.query(
           __filter_by:
-            maintainer_username: $route.current.params.username
+            owner_username: $route.current.params.username
             url_key: $route.current.params.url_key
           __one: true
           join_prof: 'disp_join').$promise
@@ -139,7 +139,7 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
         $route.current.params.subsection = 'issues'
         ProjectService.query(
           __filter_by:
-            maintainer_username: $route.current.params.username
+            owner_username: $route.current.params.username
             url_key: $route.current.params.url_key
           join_prof: 'page_join').$promise
   ).when("/:username/:purl_key/:url_key",
@@ -149,7 +149,7 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
       issue: (IssueService, $route) ->
         IssueService.query(
           __filter_by:
-            project_maintainer_username: $route.current.params.username
+            project_owner_username: $route.current.params.username
             project_url_key: $route.current.params.purl_key
             url_key: $route.current.params.url_key
           __one: true
@@ -170,14 +170,14 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
       solutions: (SolutionService, $route) ->
         SolutionService.query(
           __filter_by:
-              project_maintainer_username: $route.current.params.username
+              project_owner_username: $route.current.params.username
               project_url_key: $route.current.params.purl_key
               issue_url_key: $route.current.params.url_key
           join_prof: 'disp_join').$promise
       project: (ProjectService, $route) ->
         ProjectService.query(
           __filter_by:
-            maintainer_username: $route.current.params.username
+            owner_username: $route.current.params.username
             url_key: $route.current.params.purl_key
           __one: true
           join_prof: 'disp_join').$promise
@@ -191,7 +191,7 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
             url_key: $route.current.params.url_key
             issue_url_key: $route.current.params.iurl_key
             project_url_key: $route.current.params.purl_key
-            project_maintainer_username: $route.current.params.username
+            project_owner_username: $route.current.params.username
           __one: true
           join_prof: "page_join").$promise
   ).when("/s/:id",
@@ -235,7 +235,7 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
       project: (ProjectService, $route) ->
         ProjectService.query(
           __filter_by:
-            maintainer_username: $route.current.params.username
+            owner_username: $route.current.params.username
             url_key: $route.current.params.url_key
           join_prof: 'page_join').$promise
   ).otherwise(

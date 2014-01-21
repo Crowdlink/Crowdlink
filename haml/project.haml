@@ -24,8 +24,8 @@
             %h5
               %small{style:"margin-left:0px;"}
                 Maintained by
-                %img{src:"\{[{ project.maintainer.avatar }]}&s=20"}
-                %a{:href => "/{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
+                %img{src:"\{[{ project.owner.avatar }]}&s=20"}
+                %a{:href => "/{[{ project.owner_username }]}"} {[{ project.owner_username }]}
           .col-md-5.text-right
             .project-buttons
               %a.btn.button.btn-default{"toggle-button" => "project.subscribed",

@@ -15,12 +15,12 @@
           %td Created:
           %td {[{ project.created_at| date:'medium' }]} ({[{ project.created_at| date_ago }]})
         %tr
-          %td Maintainer:
+          %td Owner:
           %td
-            %img{src:"\{[{ project.maintainer.avatar }]}&s=20"}
-            %a{:href => "{[{ project.maintainer_username }]}"} {[{ project.maintainer_username }]}
+            %img{src:"\{[{ project.owner.avatar }]}&s=20"}
+            %a{:href => "{[{ project.owner_username }]}"} {[{ project.owner_username }]}
         %tr{"ng-repeat" => "admin in project.admins"}
-          %td Admin
+          %td Maintainer:
           %td
             %a{:href => "{[{ admin.username }]}"} {[{ admin.username }]}
         %tr{"ng-repeat" => "repo in project.repos"}

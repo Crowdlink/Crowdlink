@@ -42,7 +42,7 @@ def provision():
     for project in pdata['projects']:
         # create a sweet new project...
         proj = Project(
-            maintainer=users[project['maintainer']],
+            owner=users[project['owner']],
             name=project['name'],
             website=project['website'],
             url_key=project['url_key'],
@@ -64,7 +64,7 @@ def provision():
         for issue in project.get('issues', []):
             # add some solutions to the issue
             new_issue = Issue.create(
-                user=users[issue.get('creator', proj.maintainer.username)],
+                user=users[issue.get('creator', proj.owner.username)],
                 title=issue['title'],
                 desc=issue.get('desc'),
                 project=proj).save()
@@ -77,7 +77,7 @@ def provision():
             for sol_tmpl in issue.get('solutions', []):
                 sol = Solution.create(
                     title=sol_tmpl['title'],
-                    user=users[sol_tmpl.get('creator', proj.maintainer.username)],
+                    user=users[sol_tmpl.get('creator', proj.owner.username)],
                     issue=new_issue,
                     desc=sol_tmpl.get('desc')).save()
                 curr_issue['solutions'][sol_tmpl.get('key', sol.url_key)] = (
