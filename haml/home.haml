@@ -2,7 +2,9 @@
   .container
     .row
       .col-lg-6.col-lg-offset-1
-        %h1
+        %h2.header.hidden-md.hidden-lg
+          Crowdsource your project direction.
+        %h1.hidden-sm.hidden-xs
           Crowdsource your project direction.
         %h3
           Use donations, pledges, and votes to gauge user opinions.
@@ -35,47 +37,101 @@
                   %a{href: "privacy", target: "_blank"} privacy policy
 
 
-%div.addthis-container
-  .addthis_toolbox.addthis_default_style
-    %a.addthis_button_facebook_like{"fb:like:layout" => "button_count"}
-    %a.addthis_button_tweet
-    %a.addthis_button_pinterest_pinit{"pi:pinit:layout" => "horizontal"}
-    %a.addthis_counter.addthis_pill_style
-  %script{src: "//s7.addthis.com/js/300/addthis_widget.js#pubid=xa-52c227390407c34f", type: "text/javascript"}
+.row.no-margin
+  .col-sm-12
+    .row.share-padding
+      .share-container
+        %span.pull-left
+          -# twitter share button
+          %a.twitter-share-button{"data-via" => "crowdlinkdotio", :href => "https://twitter.com/share"} Tweet
+          :javascript
+            !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+        %span.pull-left{style:"padding-right:24px;"}
+          -# facebook share button
+          #fb-root
+          :javascript
+            (function(d, s, id) {
+              var js, fjs = d.getElementsByTagName(s)[0];
+              if (d.getElementById(id)) return;
+              js = d.createElement(s); js.id = id;
+              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+              fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+          .fb-share-button{"data-href" => "http://crowdlink.io", "data-type" => "button_count"}
+        %span.pull-left
+          .g-plus{"data-action" => "share", "data-annotation" => "bubble", "data-href" => "http://crowdlink.io"}
+          / Place this tag after the last share tag.
+          :javascript
+            (function() {
+              var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+              po.src = 'https://apis.google.com/js/platform.js';
+              var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+            })();
+
+
+
+        -#.col-sm-4.no-gutter.text-center.share-container{style:"padding-left:24px;"}
+        -#  -# twitter share button
+        -#  %a.twitter-share-button{"data-via" => "crowdlinkdotio", :href => "https://twitter.com/share"} Tweet
+        -#  :javascript
+        -#    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
+        -#.col-sm-4.no-gutter.text-center.share-container
+        -#  -# facebook share button
+        -#  #fb-root
+        -#  :javascript
+        -#    (function(d, s, id) {
+        -#      var js, fjs = d.getElementsByTagName(s)[0];
+        -#      if (d.getElementById(id)) return;
+        -#      js = d.createElement(s); js.id = id;
+        -#      js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+        -#      fjs.parentNode.insertBefore(js, fjs);
+        -#    }(document, 'script', 'facebook-jssdk'));
+        -#  .fb-share-button{"data-href" => "http://crowdlink.io", "data-type" => "button_count"}
+        -#.col-sm-4.no-gutter.text-center.share-container
+        -#  .g-plus{"data-action" => "share", "data-annotation" => "bubble", "data-href" => "http://crowdlink.io"}
+        -#  / Place this tag after the last share tag.
+        -#  :javascript
+        -#    (function() {
+        -#      var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+        -#      po.src = 'https://apis.google.com/js/platform.js';
+        -#      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+        -#    })();
 .jumbotron.home-body
   .container
     .row
       .col-md-11.col-md-offset-1.no-gutter
         .row
           .col-md-4
-            %h3
-              .text-center
-                %i.fa.fa-bullhorn.fa-3x
-                %br
-                Community Driven
+            .row
+              %h3
+                .text-center
+                  %i.fa.fa-bullhorn.fa-3x
+                  %br
+                  Community Driven
+            .row
+              %p
+                Vote and make microdonations towards problems you'd like solved, or pledge money towards their completion.
 
           .col-md-4
-            %h3
-              .text-center
-                %i.fa.fa-thumbs-up.fa-3x
-                %br
-                Solve important problems
+            .row
+              %h3
+                .text-center
+                  %i.fa.fa-thumbs-up.fa-3x
+                  %br
+                  Solve important problems
+            .row
+              %p
+                Tell project owners which issues matter, and help motivate work being done in the most
+                needed areas.
 
           .col-md-4
-            %h3
-              .text-center
-                %i.fa.fa-group.fa-3x
-                %br
-                Microdonation based
+            .row
+              %h3
+                .text-center
+                  %i.fa.fa-group.fa-3x
+                  %br
+                  Microdonation based
+            .row
+              %p
+                Support a project by giving as little as $0.01. Add funds to your account with a credit card or a bank transfer.
 
-        .row
-          .col-md-4
-            %p
-              Vote and make microdonations towards problems you'd like solved, or pledge money towards their completion.
-          .col-md-4
-            %p
-              Tell project owners which issues matter, and help motivate work being done in the most
-              needed areas.
-          .col-md-4
-            %p
-              Support a project by giving as little as $0.01. Add funds to your account with a credit card or a bank transfer.
