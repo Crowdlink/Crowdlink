@@ -35,8 +35,6 @@
                   %a{href: "tos", target: "_blank"} terms of service
                   and
                   %a{href: "privacy", target: "_blank"} privacy policy
-
-
 .row.no-margin
   .col-sm-12
     .row.share-padding
@@ -67,35 +65,6 @@
               po.src = 'https://apis.google.com/js/platform.js';
               var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
             })();
-
-
-
-        -#.col-sm-4.no-gutter.text-center.share-container{style:"padding-left:24px;"}
-        -#  -# twitter share button
-        -#  %a.twitter-share-button{"data-via" => "crowdlinkdotio", :href => "https://twitter.com/share"} Tweet
-        -#  :javascript
-        -#    !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');
-        -#.col-sm-4.no-gutter.text-center.share-container
-        -#  -# facebook share button
-        -#  #fb-root
-        -#  :javascript
-        -#    (function(d, s, id) {
-        -#      var js, fjs = d.getElementsByTagName(s)[0];
-        -#      if (d.getElementById(id)) return;
-        -#      js = d.createElement(s); js.id = id;
-        -#      js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-        -#      fjs.parentNode.insertBefore(js, fjs);
-        -#    }(document, 'script', 'facebook-jssdk'));
-        -#  .fb-share-button{"data-href" => "http://crowdlink.io", "data-type" => "button_count"}
-        -#.col-sm-4.no-gutter.text-center.share-container
-        -#  .g-plus{"data-action" => "share", "data-annotation" => "bubble", "data-href" => "http://crowdlink.io"}
-        -#  / Place this tag after the last share tag.
-        -#  :javascript
-        -#    (function() {
-        -#      var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
-        -#      po.src = 'https://apis.google.com/js/platform.js';
-        -#      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
-        -#    })();
 .jumbotron.home-body
   .container
     .row
