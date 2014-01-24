@@ -11,6 +11,10 @@
     {% endif %}
     %link{href: "//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css", rel: "stylesheet"}/
     %title{"ng-bind" => "_title"} Crowd Link
+    %meta{content: "http://crowdlink.io", property: "og:url"}
+    %meta{content: "Crowdlink.io", property: "og:title"}
+    %meta{content: "Use donations, pledges, and votes to gauge user opinions. Crowdlink connects users to product and service providers.", property: "og:description"}
+    %meta{content: "http://crowdlink.io/static/img/logo.png", property: "og:image"}
   %body
     .spinner-overlay.fade{"ng-show" => "loading"}
       %i.fa.fa-3x.fa-spin.fa-spinner
