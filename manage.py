@@ -15,18 +15,21 @@ from flask import current_app
 
 @manager.command
 def init_db():
+    return
     db.drop_all()
     db.create_all()
 
 
 @manager.command
 def provision():
+    return
     from crowdlink.provision import provision
     provision()
 
 
 @manager.command
 def test_email(template=None):
+    return
     recipient = current_app.config['email_test_address']
     TestEmail().send_email(recipient)
 
@@ -54,6 +57,7 @@ def runserver():
 @manager.command
 def generate_trans():
     """ Generates testing database fixtures """
+    return
     init_db()
     provision()
     os.system("pg_dump -c -U crowdlink -h localhost crowdlink -f " + root + "/assets/test_provision.sql")
