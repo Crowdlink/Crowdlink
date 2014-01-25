@@ -15,7 +15,7 @@ topics:
       title: What is Crowdlink?
       body: |
           Crowdlink is a platform for better communication between project owners and their end-users.
-          Users can contribute towards projects they enjoy by making pledges, voting, and donating on 
+          Users can contribute towards projects they enjoy by making pledges, voting, and donating on
           different community proposed features or improvements. Project owners can gain insight into their community's
           needs while recieving financial support for their projects. This allows growing projects to
           bootstrap themselves with the help of the community.
@@ -26,7 +26,7 @@ topics:
           No, not really. Although it could be used that way.
           <p><br>
           Instead of focusing on project management like traditional issue trackers, Crowdlink is designed
-          for community feedback first. Instead of Issues, Crowdlink has the concept of Problems, which 
+          for community feedback first. Instead of Issues, Crowdlink has the concept of Problems, which
           focus on the high level view of a product, as opposed its implementation details.
           </p>
           <p>
@@ -77,7 +77,7 @@ topics:
   pledges:
       title: What are Pledges and how do they work?
       body: |
-          A Pledge is a monetary endorsement of an idea. Once a Problem is marked as complete pledged money is 
+          A Pledge is a monetary endorsement of an idea. Once a Problem is marked as complete pledged money is
           distributed by a project admin.
       brief: Much community. So crowdfund. Wow.
   unused_solutions:
@@ -87,9 +87,9 @@ topics:
   pending_pledges:
       title: Why are some funds unable to be withdrawn?
       body: |
-          For fraud prevention Crowdlink delays some funds from from being withdrawn from the network for a certain period of time.
-          While funds are still in this 'maturing' state they can still be sent to other users, but cannot be withdrawn to a 
-          bank account.
+          For fraud prevention Crowdlink delays some funds ('immature' funds) from being withdrawn out of the Crowdlink
+          network for a period of time.
+          While funds are in an immature state they may still be sent to other users via Pledges or Donations.
       brief: Much community. So crowdfund. Wow.
   fees:
       title: What is your fee structure?
