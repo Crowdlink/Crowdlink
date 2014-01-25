@@ -541,3 +541,4 @@ mainApp.directive "twitter", ->
     twttr?.widgets.createShareButton attr.url, element[0], ((el) ->
     ),
       text: attr.text
+      hashtags: 'crowdlink'
