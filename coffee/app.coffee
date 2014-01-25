@@ -530,3 +530,11 @@ mainApp.directive "rawNgModel", ->
       scope.rawNgModel = viewValue
       viewValue
     )
+
+mainApp.directive "twitter", ->
+  link: (scope, element, attr) ->
+    debugger
+    twttr?.widgets.createShareButton attr.url, element[0], ((el) ->
+    ),
+      count: "none"
+      text: attr.text
