@@ -42,19 +42,10 @@
         %span.pull-left
           -# twitter share button
           %a{"twitter" => "", "data-text" => "Testing", "data-via" => "crowdlinkdotio", "data-url" => "http://crowdlink.io"}
-        %span.pull-left{style:"padding-right:24px;"}
+        %span{style:"padding-right:24px;"}
           -# facebook share button
-          #fb-root
-          :javascript
-            (function(d, s, id) {
-              var js, fjs = d.getElementsByTagName(s)[0];
-              if (d.getElementById(id)) return;
-              js = d.createElement(s); js.id = id;
-              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-              fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'facebook-jssdk'));
-          .fb-share-button{"data-href" => "http://crowdlink.io", "data-type" => "button_count"}
-        %span.pull-left
+          .fb-share-button{"fbparse"=> "", "data-href" => "http://crowdlink.io", "data-type" => "button_count"}
+        %span
           .g-plus{"data-action" => "share", "data-annotation" => "bubble", "data-href" => "http://crowdlink.io"}
           / Place this tag after the last share tag.
           :javascript

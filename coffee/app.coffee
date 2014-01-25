@@ -342,6 +342,10 @@ mainApp.directive "dynamic", ($compile) ->
       ele.html html
       $compile(ele.contents()) scope
 
+mainApp.directive "fbparse", ->
+  link: (scope, element, attributes) ->
+    FB?.XFBML.parse(element.parent()[0])
+
 mainApp.directive "btfMarkdown", ->
   converter = new Showdown.converter()
   restrict: "AE"
@@ -533,8 +537,6 @@ mainApp.directive "rawNgModel", ->
 
 mainApp.directive "twitter", ->
   link: (scope, element, attr) ->
-    debugger
     twttr?.widgets.createShareButton attr.url, element[0], ((el) ->
     ),
-      count: "none"
       text: attr.text
