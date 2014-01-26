@@ -54,7 +54,8 @@ def send_message(message, cls='alert-danger', timeout=5000, page_stay=1):
         session['_messages'].mainend(dat)
 
 
-# @main.route("/<path:path>", methods=['GET', 'POST'])
+@main.route("/tos", methods=['GET', 'POST'])
+@main.route("/privacy", methods=['GET', 'POST'])
 @main.route("/", methods=['GET', 'POST'])
 def angular_root(path=None):
     logged_in = "true" if current_user.is_authenticated() else "false"
