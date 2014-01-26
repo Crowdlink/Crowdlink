@@ -55,7 +55,7 @@ projects:
                 into their GA account
     - name: Mystery Inc.
       owner: fred
-      admins:
+      maintainers:
           - scrappy
           - scooby
           - daphne

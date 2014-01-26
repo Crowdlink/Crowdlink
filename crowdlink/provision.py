@@ -55,9 +55,9 @@ def provision():
             for sub in project['subscribers']:
                 proj.set_subscribed(True, user=users[sub])
 
-        if 'admins' in project:
-            for admin in project['admins']:
-                proj.add_admin(username=users[admin].username)
+        if 'maintainers' in project:
+            for maintainer in project['maintainers']:
+                proj.add_maintainer(username=users[maintainer].username)
 
         # Add out issues to the database
         curr_proj['issues'] = {}

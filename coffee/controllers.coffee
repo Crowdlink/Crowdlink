@@ -432,37 +432,37 @@ mainControllers.controller('projectController',
       data.name = $scope.project.name
     return data
 
-  $scope.new_admin = ->
-    $scope.remove_admin_error = null
+  $scope.new_maintainer = ->
+    $scope.remove_maintainer_error = null
     $scope.error_header = ""
     $scope.errors = []
     ProjectService.action(
       username: $scope.username
       id: $scope.project.id
-      __action: 'add_admin'
+      __action: 'add_maintainer'
     ,(value) ->
       if 'success' of value and value.success
-        $scope.project.admins.push value.objects[0]
+        $scope.project.maintainers.push value.objects[0]
         $scope.f.$setPristine
       else
         $scope.error_report(value)
     , $scope.error_report)
 
-  $scope.remove_admin = (idx, username) ->
-    $scope.remove_admin_error = null
+  $scope.remove_maintainer = (idx, username) ->
+    $scope.remove_maintainer_error = null
     $scope.error_header = ""
     $scope.errors = []
     ProjectService.action(
       username: username
       id: $scope.project.id
-      __action: 'remove_admin'
+      __action: 'remove_maintainer'
     ,(value) ->
       if 'success' of value and value.success
-        $scope.project.admins.splice(idx, 1);
+        $scope.project.maintainers.splice(idx, 1);
       else
-        $scope.remove_admin_error = idx
+        $scope.remove_maintainer_error = idx
     , () ->
-      $scope.remove_admin_error = null)
+      $scope.remove_maintainer_error = null)
 )
 
 # NewChargeController ============================================================

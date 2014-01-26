@@ -39,7 +39,7 @@ class Thing(base):
         return (self.pledges.count() /
                 self.pledges.filter(disputed=True).count())
 
-class ProjectAdmin(base):
+class ProjectMaintainer(base):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     acl = db.Column(db.Integer)
@@ -53,12 +53,12 @@ class ProjectAdmin(base):
     @classmethod
     def create(cls, user, project):
 
-        project_admin = cls(project_id=project.id,
+        project_maintainer = cls(project_id=project.id,
                       user_id=user.id,
                       acl=1,
                       user=user)
 
-        db.session.add(project_admin)
+        db.session.add(project_maintainer)
         # flush after finishing creation
         db.session.flush()
 
@@ -83,9 +83,9 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     # Event log
     public_events = db.Column(EventJSON, default=list)
 
-    # project admins
-    admins_objs = db.relationship("ProjectAdmin", backref="admin_powers")
-    admins = db.relationship("User", secondary='project_admin', backref="admin_projects")
+    # project maintainers
+    maintainers_objs = db.relationship("ProjectMaintainer", backref="maintainer_powers")
+    maintainers = db.relationship("User", secondary='project_maintainer', backref="maintainer_projects")
 
     # Github Syncronization information
     gh_repo_id = db.Column(db.Integer, default=-1)
@@ -128,7 +128,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                              'subscribed',
                              'vote_status',
                              'desc',
-                             {'obj': 'admins', 'join_prof': 'disp_join'},
+                             {'obj': 'maintainers', 'join_prof': 'disp_join'},
                              {'obj': 'owner'},
                              {'obj': 'public_events'},
                              {'obj': 'issues', 'join_prof': 'disp_join'},
@@ -142,8 +142,8 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
         if self.owner == user:
             return ['owner']
         # else:
-        #     for admin in self.admins:
-        #         if admin == user:
+        #     for maintainer in self.maintainers:
+        #         if maintainer == user:
         #             return ['maintainer']
         return []
 
@@ -157,18 +157,18 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
             username=self.owner_username,
             url_key=self.url_key)
 
-    def add_admin(self, username):
+    def add_maintainer(self, username):
         # grab user object from username
         user = User.query.filter_by(username=username.lower()).one()
 
-        ProjectAdmin.create(user, self)
+        ProjectMaintainer.create(user, self)
         return {'objects': [get_joined(user)]}
 
-    def remove_admin(self, username):
+    def remove_maintainer(self, username):
         # grab user object from username
-        user = (ProjectAdmin.query.
+        user = (ProjectMaintainer.query.
                 filter_by(project_id=self.id).
-                join(ProjectAdmin.user, aliased=True).
+                join(ProjectMaintainer.user, aliased=True).
                 filter_by(username=username).one())
         print user
         db.session.delete(user)

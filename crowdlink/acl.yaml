@@ -126,8 +126,8 @@ project:
     owner:
         inherit: maintainer
         action:
-            - add_admin
-            - remove_admin
+            - add_maintainer
+            - remove_maintainer
 
 issue:
     # global context roles
