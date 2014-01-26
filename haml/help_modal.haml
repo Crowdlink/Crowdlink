@@ -11,12 +11,12 @@
               %h5 {[{ cat['name'] }]}
               %ul.nav.nav-pills.nav-stacked
                 %li{"ng-class" => "{true: 'active'}[curr_topic==topics[topic]]", "ng-repeat" => "topic in cat['keys']"}
-                  %a{"ng-click" => "update(topics[topic])", style: "font-size:14px;"} {[{ topics[topic]['title'] }]}
+                  %a{"ng-click" => "update(topics[topic])"} {[{ topics[topic]['title'] }]}
         .col-md-8
           %span
             %h3 {[{ curr_topic['title'] }]}
             %hr
-            %div{"ng-bind-html" => "curr_topic['body']", style:"padding:8px;"}
+            %div.body-text{"ng-bind-html" => "curr_topic['body']"}
 
       .modal-footer
         %button.btn.btn-info{"ng-click" => "close()"} Close
