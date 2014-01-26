@@ -24,6 +24,15 @@ $img-lib-url: "/static/lib/img/";
     cursor: pointer;
   }
 }
+.modal-body {
+  li a {
+    cursor:pointer;
+    font-size:14px;
+  }
+  .body-text {
+    padding:8px;
+  }
+}
 
 .muted-link {
   color:#99A2C1;
