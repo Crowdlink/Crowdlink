@@ -726,7 +726,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     def avatar(self):
         # Set your variables here
         default = urljoin(current_app.config['base_url'],
-                          current_app.config['static_path'], "img/logo_sm.jpg")
+                          current_app.config['static_path'] + "img/no_avatar.jpg")
         # construct the url
         gravatar_url = "http://www.gravatar.com/avatar/"
         gravatar_url += hashlib.md5(
