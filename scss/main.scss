@@ -216,16 +216,51 @@ div.home-body {
   background-color:#3A9C4A;
   color:#fff;
   padding-top:75px;
-  padding-bottom:75px;
-  h3 {
+  padding-bottom:15px;
+  h3,h2,h1 {
     color:#fff;
-    font-size:26px;
   }
   p {
     font-size:14pt;
     line-height:30px;
     padding:15px 25px 25px 35px;
   }
+}
+div.comm-body {
+  @extend div.home-body;
+  padding-top:40px;
+  padding-bottom:40px;
+  .header {
+    position:relative;
+    left:-70px;
+    text-align:center;
+    padding-top: 40px;
+    padding-bottom: 50px;
+    .title {
+      display: inline;
+      position:relative;
+      bottom: 10px;
+      left: 40px;
+    }
+  }
+  h2,h3,h4,h1 {
+    color:#fff;
+  }
+  p {
+    font-size:14pt;
+  }
+  .pad-right {
+    margin-right:10px;
+  }
+  background-color:#252628;
+}
+div.acct-body {
+  @extend div.comm-body;
+  background-color:#0E5D6C;
+}
+div.proj-body {
+  @extend div.comm-body;
+  background-color:#AC3F2A;
 }
 .btn-oauth {
   background-color:#22A9E1;
