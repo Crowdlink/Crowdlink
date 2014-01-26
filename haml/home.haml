@@ -1,7 +1,7 @@
 .jumbotron
   .container
-    .row
-      .col-lg-6.col-lg-offset-1
+    .row.no-margin
+      .col-lg-7
         %h2.header.hidden-md.hidden-lg
           Crowdsource your project direction.
         %h1.hidden-sm.hidden-xs
@@ -44,9 +44,6 @@
             :javascript
               !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");
 
-
-
-
 .row.no-margin
   .col-sm-12
     .row.share-padding
@@ -69,7 +66,7 @@
 .jumbotron.home-body
   .container
     .row
-      .col-md-11.col-md-offset-1.no-gutter
+      .col-md-12.no-gutter
         .row
           .col-md-4
             .row
@@ -105,17 +102,18 @@
               %p
                 Support a project by giving as little as $0.01. Add funds to your account with a credit card or a bank transfer.
 
-  .container
+  .container.more-info
     .row
-      .col-md-12.text-center
-        %h2
-          %i.fa.fa-angle-double-down.fa-2x
-          %span{style: "position:relative; bottom:15px; padding:30px;"} More Information
-          %i.fa.fa-angle-double-down.fa-2x
+      .col-md-12.no-gutter.text-center
+        %h4
+          %div
+            %span{style: "position:relative; bottom:15px; padding:30px;"}
+              Learn more
+              %i.fa.fa-angle-double-down
 .comm-body
   .container
     .row
-      .col-md-11.col-md-offset-1.no-gutter
+      .col-md-12.no-gutter
         .header
           %span.fa.fa-tachometer.fa-4x
           %h1.title Feedback Methods
@@ -138,9 +136,9 @@
 .proj-body
   .container
     .row
-      .col-md-11.col-md-offset-1.no-gutter
+      .col-md-12.no-gutter
         .header
-          %span.fa.fa-suitcase.fa-4x
+          %span.fa.fa-comment-o.fa-4x
           %h1.title Feedback Avenues
         .row
           .col-md-4
@@ -161,7 +159,7 @@
 .acct-body
   .container
     .row
-      .col-md-11.col-md-offset-1.no-gutter
+      .col-md-12.no-gutter
         .header
           %span.fa.fa-lock.fa-4x
           %h1.title Payment Mechanics
