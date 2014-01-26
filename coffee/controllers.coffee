@@ -448,12 +448,12 @@ mainControllers.controller('projectController',
         $scope.error_report(value)
     , $scope.error_report)
 
-  $scope.remove_admin = (idx, user_id) ->
+  $scope.remove_admin = (idx, username) ->
     $scope.remove_admin_error = null
     $scope.error_header = ""
     $scope.errors = []
     ProjectService.action(
-      user_id: user_id
+      username: username
       id: $scope.project.id
       __action: 'remove_admin'
     ,(value) ->

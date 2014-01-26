@@ -128,7 +128,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                              'subscribed',
                              'vote_status',
                              'desc',
-                             {'obj': 'admins'},
+                             {'obj': 'admins', 'join_prof': 'disp_join'},
                              {'obj': 'owner'},
                              {'obj': 'public_events'},
                              {'obj': 'issues', 'join_prof': 'disp_join'},
@@ -164,9 +164,13 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
         ProjectAdmin.create(user, self)
         return {'objects': [get_joined(user)]}
 
-    def remove_admin(self, user_id):
+    def remove_admin(self, username):
         # grab user object from username
-        user = ProjectAdmin.query.filter_by(user_id=user_id).filter_by(project_id=self.id).one()
+        user = (ProjectAdmin.query.
+                filter_by(project_id=self.id).
+                join(ProjectAdmin.user, aliased=True).
+                filter_by(username=username).one())
+        print user
         db.session.delete(user)
 
     @classmethod
