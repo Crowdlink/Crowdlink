@@ -40,7 +40,7 @@
             %hr.hr-header
         .row
           .col-lg-8.col-lg-offset-2.text-center.text-muted.no-gutter
-            %a.twitter-follow-button{"data-size" => "large", "data-lang" => "en", "data-show-screen-name" => "true", "data-show-count" => "true", :href => "https://twitter.com/crowdlinkdotio"} Follow @crowdlinkdotio
+            %a.twitter-follow-button{"data-size" => "large", "data-lang" => "en", "data-show-screen-name" => "true", "data-show-count" => "false", :href => "https://twitter.com/crowdlinkdotio"} Follow @crowdlinkdotio
             :javascript
               !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");
 
@@ -51,10 +51,10 @@
         %span.pull-left
           -# twitter share button
           %a{"twitter" => "", "data-text" => "Crowdsource your project", "data-via" => "crowdlinkdotio", "data-url" => "http://crowdlink.io"}
-        %span{style:"padding-right:24px;"}
+        %span.pull-left{style:"padding-right:24px;max-height:35px;"}
           -# facebook share button
           .fb-share-button{"fbparse"=> "", "data-href" => "http://crowdlink.io", "data-type" => "button_count"}
-        %span
+        %span.pull-left
           .g-plus{"data-action" => "share", "data-annotation" => "bubble", "data-href" => "http://crowdlink.io"}
           / Place this tag after the last share tag.
           :javascript
@@ -109,13 +109,17 @@
             %span
               Learn more
               %i.fa.fa-angle-double-down
-.comm-body
+.jumbotron.comm-body
   .container
     .row
       .col-md-12.no-gutter
         .header
-          %span.fa.fa-tachometer.fa-4x
-          %h1.title Feedback methods
+          %h2.title.hidden-md.hidden-lg
+            %span.fa.fa-tachometer
+            Feedback methods
+          %h1.title.hidden-sm.hidden-xs
+            %span.fa.fa-tachometer
+            Feedback methods
         .row
           .col-md-4
             .row
@@ -141,13 +145,17 @@
                 Give a gift amount on a Problem or Solution that will be given
                 regardless of implementation outcome. Help support the project
                 and show your interest in specific areas at the same time.
-.proj-body
+.jumbotron.proj-body
   .container
     .row
       .col-md-12.no-gutter
         .header
-          %span.fa.fa-sitemap.fa-4x
-          %h1.title Workflow
+          %h2.title.hidden-md.hidden-lg
+            %span.fa.fa-sitemap
+            Workflow
+          %h1.title.hidden-sm.hidden-xs
+            %span.fa.fa-sitemap
+            Workflow
         .row
           .col-md-4
             .row
@@ -173,13 +181,17 @@
                 Any Problem may have multiple Solutions proposed for it.
                 Solutions can be promoted in the same way as Problems and can
                 also be added by any user.
-.acct-body
+.jumbotron.acct-body
   .container
     .row
       .col-md-12.no-gutter
         .header
-          %span.fa.fa-lock.fa-4x
-          %h1.title Finance details
+          %h2.title.hidden-md.hidden-lg
+            %span.fa.fa-lock
+            Finance details
+          %h1.title.hidden-sm.hidden-xs
+            %span.fa.fa-lock
+            Finance details
         .row
           .col-md-4
             .row
