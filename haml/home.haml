@@ -53,6 +53,19 @@
                   %i.fa.fa-twitter.fa-large
                 %a.btn.btn-oauth.btn-google.btn-large{href: "/oauth/go/signup", type: "button"}
                   %i.fa.fa-google-plus.fa-large
+                  By clicking "Register for updates", you agree to our
+                  %a{href: "/tos", target: "_blank"} terms of service
+                  and
+                  %a{href: "/privacy", target: "_blank"} privacy policy
+        .row
+          .col-lg-10.col-lg-offset-1.text-center
+            %hr.hr-header
+        .row
+          .col-lg-8.col-lg-offset-2.text-center.text-muted.no-gutter
+            %a.twitter-follow-button{"data-size" => "large", "data-lang" => "en", "data-show-screen-name" => "true", "data-show-count" => "true", :href => "https://twitter.com/crowdlinkdotio"} Follow @crowdlinkdotio
+            :javascript
+              !function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");
+
 .row.no-margin
   .col-sm-12
     .row.share-padding
