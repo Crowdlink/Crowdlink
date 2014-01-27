@@ -854,7 +854,7 @@ mainControllers.controller('errorController', ($scope, $routeParams, $rootScope)
 mainControllers.controller('helpModalController', ($sce, $scope, $modalInstance, $rootScope, $http, topic) ->
   $scope.init = () ->
     $rootScope.loading = true
-    $http.get('assets/help/faq.json').success((data) ->
+    $http.get('{{ static_path }}faq.json').success((data) ->
       $scope.cats = data['categories']
       $scope.topics = data['topics']
       for c_topic, vals of $scope.topics

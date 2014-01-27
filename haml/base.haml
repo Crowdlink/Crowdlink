@@ -3,6 +3,7 @@
   %head
     %meta{content: "width=device-width, initial-scale=1.0", name: "viewport"}/
     {% if production %}
+    %link{href:"http://fonts.googleapis.com/css?family=Open+Sans:400,700|Raleway:400,500|Orbitron", rel:"stylesheet", type:"text/css"}
     %link{href: "{{ static_path }}css/common.min.css", media: "screen", rel: "stylesheet"}/
     {% else %}
     %link{href: "{{ static_path }}css/bootstrap.css", media: "screen", rel: "stylesheet"}/
@@ -30,8 +31,6 @@
     %script{src: "//ajax.googleapis.com/ajax/libs/angularjs/1.2.8/angular-animate.min.js"}
     / Bootstrap
     %script{src: "//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.7.0/ui-bootstrap-tpls.min.js"}
-    / Stripe
-    %script{src: "https://checkout.stripe.com/checkout.js", type: ""}
     / Internally managed =====================================================
     {% if production and production == True %}
     %script{src: "{{ static_path }}js/common.min.js"}

@@ -144,7 +144,7 @@ module.exports = (grunt) ->
       proc_sass:
         command: './util/preprocess.py scss scss -v'
       compile_yaml:
-        command: 'yaml2json ./assets/help/faq.yaml > ./assets/help/faq.json'
+        command: 'yaml2json ./assets/help/faq.yaml > ./static/faq.json'
 
     inlinecss:
       main:

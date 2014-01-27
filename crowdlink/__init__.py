@@ -129,17 +129,4 @@ def create_app(config='/application.json'):
         except sqlalchemy.orm.exc.NoResultFound:
             return None
 
-    def error_handler(e, code):
-        # prevent error loops
-        if request.path == '/':
-            return str(code)
-        return redirect('/errors/' + str(code))
-
-    app.register_error_handler(404, lambda e: error_handler(e, 404))
-    app.register_error_handler(400, lambda e: error_handler(e, 400))
-    app.register_error_handler(402, lambda e: error_handler(e, 402))
-    app.register_error_handler(403, lambda e: error_handler(e, 403))
-    app.register_error_handler(409, lambda e: error_handler(e, 409))
-    app.register_error_handler(500, lambda e: error_handler(e, 500))
-
     return app
