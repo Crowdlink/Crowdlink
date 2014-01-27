@@ -3,12 +3,13 @@
     .row
       .col-lg-6.col-lg-offset-1
         %h2.header.hidden-md.hidden-lg
-          Crowdsource your project direction.
+          Help cool projects grow.
         %h1.hidden-sm.hidden-xs
-          Crowdsource your project direction.
+          Help cool projects grow.
         %h3
-          Use donations, pledges, and votes to gauge user opinions.
-          -#Get user feedback on issues and features through donations, voting, and suggestions.
+          Support project growth by contributing towards individual features and improvements.
+          -#Support growing projects by crowdfunding individual features and improvements.
+          -#Use donations, pledges, and votes to gauge user opinions.
       .col-lg-5
         .row
           %form.form-horizontal.ng-pristine.ng-valid.landing-sign-up{method: "post", "ng-submit" => "submit()"}
@@ -72,8 +73,8 @@
       .share-container
         %span.pull-left
           -# twitter share button
-          %a{"twitter" => "", "data-text" => "Crowdsource your project", "data-via" => "crowdlinkdotio", "data-url" => "http://crowdlink.io"}
-        %span.pull-left{style:"padding-right:24px;max-height:35px;"}
+          %a{"twitter" => "", "data-text" => "Help cool projects grow", "data-via" => "crowdlinkdotio", "data-url" => "http://crowdlink.io"}
+        %span.pull-left{style:"padding-right:24px;"}
           -# facebook share button
           .fb-share-button{"fbparse"=> "", "data-href" => "http://crowdlink.io", "data-type" => "button_count"}
         %span.pull-left
@@ -220,24 +221,26 @@
               %h3.text-center Accounts
             .row
               %p
-                Each user has an account that maintains a balance. Add funds to
-                your balance with a credit card, bank transfer, or from Donations
+                Each user has a Crowdlink account that maintains a running balance. Add funds to
+                your account with a credit card, bank transfer, or from Donations
                 and Pledges you recieve. Account balances can be
-                deposited via bank transfer.
+                withdrawn from your Crowdlink account via bank transfer.
           .col-md-4
             .row
               %h3.text-center Network Fees
             .row
               %p
-                Crowdlink charges a flat fee of 6% on funds moving between
-                users via Pledges or Donations, regardless of amount. Amounts
-                can be as low as $0.01 and as large as $10,000.
+                Crowdlink charges a fee of 6% on funds moving between
+                users via Pledges or Donations, regardless of amount. This fee is likely to change as our
+                volume changes.
           .col-md-4
             .row
               %h3.text-center Processor Fees
             .row
               %p
-                Crowdlink transparently passes on processor fees, so the amount
-                in your account is the full amount we received, and the amount
-                deposited to your bank account is the amount you sent minus the
-                fees we're charged.
+                We use
+                %a{href:"http://www.balancedpayments.com", target: "_blank"} Balanced Payments
+                to allow you to use credit cards and bank accounts on Crowdlink.
+                They charge various fees that may apply when depositing or withdrawing money from Crowdlink. Check our
+                %a{"ng-click" => "help('fees')"} help
+                for a more detailed explanation of those fees.

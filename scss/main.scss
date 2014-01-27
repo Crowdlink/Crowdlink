@@ -249,9 +249,16 @@ div.more-info {
 div.comm-body {
   @extend div.home-body;
   padding-top:40px;
-  padding-bottom:40px;
+  padding-bottom:80px;
+  a {
+    color:lightgray;
+    text-decoration: underline;
+    &:hover {
+      cursor: pointer;
+      color: #fff;
+    }
+  }
   .header {
-
     position:relative;
     left:-70px;
     text-align:center;
@@ -489,6 +496,7 @@ body {
   padding-bottom:15px;
 }
 .share-container {
+  max-height:35px;
   display:table;
   margin: 0 auto;
 }
