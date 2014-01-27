@@ -3,7 +3,7 @@
   %head
     %meta{content: "width=device-width, initial-scale=1.0", name: "viewport"}/
     {% if production %}
-    %link{href:"http://fonts.googleapis.com/css?family=Open+Sans:400,700|Raleway:400,500|Quattrocento+Sans:400", rel:"stylesheet", type:"text/css"}
+    %link{href:"//fonts.googleapis.com/css?family=Open+Sans:400,700|Raleway:400,500|Quattrocento+Sans:400", rel:"stylesheet", type:"text/css"}
     %link{href: "{{ static_path }}css/common.min.css", media: "screen", rel: "stylesheet"}/
     {% else %}
     %link{href: "{{ static_path }}css/bootstrap.css", media: "screen", rel: "stylesheet"}/
@@ -13,10 +13,10 @@
     %title{"ng-bind" => "_title"} Crowdlink - Crowdsource your project direction
     %meta{content: "Crowdlink.io", name: "title"}
     %meta{content: "Use donations, pledges, and votes to gauge user opinions. Crowdlink connects users to product and service providers.", name: "description"}
-    %meta{content: "http://crowdlink.io", property: "og:url"}
+    %meta{content: "https://crowdlink.io", property: "og:url"}
     %meta{content: "Crowdlink.io", property: "og:title"}
     %meta{content: "Use donations, pledges, and votes to gauge user opinions. Crowdlink connects users to product and service providers.", property: "og:description"}
-    %meta{content: "http://crowdlink.io/static/img/logo.png", property: "og:image"}
+    %meta{content: "https://crowdlink.io/static/img/logo.png", property: "og:image"}
   %body
     .spinner-overlay.fade{"ng-show" => "loading"}
       %i.fa.fa-3x.fa-spin.fa-spinner
@@ -34,7 +34,7 @@
     / Bootstrap
     %script{src: "//cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.7.0/ui-bootstrap-tpls.min.js"}
     / Twitter
-    %script{src: "http://platform.twitter.com/widgets.js"}
+    %script{src: "//platform.twitter.com/widgets.js"}
     / Internally managed =====================================================
     {% if production and production == True %}
     %script{src: "{{ static_path }}js/common.min.js"}
