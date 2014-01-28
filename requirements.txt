@@ -1,4 +1,4 @@
-git+https://github.com/icook/lever.git#egg=lever-0.1
+lever==0.1
 six
 Flask==0.10.1
 Flask-Login==0.2.9

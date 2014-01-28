@@ -170,7 +170,6 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                 filter_by(project_id=self.id).
                 join(ProjectMaintainer.user, aliased=True).
                 filter_by(username=username).one())
-        print user
         db.session.delete(user)
 
     @classmethod

@@ -5,7 +5,7 @@ import os
 import six
 
 from pprint import pprint
-from flask.ext.testing import TestCase
+from unittest import TestCase
 from flask.ext.login import login_user, logout_user
 from crowdlink import root
 from crowdlink.models import User
@@ -30,7 +30,8 @@ def login_required_ctx(username='crowdlink', password='testing'):
     testing """
     def login_required_ctx(f, *args, **kwargs):
         self = args[0]
-        self.user = self.db.session.query(User).filter_by(username=username).one()
+        self.user = (self.db.session.query(User).
+                     filter_by(username=username).one())
         login_user(self.user)
         f(self)
         logout_user()
@@ -71,7 +72,7 @@ class ThinTest(TestCase):
             data=json.dumps(data),
             content_type='application/json')
 
-    def create_app(self):
+    def setUp(self):
         app = crowdlink.create_app()
         app.config['TESTING'] = True
         # Remove flasks stderr handler, replace with stdout so nose can
@@ -90,7 +91,11 @@ class ThinTest(TestCase):
         with app.app_context():
             self.db = crowdlink.db
             self.setup_db()
-        return app
+
+        self.app = app
+        self._ctx = self.app.test_request_context()
+        self._ctx.push()
+        self.client = self.app.test_client()
 
     def setup_db(self):
         self.db.drop_all()
