@@ -187,7 +187,7 @@ mainControllers.controller('rootController',
   # update the title with a suffix
   $rootScope.$watch('title', (val) ->
     if val
-      $rootScope._title = val + " : Crowd Link"
+      $rootScope._title = val + " : Crowdlink"
     else
       $rootScope._title = "Crowdlink - Help cool projects grow."
   )
