@@ -147,9 +147,6 @@ ul.main-list.sub-list {
   background-color:#F9F9F9;
   border-bottom:1px solid #DDD;
 }
-.no-margin {
-  margin:0px !important;
-}
 .cursor {
   &:hover {
     cursor:pointer;
@@ -260,10 +257,11 @@ div.comm-body {
   }
   .header {
     position:relative;
-    left:-70px;
     text-align:center;
     padding-top: 40px;
     padding-bottom: 50px;
+    margin-bottom:50px;
+    border-bottom:1px solid lightgray;
     .title {
       display: inline;
       position:relative;
@@ -304,13 +302,6 @@ div.proj-body {
 }
 .btn-github {
   background-color:#000;
-}
-.more-info {
-  margin-top:55px;
-//  .btn {
-//    background-color:#9C3A42;
-//    color:#fff;
-//  }
 }
 .info-table {
   td {

@@ -187,9 +187,9 @@ mainControllers.controller('rootController',
   # update the title with a suffix
   $rootScope.$watch('title', (val) ->
     if val
-      $rootScope._title = val + " : Crowd Link"
+      $rootScope._title = val + " : Crowdlink"
     else
-      $rootScope._title = "Crowd Link"
+      $rootScope._title = "Crowdlink"
   )
 
   # update the profile url when the username changes
