@@ -4,6 +4,8 @@ from flask.ext.oauthlib.client import OAuthException
 
 from pprint import pformat
 from lever import API, LeverException
+import six
+import sys
 from .oauth import oauth_retrieve, oauth_from_session
 from .models import User, Project, Issue, Solution, Email, Comment, Thing
 
@@ -25,7 +27,7 @@ def api_error_handler(exc):
     end_user = {}
 
     try:
-        raise exc
+        six.reraise(type(exc), exc, tb=sys.exc_info()[2])
     except LeverException as e:
         code = e.code
         msg = str(e)
@@ -52,9 +54,9 @@ def api_error_handler(exc):
         msg = 'Unkown OAuth error occured'
         code = 400
         log = 'warn'
-    except Exception:
+    except Exception as e:
         current_app.logger.error(
-            "Unhadled API error of type {0} raised".format(e.__name__))
+            "Unhadled API error of type {0} raised".format(type(e)))
 
     if hasattr(exc, 'error_key'):
         end_user['error_key'] = e.error_key
@@ -128,12 +130,12 @@ class IssueAPI(APIBase):
         # do logic to pick out the parent from the database based on parent
         # keys
         purl_key = self.params.pop('project_url_key', None)
-        puser = self.params.pop('project_maintainer_username', None)
+        puser = self.params.pop('project_owner_username', None)
         pid = self.params.pop('project_id', None)
         # try this method first, most common
         if puser and purl_key:
             project = Project.query.filter(
-                Project.maintainer_username == puser,
+                Project.owner_username == puser,
                 Project.url_key == purl_key).one()
         elif pid:
             project = Project.query.filter(Project.id == pid).one()
@@ -153,13 +155,13 @@ class SolutionAPI(APIBase):
         # do logic to pick out the parent from the database based on parent
         # keys
         purl_key = self.params.pop('project_url_key', None)
-        puser = self.params.pop('project_maintainer_username', None)
+        puser = self.params.pop('project_owner_username', None)
         iurl_key = self.params.pop('issue_url_key', None)
         iid = self.params.pop('issue_id', None)
         # try this method first, most common
         if puser and purl_key and iurl_key:
             issue = Issue.query.filter(
-                Issue.project_maintainer_username == puser,
+                Issue.project_owner_username == puser,
                 Issue.project_url_key == purl_key,
                 Issue.url_key == iurl_key).one()
         elif iid:

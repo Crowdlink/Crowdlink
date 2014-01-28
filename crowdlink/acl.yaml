@@ -28,7 +28,7 @@ solution:
             - vote_status
         class: create
     admin:
-        inherit: issue_project_maintainer
+        inherit: issue_project_owner
         class: create_other
 
     # Object context roles
@@ -38,9 +38,12 @@ solution:
             - url_key
             - title
             - desc
+    issue_project_owner:
+        inherit: issue_project_maintainer
     issue_creator:
     creator:
-        inherit: issue_project_maintainer
+        inherit: issue_project_owner
+
 email:
     # global context roles
     anonymous:
@@ -67,8 +70,8 @@ user:
             - page_join
             - disp_join
         edit: subscribed
-    usernameless:
-        inherit: noactive_user
+        action:
+            - check_taken
     user:
         inherit: noactive_user
         edit:
@@ -83,10 +86,12 @@ user:
             - go_linked
             - gh_linked
             - tw_linked
-        action: refresh_provider
+        action:
+            - refresh_provider
         view:
             - home_join
             - settings_join
+
 project:
     # global context roles
     anonymous:
@@ -108,7 +113,7 @@ project:
             - vote_status
         class: create
     admin:
-        inherit: maintainer
+        inherit: owner
         class: create_other
     # Object context roles
     maintainer:
@@ -116,6 +121,14 @@ project:
         edit:
             - name
             - website
+        view:
+            - project_settings
+    owner:
+        inherit: maintainer
+        action:
+            - add_maintainer
+            - remove_maintainer
+
 issue:
     # global context roles
     anonymous:
@@ -137,7 +150,7 @@ issue:
             - subscribed
         class: create
     admin:
-        inherit: project_maintainer
+        inherit: project_owner
         class: create_other
     # Object context roles
     project_maintainer:
@@ -147,8 +160,10 @@ issue:
             - _status
             - title
             - desc
-    creator:
+    project_owner:
         inherit: project_maintainer
+    creator:
+        inherit: project_owner
 
 comment:
     # global context roles
@@ -163,12 +178,14 @@ comment:
         class: create
         edit: report_status
     admin:
-        inherit: thing_project_maintainer
+        inherit: thing_project_owner
         class: create_other
         edit: banned
     # Object context roles
     thing_project_maintainer:
         inherit: user
         edit: hidden
-    creator:
+    thing_project_owner:
         inherit: thing_project_maintainer
+    creator:
+        inherit: thing_project_owner

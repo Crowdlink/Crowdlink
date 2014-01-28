@@ -22,6 +22,7 @@ def init_db():
             pass
         else:
             raise Exception("Unable to enable HSTORE extension")
+    db.session.commit()
     db.drop_all()
     db.create_all()
 

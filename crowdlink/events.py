@@ -211,7 +211,7 @@ class NewProjNotif(Event):
 
     @classmethod
     def generate(cls, new_proj):
-        user = new_proj.maintainer
+        user = new_proj.owner
         notif = cls(
             time=datetime.datetime.utcnow(),
             uname=user.username,

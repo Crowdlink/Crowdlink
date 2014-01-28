@@ -1,6 +1,6 @@
 projects:
     - name: Crowdlink
-      maintainer: crowdlink
+      owner: crowdlink
       website: http://crowdlink.io
       url_key: crowdlink
       desc: A platform for user feedback
@@ -40,7 +40,7 @@ projects:
             desc: |
                 Similar function to a lot of mailing lists, Improvements
                 would be by default hidden until approved by a project
-                maintainer.  Perhaps a user could be put on an approved list
+                owner.  Perhaps a user could be put on an approved list
                 as well, allowing their suggestions to be auto-approved.
             key: approval
           - title: Promote with donations
@@ -50,11 +50,15 @@ projects:
                 show your support
           - title: Google Analytics Hooks
             desc: |
-                Allow project maintainers to specify a Google Analytics Key
+                Allow project owner to specify a Google Analytics Key
                 and select from a range of events that they would like logged
                 into their GA account
     - name: Mystery Inc.
-      maintainer: fred
+      owner: fred
+      maintainers:
+          - scrappy
+          - scooby
+          - daphne
       website: http://scoobydoo.kidswb.com/
       url_key: mystery-inc
       desc: Just a couple people solving mysteries.

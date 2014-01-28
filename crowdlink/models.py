@@ -39,13 +39,36 @@ class Thing(base):
         return (self.pledges.count() /
                 self.pledges.filter(disputed=True).count())
 
+class ProjectMaintainer(base):
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    acl = db.Column(db.Integer)
+    user = db.relationship("User")
+
+        # Join profiles
+    # ======================================================================
+    standard_join = ['user_id'
+                     ]
+
+    @classmethod
+    def create(cls, user, project):
+
+        project_maintainer = cls(project_id=project.id,
+                      user_id=user.id,
+                      acl=1,
+                      user=user)
+
+        db.session.add(project_maintainer)
+        # flush after finishing creation
+        db.session.flush()
+
 
 class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     """ This class is a composite of thing and project tables """
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    maintainer_username = db.Column(db.String, db.ForeignKey('user.username'))
+    owner_username = db.Column(db.String, db.ForeignKey('user.username'))
     url_key = db.Column(db.String)
 
     # description info
@@ -60,40 +83,44 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     # Event log
     public_events = db.Column(EventJSON, default=list)
 
+    # project maintainers
+    maintainers_objs = db.relationship("ProjectMaintainer", backref="maintainer_powers")
+    maintainers = db.relationship("User", secondary='project_maintainer', backref="maintainer_projects")
+
     # Github Syncronization information
     gh_repo_id = db.Column(db.Integer, default=-1)
     gh_repo_path = db.Column(db.String)
     gh_synced_at = db.Column(db.DateTime)
     gh_synced = db.Column(db.Boolean, default=False)
-    maintainer = db.relationship('User',
-                                 foreign_keys='Project.maintainer_username',
+    owner = db.relationship('User',
+                                 foreign_keys='Project.owner_username',
                                  backref='projects')
     __table_args__ = (
-        db.UniqueConstraint("url_key", "maintainer_username"),
+        db.UniqueConstraint("url_key", "owner_username"),
     )
     __mapper_args__ = {'polymorphic_identity': 'Project'}
 
     # Join profiles
     # ======================================================================
     standard_join = ['get_abs_url',
-                     'maintainer',
+                     'owner',
                      'user_acl',
                      'report_status',
                      'created_at',
-                     'maintainer_username',
+                     'owner_username',
                      'id',
                      '-vote_list',
-                     '-public_events'
+                     '-public_events',
                      ]
     # used for displaying the project in noifications, etc
     disp_join = ['__dont_mongo',
                  'name',
                  'get_abs_url',
-                 'maintainer_username']
+                 'owner_username']
 
     issue_page_join = ['__dont_mongo',
                        'name',
-                       'maintainer_username',
+                       'owner_username',
                        'get_abs_url']
     page_join = inherit_lst(standard_join,
                             ['__dont_mongo',
@@ -101,7 +128,8 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                              'subscribed',
                              'vote_status',
                              'desc',
-                             {'obj': 'maintainer'},
+                             {'obj': 'maintainers', 'join_prof': 'disp_join'},
+                             {'obj': 'owner'},
                              {'obj': 'public_events'},
                              {'obj': 'issues', 'join_prof': 'disp_join'},
                              ]
@@ -111,8 +139,12 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     acl = acl['project']
 
     def roles(self, user=current_user):
-        if self.maintainer == user:
-            return ['maintainer']
+        if self.owner == user:
+            return ['owner']
+        # else:
+        #     for maintainer in self.maintainers:
+        #         if maintainer == user:
+        #             return ['maintainer']
         return []
 
     @property
@@ -122,8 +154,24 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     @property
     def get_abs_url(self):
         return "/{username}/{url_key}/".format(
-            username=self.maintainer_username,
+            username=self.owner_username,
             url_key=self.url_key)
+
+    def add_maintainer(self, username):
+        # grab user object from username
+        user = User.query.filter_by(username=username.lower()).one()
+
+        ProjectMaintainer.create(user, self)
+        return {'objects': [get_joined(user)]}
+
+    def remove_maintainer(self, username):
+        # grab user object from username
+        user = (ProjectMaintainer.query.
+                filter_by(project_id=self.id).
+                join(ProjectMaintainer.user, aliased=True).
+                filter_by(username=username).one())
+        print user
+        db.session.delete(user)
 
     @classmethod
     def create(cls, name, url_key, website="", desc="", user=current_user):
@@ -131,7 +179,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                       url_key=url_key,
                       website=website,
                       desc=desc,
-                      maintainer=user)
+                      owner=user)
 
         db.session.add(project)
 
@@ -147,7 +195,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
         """ Called by the registration form to check if the email address is
         taken """
         try:
-            Project.query.filter_by(url_key=value, maintainer=user.get()).one()
+            Project.query.filter_by(url_key=value, owner=user.get()).one()
         except sqlalchemy.orm.exc.NoResultFound:
             return {'taken': False}
         else:
@@ -200,18 +248,18 @@ class Issue(
     # our project relationship and keys
     url_key = db.Column(db.String, unique=True)
     project_url_key = db.Column(db.String)
-    project_maintainer_username = db.Column(db.String)
+    project_owner_username = db.Column(db.String)
     __table_args__ = (
         db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username],
-            [Project.url_key, Project.maintainer_username]),
+            [project_url_key, project_owner_username],
+            [Project.url_key, Project.owner_username]),
         db.UniqueConstraint("url_key",
-                            "project_maintainer_username",
+                            "project_owner_username",
                             "project_url_key"),
         {})
     project = db.relationship(
         'Project',
-        foreign_keys='[Issue.project_url_key, Issue.project_maintainer_username]',
+        foreign_keys='[Issue.project_url_key, Issue.project_owner_username]',
         backref='issues')
     creator = db.relationship('User', foreign_keys='Issue.creator_id')
 
@@ -275,13 +323,13 @@ class Issue(
     def get_abs_url(self):
         return "/{username}/{purl_key}/{url_key}".format(
             purl_key=self.project_url_key,
-            username=self.project_maintainer_username,
+            username=self.project_owner_username,
             url_key=self.url_key)
 
     @property
     def get_project_abs_url(self):
         return "/{username}/{url_key}/".format(
-            username=self.project_maintainer_username,
+            username=self.project_owner_username,
             url_key=self.project_url_key)
 
     def create_key(self):
@@ -341,23 +389,23 @@ class Solution(
     # our project relationship and all keys
     url_key = db.Column(db.String, unique=True)
     project_url_key = db.Column(db.String)
-    project_maintainer_username = db.Column(db.String)
+    project_owner_username = db.Column(db.String)
     issue_url_key = db.Column(db.String)
     __table_args__ = (
         db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username],
-            [Project.url_key, Project.maintainer_username]),
+            [project_url_key, project_owner_username],
+            [Project.url_key, Project.owner_username]),
         db.ForeignKeyConstraint(
-            [project_url_key, project_maintainer_username, issue_url_key],
-            [Issue.project_url_key, Issue.project_maintainer_username, Issue.url_key]),
+            [project_url_key, project_owner_username, issue_url_key],
+            [Issue.project_url_key, Issue.project_owner_username, Issue.url_key]),
         {})
 
     project = db.relationship(
         'Project',
-        foreign_keys='[Solution.project_url_key, Solution.project_maintainer_username]')
+        foreign_keys='[Solution.project_url_key, Solution.project_owner_username]')
     issue = db.relationship(
         'Issue',
-        foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_maintainer_username]',
+        foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_owner_username]',
         backref='solutions')
     creator = db.relationship('User', foreign_keys='Solution.creator_id')
     comments = db.relationship(
@@ -407,7 +455,7 @@ class Solution(
     @property
     def get_abs_url(self):
         return "/{username}/{purl_key}/{iurl_key}/{url_key}".format(
-            username=self.project_maintainer_username,
+            username=self.project_owner_username,
             purl_key=self.project_url_key,
             iurl_key=self.issue_url_key,
             url_key=self.url_key)
@@ -682,7 +730,7 @@ class User(Thing, SubscribableMixin, ReportableMixin):
     def avatar(self):
         # Set your variables here
         default = urljoin(current_app.config['base_url'],
-                          current_app.config['static_path'], "img/logo_sm.jpg")
+                          current_app.config['static_path'] + "img/no_avatar.jpg")
         # construct the url
         gravatar_url = "http://www.gravatar.com/avatar/"
         gravatar_url += hashlib.md5(
