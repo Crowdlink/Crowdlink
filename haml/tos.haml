@@ -34,49 +34,51 @@
               %li
                 %b "Projects"
                 are products or services, either run by an individual or through collaborative efforts,
-                presented on Crowdlink for feedback from users in the form of Proposals, Solutions, votes, or Donations.
+                presented on Crowdlink for feedback from users in the form of Tasks, Suggestions, votes, Donations or
+                Pledges.
+              %li
+                %b "Project Owners"
+                are users that are responsible for determining the direction of a Project,
+                and have the authority to accept or reject Suggestions, distribute Donations, and assign
+                Project Maintainers.
               %li
                 %b "Project Maintainers"
-                are users that are responsible for determining the direction of a Project,
-                and have the authority to accept or reject proposed Solutions, distribute Donations, and assign
-                additional Project Administrators.
-              %li
-                %b "Project Administrators"
                 are users that have elevated privledges on a Project. The Project
-                Administrators group includes the Project Maintainer and may include users a Project Maintainer has
+                Maintainers group includes the Project Owner and may include users a Project Owner has
                 given elevated privledges to.
               %li
                 %b "Contributors"
-                are users that create Proposals or Solutions, commit code, vote, Donate or Pledge funds
-                towards a Solution or Project.
+                are users that create Tasks or Suggestions, commit code, vote, Donate or Pledge funds
+                towards a Suggestion, Task or Project.
               %li
                 %b "Donations"
                 are funds donated by Contributors towards a Project with no implied conditions or stipulations.
               %li
                 %b "Matured Funds"
-                are Donations or Pledges that have been assigned to users and are available for withdrawal, or
-                contributed towards other Solutions/Projects.
+                are funds that have been in the Crowdlink network long enough to have cleared our internal fraud
+                prevention measures.
               %li
                 %b "Immatured Funds"
                 are funds in the Crowdlink system that are available for transfer between users, but
                 are unavailable for withdrawal and will become Matured Funds at some point in the future.
               %li
-                %b "Solutions"
-                are proposed features or fixes to problems with a project
+                %b "Suggestions"
+                are proposed features or fixes to tasks on a project
               %li
-                %b "Accepted Solutions"
-                are Solutions that have been marked as accepted by a Project Administrator.
+                %b "Accepted Suggestions"
+                are Suggestions that have been marked as accepted by a Project Maintainer.
               %li
                 %b "Completed"
-                means a Project Administrator has marked a Solution as being materially complete. Crowdlink
+                means a Project Maintainer has marked a Suggestion as being materially complete. Crowdlink
                 expressly disclaims any responsibility for the accuracy of claims of completion.
               %li
                 %b "Pledges"
-                are funds donated by Contributors towards the completion of a specific Solution. These funds
-                are held in escrow until such time as the Solution is marked as completed by a Project Administrator.
+                are funds donated by Contributors towards the completion of a specific Suggestion or Task. These funds
+                are held in escrow until such time as the Suggestion or Task is marked as completed by a Project
+                Maintainer.
               %li
                 %b "Assignees"
-                are persons who are allotted funds from Donations or Pledges by a Project Administrator.
+                are persons who are allotted funds from Donations or Pledges by a Project Maintainer.
                 It is highly encouraged that these be persons who are Contributors to the Project, although
                 this is not required.
               %li
@@ -90,19 +92,21 @@
           %h3 2. Contributors
           %p
             %b 2.1 Pledge scope and cancellation.
-            Contributors may create a Pledge to a Solution or Accepted Solution.
+            Contributors may create a Pledge to a Suggestion or Task.
             Once a Pledge has been created Contributors may increase, decrease, or cancel the Pledge up until such time as
-            the Solution is marked Completed by a Project Administrator. You acknowledge that a Project Administrator
-            may mark a Solution as Completed at any time and is not controlled by Crowdlink.
+            the Task is marked Completed by a Project Maintainer. You acknowledge that a Project Maintainer
+            may mark a Task as Completed at any time and is not controlled by Crowdlink.
           %p
             %b 2.2 Donation scope and cancellation.
-            Donations may be made to Projects, Solutions, or Accepted Solutions. Donations may not be cancelled and are
+            Donations may be made to Tasks or Suggestions. Donations may be cancelled for up to twenty-four(24) hours
+            and after that are
             non-refundable. We reserve the right to refund a donation, and if you feel special circumstances apply
-            please feel free to contact us at support@crowdlink.io.
+            please feel free to contact us at
+            %a{href:"mailto:support@crowdlink.io"}support@crowdlink.io
           %p
             %b 2.3 Assignment of funds.
-            Crowdlink holds Project Maintainers responsible for determining who Donations and Pledges will be paid out
-            to. Project Maintainers may assign this power to a Project Administrator. Failure to completely assign
+            Crowdlink holds Project Owners responsible for determining who Donations and Pledges will be paid out
+            to. Project Owners may assign this power to a Project Maintainer. Failure to completely assign
             funds to Assignees before a period of fourteen(14) days may result in funds being refunded to
             Contributors.
           %p
@@ -118,27 +122,26 @@
             suspend a Donation or Pledge at any time and for any reason. Crowdlink is not liable for
             any damages as a result of any of those actions.
           %p
-            %b 2.6 Marking Solutions as Completed.
-            Project Administrators are responsible for properly
+            %b 2.6 Marking Suggestions as Completed.
+            Project Maintainers are responsible for properly
             reporting the Project status. Crowdlink
-            does not receive, process or review Solutions or Solutions marked Completed. If you are a Project
-            Administrator
-            you represent, warrant and promise that any Solution marked completed by you or on your
+            does not receive, process or review Suggestions. If you are a Project Maintainer
+            you represent, warrant and promise that any Suggestion marked completed by you or on your
             behalf was actually completed and accomplished. Crowdlink expressly disclaims any responsibility or
-            liability in regards to the factual accuracy of Solutions marked as completed.
+            liability in regards to the factual accuracy of Suggestions marked as completed.
           %p
-            %b 2.7 Selection of Accepted Solutions.
-            An Accepted Solution will be selected
-            by a Project Administrator by marking the Solution as accepted.
-            Multiple Solutions may be marked as accepted. You agree not to make claims against Crowdlink or hold
+            %b 2.7 Selection of Accepted Suggestions.
+            An Accepted Suggestion will be selected
+            by a Project Maintainer by marking the Suggestion as accepted.
+            Multiple Suggestions may be marked as accepted. You agree not to make claims against Crowdlink or hold
             Crowdlink responsible in connection with the determination of an Accepted
-            Solution.
+            Suggestion.
           %p
-            %b 2.8 Rejected Proposals.
-            A Proposal may be rejected
-            by a Project Administrator by marking the Proposal appropriately.
+            %b 2.8 Rejected Tasks.
+            A Task may be rejected
+            by a Project Maintainer by marking the Task appropriately.
             You agree not to make claims against Crowdlink or hold
-            Crowdlink responsible in connection with the determination of a rejected Proposal.
+            Crowdlink responsible in connection with the determination of a rejected Task.
           %p
             %b 2.9 Liability.
             By participating in our Service, you agree that Crowdlink's good faith
@@ -178,7 +181,7 @@
           %p
             %b 4.1 Registration Information
             Some users of our Service,
-            such as Project Maintainers and Contributors, must register with Crowdlink. If you are
+            such as Project Owners and Contributors, must register with Crowdlink. If you are
             required to register, you must provide accurate, complete and current
             registration information and promptly correct and update your information while
             you have an account with Crowdlink. Your provision of inaccurate or unreliable
@@ -240,7 +243,7 @@
             %b 6.1 Scope
             This Agreement governs all users of the
             Crowdlink Service and Site, including, without limitation, Contributors,
-            Project Administrators, and anyone else who uses or browses the Service or Site. The Service
+            Project Maintainers, and anyone else who uses or browses the Service or Site. The Service
             is offered subject to acceptance of all of the terms and conditions contained
             in this Agreement, including the Privacy Policy, and all other operating rules,
             policies, and procedures that may be published on the Site by Crowdlink, which
@@ -267,7 +270,7 @@
             full to our Site without further notice. Changes will be effective immediately
             upon such posting, unless otherwise noted in the posting. We also reserve the
             right to change, suspend or discontinue the Site or Service (including, but not
-            limited to, the availability of any feature, database or Solutions) at any time
+            limited to, the availability of any features or database) at any time
             for any reason. Crowdlink may also impose limits on certain features and
             Services or restrict your access to parts or all of the Service without notice
             or liability. It is your responsibility to check this Agreement and our Site
@@ -288,17 +291,18 @@
           %p
             %b 6.6 Intellectual Property Rights
             Crowdlink is not the author or owner of
-            any Proposals, Solutions, or products or services developed in connection with a Pledge or
+            any Tasks, Suggestions, or any products or services developed in connection with a Pledge or
             Donation. Crowdlink does not guarantee or certify the
-            availability of any Solutions developed hereunder. Solutions or their resulting products or services
+            availability or validity of any products or services developed hereunder. Suggestions, products or services
+            resulting from them,
             offered by Developers may be protected (in whole or in part) by
             copyrights, trademarks, service marks, patents, trade secrets, or other rights
-            and laws. If you wish to use any part of a Solution or its derivatives,
-            you must obtain the rights to do so from a Project Administrator or owner, as
+            and laws. If you wish to use any part of a Suggestion or its derivatives,
+            you must obtain the rights to do so from a Project Maintainer or Owner, as
             appropriate. You shall abide by and maintain all copyright and other legal
-            notices, information, and restrictions contained in any Solutions, code, or other resources
+            notices, information, and restrictions contained in any Suggestions, code, or other resources
             offered by Developers. You shall not sell, license, rent, or otherwise use or
-            exploit any Solutions, associated code, derivative products or services for commercial use or in any way that
+            exploit any Suggestions, associated code, derivative products or services for commercial use or in any way that
             violates any third-party right, unless authorized to do so under the
             appropriate license.
 
@@ -308,14 +312,12 @@
             Your use of the Service must at all times be in
             good faith. You must not use the Service for any purpose that is prohibited by
             this Agreement. You shall abide by all applicable local, state, national, and
-            international laws and regulations in your use of the Service, Site and
-            Solutions.
+            international laws and regulations in your use of the Service and Site.
           %p
             %b 7.2 Your account is your responsibility.
             You are responsible for all of your account activity in connection with
             the Service. You shall not, and shall not permit any third party using your
-            account to, take any action (including, without limitation, submitting a
-            Solution) that:
+            account to, take any action (including, without limitation, submitting any content) that:
           %p
             %b 7.2.1
             infringes any patent, trademark, trade secret, copyright, right of
@@ -382,9 +384,9 @@
             We reserve the right in our sole discretion to suspend,
             cancel or modify the Service or to cancel your participation in the Service at
             any time. This means that you may be prohibited from
-            continued Contributions towards a Solution, from submitting a Proposal or Solution, from
+            continued Contributions towards a Project, from submitting a Task or Suggestion, from
             participating in making Pledges or Donations, from being considered as an Assignee on a
-            Donation or Pledge, and from voting on any Proposal, Solution, or Project.
+            Donation or Pledge, and from voting on any Task, Suggestion, or Project.
           %p
             %b 8.2 Circumstances in which we might disclose information about you.
             We reserve the right to disclose information about you or your
@@ -417,17 +419,17 @@
           %h3 9. Disclaimer
           %p
             Crowdlink is a listing and project platform, and does not
-            develop code, Solutions, or Projects itself. Any and all code and Solutions developed or made
-            available through Crowdlink are developed by third parties. Such
+            develop code, Suggestions, Tasks, or Projects itself. Any and all products and services developed or made
+            available through Crowdlink's Services are developed by third parties. Such
             parties are not employees or agents of Crowdlink, and (if any payments are
             made) are treated as independent contractors. Accordingly, users of Crowdlink
             agree to release and hold harmless Crowdlink from and against any claims that
-            code or Solutions are incomplete, do not work correctly, have bugs, or are
+            a Task or Suggestion are incomplete, do not work correctly, have bugs, or are
             otherwise unsuitable for a particular user's purpose. TO THE FULLEST EXTENT
             PERMITTED BY LAW, CROWDLINK DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED,
-            REGARDING THE SERVICE, SITE, CODE DEVELOPED BY DEVELOPERS, OR ANY WORK PERFORMED
+            REGARDING THE SERVICE, SITE, PRODUCTS OR SERVICES DEVELOPED BY DEVELOPERS, OR ANY WORK PERFORMED
             BY THIRD PARTIES HEREUNDER, FUNDS ASSIGNED
-            FOR PARTICIPATION IN AND SOLUTIONS ENCOURAGED THROUGH THE
+            FOR PARTICIPATION IN AND SUGGESTIONS ENCOURAGED THROUGH THE
             SERVICE, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
             MERCHANTABILITY AND FITNESS FOR PARTICULAR USE. THE SERVICE IS PROVIDED "AS IS"
             AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING,
@@ -437,11 +439,11 @@
             DISCLAIMED. CROWDLINK, AND ITS DIRECTORS, EMPLOYEES, AGENTS, SUPPLIERS,
             PARTNERS, AND CONTENT PROVIDERS DO NOT WARRANT THAT: (A) THE SERVICE WILL BE
             SECURE OR AVAILABLE AT ANY PARTICULAR TIME OR LOCATION; (B) ANY DEFECTS OR
-            ERRORS IN THE SERVICE OR SOLUTIONS WILL BE CORRECTED; (C) ANY SOLUTIONS, CODE
+            ERRORS IN THE SERVICE WILL BE CORRECTED; (C) ANY PRODUCTS, SERVICES
             OR SOFTWARE DEVELOPED OR MADE AVAILABLE AT OR THROUGH THE SERVICE IS FREE OF
             ERRORS, VIRUSES OR OTHER HARMFUL COMPONENTS; OR (D) THE RESULTS OF USING THE
-            SERVICE OR SUCH CODE OR SOLUTIONS WILL MEET YOUR REQUIREMENTS. YOUR USE OF THE
-            SERVICE AND SOLUTIONS IS SOLELY AT YOUR OWN RISK. SOME STATES OR COUNTRIES DO
+            SERVICE OR SUGGESTIONS WILL MEET YOUR REQUIREMENTS. YOUR USE OF THE
+            SERVICE AND SUGGESTIONS IS SOLELY AT YOUR OWN RISK. SOME STATES OR COUNTRIES DO
             NOT ALLOW LIMITATIONS ON HOW LONG AN IMPLIED WARRANTY LASTS, SO THE ABOVE
             LIMITATIONS MAY NOT APPLY TO YOU. To the extent that such warranties cannot be
             disclaimed, you agree that the liability of Crowdlink shall be limited to
@@ -453,7 +455,7 @@
             COMPANIES OR THEIR RESPECTIVE DIRECTORS, OFFICERS, EMPLOYEES, AGENTS, PARTNERS,
             SUPPLIERS, OR DEVELOPERS, BE LIABLE UNDER CONTRACT, TORT, STRICT LIABILITY,
             NEGLIGENCE, OR ANY OTHER LEGAL OR EQUITABLE THEORY WITH RESPECT TO THE SERVICE
-            OR SOLUTIONS ENCOURAGED BY THE SERVICE (I) FOR ANY LOST PROFITS, DATA LOSS,
+            OR ACTIVITIES ENCOURAGED BY THE SERVICE (I) FOR ANY LOST PROFITS, DATA LOSS,
             COST OF PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES, OR SPECIAL, INDIRECT,
             INCIDENTAL, PUNITIVE, OR CONSEQUENTIAL DAMAGES OF ANY KIND WHATSOEVER,
             INCLUDING, WITHOUT LIMITATION, SUBSTITUTE GOODS OR SERVICES (HOWEVER ARISING),
@@ -471,8 +473,8 @@
             officers, employees and agents, from and against any and all claims, damages,
             liabilities, costs and expenses (including reasonable legal fees and expenses)
             arising out of or in connection with your violation of any of the terms and
-            conditions of this Agreement or your unauthorized use of the Service or any
-            Solutions. Crowdlink reserves the right to assume the exclusive defense and
+            conditions of this Agreement or your unauthorized use of the Service. Crowdlink reserves the right to
+            assume the exclusive defense and
             control of any matter otherwise subject to indemnification by you, in which
             event you will assist and cooperate with Crowdlink in asserting any available
             defenses.
@@ -519,7 +521,7 @@
             successors, assigns, employees, agents, directors, officers or shareholders,
             either specific or general, in any jurisdiction other than the State of
             Kansas. You agree that any action at law or in equity arising out of or
-            relating to these terms, or your use or non-use of the Services or Solutions,
+            relating to these terms, or your use or non-use of the Services or Suggestions,
             shall be filed only in the state or federal courts located in Wyandotte
             County in the State of Kansas and you hereby consent and submit to the
             personal jurisdiction of such courts for the purposes of litigating any such
@@ -528,7 +530,7 @@
           %p
             %b 13.4 International
             Accessing the Service is prohibited from territories
-            where the Solutions or Service is illegal. If you access the Service from other
+            where the Service is illegal. If you access the Service from other
             locations, you do so at your own initiative and are responsible for compliance
             with local laws.
           %p
@@ -575,6 +577,6 @@
             OR INFORMATION TRANSMITTED ON THE SITE OR ANY WEBSITE LINKED TO THE SITE.
             Crowdlink will not be liable for the privacy of email addresses, registration
             and identification information, disk space, communications, confidential or
-            trade-secret information, or any Solutions received by Crowdlink or stored on
+            trade-secret information, or any Tasks or Suggestions received by Crowdlink or stored on
             our equipment, transmitted over networks accessed by the Site, or otherwise
             connected with your use of the Service.

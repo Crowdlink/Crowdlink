@@ -26,13 +26,13 @@ topics:
           No, not really. Although it could be used that way.
           <p><br>
           Instead of focusing on project management like traditional issue trackers, Crowdlink is designed
-          for community feedback first. Instead of Issues, Crowdlink has the concept of Problems, which
-          focus on the high level view of a product, as opposed to its implementation details.
+          for community feedback first. Instead of Issues, Crowdlink has the concept of Tasks, which
+          focus on the high level view of a product or service, as opposed to its implementation details.
           </p>
           <p>
-          For instance, a user might post a new Problem stating that they dislike the tabbed navigation on a website.
-          The project owner and other users can vote on this Problem as well as contribute potential Solutions to it.
-          Crowdlink also allows users to make microdonations and Pledges towards different Problems and Solutions, which
+          For instance, a user might post a new Task stating that they dislike the tabbed navigation on a website.
+          The project owner and other users can vote on this Task as well as contribute Suggestions to it.
+          Crowdlink also allows users to make microdonations and Pledges, which
           is an uncommon feature in an issue tracker.
           </p>
       brief: Crowdlink is designed to allow developers to make informed project direction decisions, rather than focusing on specific implementation details.
@@ -49,9 +49,9 @@ topics:
           <li>Developers, excited by the interest in the project, have a clear view of which improvements users value most.</li>
           <li>For particularly challenging ideas developers gain a route to communicate the difficulties</li>
           <li>After weighing the pros and cons they accept or reject an idea to let users know how they are going forward.</li>
-          <li>If a solution is completed the developers receive the pledges.</li>
+          <li>If a Suggestion is completed the developers receive the pledges.</li>
           </ul>
-      brief: Users make pledges towards issues or solutions. Developers may complete those to receive the pledges.
+      brief: Users make pledges towards issues or Suggestions. Developers may complete those to receive the pledges.
   benefits:
       title: Why use Crowdlink?
       body: |
@@ -59,7 +59,7 @@ topics:
           <li>Watch projects you are interested in and monitor upcoming awesome features</li>
           <li>Easily determine which issues are important with voting, pledges and donations</li>
           <li>Encourage project owners by giving small amounts to show your interest and help them grow</li>
-          <li>Motivate project owners to fix problems that are bugging you by Pledging towards their completion</li>
+          <li>Motivate project owners to work on Tasks that are bugging you by Pledging towards their completion</li>
           <li>Contribute your ideas to projects you care about</li>
           </ul>
       brief: Crowdlink helps motivate developers, increases communication between devs and end users, and helps starving devs pay their bills.
@@ -77,12 +77,12 @@ topics:
   pledges:
       title: What are Pledges and how do they work?
       body: |
-          A Pledge is a monetary endorsement of an idea. Once a Problem is marked as complete, pledged money is
+          A Pledge is a monetary endorsement of an idea. Once a Task is marked as complete, pledged money is
           distributed by a project admin.
       brief: Much community. So crowdfund. Wow.
-  unused_solutions:
-      title: What happens to a Pledge if a Solution is not accepted?
-      body: When a solution is rejected, or simply isn't picked any Pledges attached to it get returned to the contributor.
+  unused_suggestions:
+      title: What happens to a Pledge if a Suggestion is not accepted?
+      body: When a Suggestion is rejected, or simply isn't picked, any Pledges attached to it get returned to the contributor.
       brief: Much community. So crowdfund. Wow.
   pending_pledges:
       title: Why are some funds unable to be withdrawn?
