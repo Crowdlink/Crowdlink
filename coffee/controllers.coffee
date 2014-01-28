@@ -189,7 +189,7 @@ mainControllers.controller('rootController',
     if val
       $rootScope._title = val + " : Crowd Link"
     else
-      $rootScope._title = "Crowd Link"
+      $rootScope._title = "Crowdlink - Help cool projects grow."
   )
 
   # update the profile url when the username changes
