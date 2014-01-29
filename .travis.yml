@@ -3,9 +3,9 @@ python:
     - "3.3"
 # command to install dependencies
 before_script:
-    - cat util/init.sql | psql -d template1 -U postgres
+    - "cat util/init.sql | psql -d template1 -U postgres"
     # setup our application settings for test mode on travis...
-    - echo '{"private": {"SQLALCHEMY_DATABASE_URI": "postgresql://crowdlink:testing@localhost:5432/crowdlink_testing", "send_emails": false}, "public": {}}' > testing.json
+    - "echo '{\"private\": {\"SQLALCHEMY_DATABASE_URI\": \"postgresql://crowdlink:testing@localhost:5432/crowdlink_testing\", \"send_emails\": false}, \"public\": {}}' > testing.json"
     - cp application.json.travis application.json
 install:
     - "pip install . --use-mirrors"
