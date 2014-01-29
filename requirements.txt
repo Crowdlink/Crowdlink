@@ -1,4 +1,4 @@
-lever==0.1
+lever==0.2
 six
 Flask==0.10.1
 Flask-Login==0.2.9

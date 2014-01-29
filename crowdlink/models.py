@@ -311,7 +311,7 @@ class Issue(
         return roles
 
     @classmethod
-    def p_roles(cls, project=None, user=current_user):
+    def p_roles(cls, project=None, user=current_user, **params):
         return cls._inherit_roles(project=project, user=user)
 
     @property
@@ -444,7 +444,7 @@ class Solution(
         return roles
 
     @classmethod
-    def p_roles(cls, issue=None, user=current_user):
+    def p_roles(cls, issue=None, user=current_user, **params):
         return cls._inherit_roles(issue=issue, user=user)
 
     @property
@@ -502,7 +502,7 @@ class Comment(base):
         return "{parent_url}/{id}".format(id=self.id, parent_url=self.thing.get_dur_url)
 
     @classmethod
-    def p_roles(cls, thing=None, user=current_user):
+    def p_roles(cls, thing=None, user=current_user, **params):
         return cls._inherit_roles(thing=thing, user=user)
 
     def roles(self, user=current_user):

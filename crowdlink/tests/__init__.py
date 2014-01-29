@@ -126,7 +126,7 @@ class ThinTest(TestCase):
             '__action': 'login',
             '__cls': True
         }
-        ret = self.patch('/api/user', 200, params=data)
+        ret = self.post('/api/user', 200, params=data)
         pprint(ret)
         return ret
 

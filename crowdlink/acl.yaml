@@ -4,7 +4,7 @@ base_private:
     # global context roles
     anonymous: []
     user:
-        class: create
+        action: create
     # Object context roles
     owner:
         view: standard_join
@@ -26,7 +26,7 @@ solution:
         edit:
             - report_status
             - vote_status
-        class: create
+        action: create
     admin:
         inherit: issue_project_owner
         class: create_other
@@ -57,13 +57,13 @@ user:
             - standard_join
             - page_join
             - disp_join
-        class: create
         action:
             - oauth_create
             - login
             - send_recover
             - recover
             - check_taken
+            - create
     noactive_user:
         view:
             - standard_join
@@ -111,7 +111,7 @@ project:
         edit:
             - report_status
             - vote_status
-        class: create
+        action: create
     admin:
         inherit: owner
         class: create_other
@@ -148,7 +148,7 @@ issue:
             - report_status
             - vote_status
             - subscribed
-        class: create
+        action: create
     admin:
         inherit: project_owner
         class: create_other
@@ -175,7 +175,7 @@ comment:
         inherit: noactive_user
     user:
         inherit: noactive_user
-        class: create
+        action: create
         edit: report_status
     admin:
         inherit: thing_project_owner

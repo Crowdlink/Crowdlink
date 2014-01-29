@@ -3,7 +3,7 @@ from flask.ext.login import login_required, logout_user, current_user
 from flask.ext.oauthlib.client import OAuthException
 
 from pprint import pformat
-from lever import API, LeverException
+from lever import API, ModelBasedACL, LeverException, preprocess
 import six
 import sys
 from .oauth import oauth_retrieve, oauth_from_session
@@ -107,9 +107,9 @@ def oauth_user_data():
     return jsonify(success=False, error='oauth_missing_token')
 
 
-class APIBase(API):
+class APIBase(ModelBasedACL, API):
     session = db.session
-    current_user = current_user
+    create_method = 'create'
 
 
 class UserAPI(APIBase):
@@ -126,6 +126,7 @@ class ProjectAPI(APIBase):
 
 class IssueAPI(APIBase):
     model = Issue
+    @preprocess(action='create')
     def create_hook(self):
         # do logic to pick out the parent from the database based on parent
         # keys
@@ -151,6 +152,8 @@ class IssueAPI(APIBase):
 
 class SolutionAPI(APIBase):
     model = Solution
+
+    @preprocess(action='create')
     def create_hook(self):
         # do logic to pick out the parent from the database based on parent
         # keys
@@ -178,6 +181,8 @@ class SolutionAPI(APIBase):
 
 class CommentAPI(APIBase):
     model = Comment
+
+    @preprocess(action='create')
     def create_hook(self):
         # do logic to pick out the parent from the database based on parent
         # keys
