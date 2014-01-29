@@ -1,4 +1,3 @@
-import decorator
 import crowdlink
 import json
 import os
@@ -6,37 +5,9 @@ import six
 
 from pprint import pprint
 from unittest import TestCase
-from flask.ext.login import login_user, logout_user
+from flask.ext.login import login_user, current_user
 from crowdlink import root
-from crowdlink.models import User
-
-
-def login_required(username='crowdlink', password='testing'):
-    """ Decorator that logs in the user under a request context as well as a
-    testing cleint """
-    def login_required(func, self, *args, **kwargs):
-        self.user = self.db.session.query(User).filter_by(username=username).one()
-        self.login(username, password)['objects'][0]
-        login_user(self.user)
-        func(self)
-        self.logout()
-        logout_user()
-
-    return decorator.decorator(login_required)
-
-
-def login_required_ctx(username='crowdlink', password='testing'):
-    """ Decorator for loggin in the user under a request context. Helpful for
-    testing """
-    def login_required_ctx(f, *args, **kwargs):
-        self = args[0]
-        self.user = (self.db.session.query(User).
-                     filter_by(username=username).one())
-        login_user(self.user)
-        f(self)
-        logout_user()
-
-    return decorator.decorator(login_required_ctx)
+from crowdlink.models import User, Email, Comment, Solution, Project, Issue
 
 
 class ThinTest(TestCase):
@@ -129,14 +100,26 @@ class ThinTest(TestCase):
         self.db.drop_all()
         self.db.create_all()
 
+    def new_user(self, username='velma', active=True, login=False, login_ctx=False):
+        # create a user for testing
+        usr = User.create(username, "testing", username + '@crowdlink.io')
+        self.db.session.commit()
+        # activate the user if requested
+        if active:
+            Email.activate_email(username + '@crowdlink.io', force=True)
 
-class BaseTest(ThinTest):
-    def setup_db(self):
-        os.system("psql -U crowdlink -h localhost crowdlink_testing -f "
-                  "{0}/assets/test_provision.sql > /dev/null 2>&1"
-                  .format(root))
+        # now log them in via api call, or direct call if requested
+        if login:
+            self.login(username=username)
+        if login_ctx:
+            self.login_ctx(username=username)
+        return usr
 
-    def login(self, username, password):
+    def login(self, username='velma'):
+        user = self.db.session.query(User).filter_by(username=username).one()
+        login_user(user)
+
+    def login_ctx(self, username='velma', password='testing'):
         data = {
             'identifier': username,
             'password': password,
@@ -146,6 +129,53 @@ class BaseTest(ThinTest):
         ret = self.patch('/api/user', 200, params=data)
         pprint(ret)
         return ret
+
+    def provision_issue(self, project, user=None):
+        if user is None:
+            user = project.owner
+        new_issue = Issue.create(
+            user=user,
+            title='testing title..',
+            desc='Awesome testing description',
+            project=project).save()
+        self.db.session.commit()
+        return new_issue
+
+    def provision_project(self, name='Crowdlink', url_key='crowdlink',
+                          user=current_user):
+        proj = Project(
+            owner=user,
+            name=name,
+            website='http://google.com/',
+            url_key=url_key,
+            desc='Awesome desc').save()
+        self.db.session.commit()
+        return proj
+
+    def provision_solution(self, issue, user=None):
+        if user is None:
+            user = issue.creator
+        sol = Solution.create(
+            title='dfgljksdflkj',
+            user=user,
+            issue=issue,
+            desc='sdflgjsldfkjgsdfg').save()
+        self.db.session.commit()
+        return sol
+
+    def provision_comment(self, thing, user=current_user):
+        comm = Comment.create(
+            thing=thing,
+            user=user,
+            message='dsfgljksdfgljksdfgljk').save()
+        self.db.session.commit()
+        return comm
+
+    def provision_many(self, user=current_user):
+        project = self.provision_project(user=user)
+        issue = self.provision_issue(project)
+        solution = self.provision_solution(issue)
+        self.provision_comment(solution, user=user)
 
     def logout(self):
         ret = self.get('/api/logout', 200)

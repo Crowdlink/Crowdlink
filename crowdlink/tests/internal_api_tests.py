@@ -1,20 +1,22 @@
 from flask.ext.login import current_user, logout_user
 from pprint import pprint
 
-from crowdlink.tests import BaseTest, login_required_ctx
+from crowdlink.tests import BaseTest, ThinTest
 from crowdlink.models import Issue, Project, Solution, Email, User, Thing
 from crowdlink.mail import TestEmail
 
 import datetime
 
 
-class ProjectTests(BaseTest):
+class ProjectTests(ThinTest):
     """ Project internal API """
 
-    @login_required_ctx('crowdlink')
     def test_check_taken(self):
-        """ ensure registration works, and lowercases names """
+        """ check taken project_url_keys works as expected """
         # TODO: XXX: Will need to be changed when case bug is fixed
+        user = self.new_user(login=True)
+        self.provision_project(user=user, url_key='mystery-inc')
+        self.provision_project(user=user)
         tests = [('crowdlink', True),
                  ('Crowdlink', False),
                  ('MYstery-inc', False)]
@@ -22,17 +24,17 @@ class ProjectTests(BaseTest):
             assert Project.check_taken(url_key)['taken'] is result
 
 
-class EmailTests(BaseTest):
+class EmailTests(ThinTest):
     """ Email internal API """
-    @login_required_ctx()
     def test_email_send(self):
+        self.new_user(login=True)
         assert TestEmail().send(self.app.config['email_test_address'],
                                 force_send=False)
 
-    @login_required_ctx()
     def test_activate_email(self):
+        user = self.new_user(login=True)
         addr = "this.test.unique@testingdsflkjgsdfg.com"
-        email = Email(user=self.user,
+        email = Email(user=user,
                       address=addr,
                       primary=False).save()
         email.send_activation(force_send=False)
@@ -50,6 +52,7 @@ class EmailTests(BaseTest):
     def test_check_taken(self):
         """ ensure registration works, and lowercases names """
         # TODO: XXX: Will need to be changed when case bug is fixed
+        self.new_user()
         tests = [('velma@crowdlink.io', True),
                  ('velmA@crowdlink.io', False),
                  ('dsfglkjdsfg@dflj.com', False),
@@ -58,22 +61,23 @@ class EmailTests(BaseTest):
             assert Email.check_taken(email)['taken'] is result
 
 
-class UserTests(BaseTest):
+class UserTests(ThinTest):
     def test_recover_user(self):
         # fake the sending of the recover email
-        User.send_recover('velma', force_send=False)
+        user = self.new_user()
+        User.send_recover(user.username, force_send=False)
         self.db.session.commit()
-        user = User.query.filter_by(username='velma').one()
         assert user.recover_hash is not None
         assert user.recover_gen is not None
 
         # now actually run the recover function
         user.recover(user.recover_hash, 'new_password')
         self.db.session.commit()
+        # ensure we got logged in
         assert current_user == user
 
     def test_login(self):
-        user = User.query.filter_by(username='velma').one()
+        user = self.new_user()
         ret = User.login()
         # make sure message is uniform with no params, or wrong params...
         assert ret['success'] is False
@@ -108,6 +112,7 @@ class UserTests(BaseTest):
 
     def test_check_taken(self):
         """ ensure registration works, and lowercases names """
+        self.new_user(username='crowdlink')
         tests = [('crowdlink', True),
                  ('CROWdlink', True),
                  ('dsfglkj', False)]
