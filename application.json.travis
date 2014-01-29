@@ -33,7 +33,7 @@
   },
 "public":
   {
-  "DEBUG": true,
+  "DEBUG": false,
   "static_path": "/static/",
   "api_path": "/api/",
   "static_path": "/static/",
