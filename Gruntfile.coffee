@@ -33,7 +33,7 @@ module.exports = (grunt) ->
       app: ['processed/coffee/*.coffee']
 
     haml:
-      development:
+      default:
         options:
           loadPath: ["haml"]
         files:
@@ -85,7 +85,7 @@ module.exports = (grunt) ->
 
           # Server Side
           "templates/base.html": "processed/haml/base.haml"
-          "processed/email/base.html": "haml/email/base.haml"
+          "processed/email/base.html": "processed/haml/email/base.haml"
 
     coffee:
       default:
@@ -98,24 +98,17 @@ module.exports = (grunt) ->
           "static/js/miu.js": "processed/coffee/miu.coffee"
 
     compass:
-      development:
+      default:
         options:
           sassDir: ["processed/scss"]
           cssDir: ["static/css"]
 
     less:
-      development:
+      default:
         options:
           paths: ["less"]
         files:
           "static/css/bootstrap.css": "processed/less/bootstrap/bootstrap.less"
-
-      production:
-        options:
-          paths: ["less"]
-          cleancss: true
-        files:
-          "static/lib/css/bootstrap.min.css": "less/bootstrap/bootstrap.less"
 
     shell:
       options:
@@ -147,7 +140,7 @@ module.exports = (grunt) ->
         command: 'yaml2json ./assets/help/faq.yaml > ./static/faq.json'
 
     inlinecss:
-      main:
+      default:
         options:
           removeStyleTags: false
         files:
@@ -159,7 +152,7 @@ module.exports = (grunt) ->
         tasks: ['shell:proc_less']
       less:
         files: ['processed/less/**/*.less']
-        tasks: ['less:development']
+        tasks: ['less:default']
       haml_pre:
         files: ['haml/**/*.haml']
         tasks: ['shell:proc_haml']
@@ -183,7 +176,7 @@ module.exports = (grunt) ->
         tasks: ['newer:coffee']
       email:
         files: ['processed/email/*.html']
-        tasks: ['inlinecss:main']
+        tasks: ['inlinecss:default']
       yaml:
         files: ['assets/help/*.yaml']
         tasks: ['shell:compile_yaml']
@@ -204,14 +197,20 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-inline-css')      # used for inlining email temps
   grunt.loadNpmTasks('grunt-newer')           # only compiles newer files
 
-  grunt.registerTask "dev", ["shell:proc_coffee", "shell:proc_less",
-                             "shell:proc_haml", "shell:proc_sass",
-                             "less", "haml", "compass", "coffee",
-                             "inlinecss:main","shell:compile_yaml"]
-  grunt.registerTask "prod", ["shell:proc_coffee", "shell:proc_less",
-                             "shell:proc_haml", "shell:proc_sass",
-                             "less", "haml", "compass", "coffee",
-                             "cssmin:all", "uglify:all"]
+  common_actions = ["shell:proc_coffee",
+                    "shell:proc_less",
+                    "shell:proc_haml",
+                    "shell:proc_sass",
+                    "shell:compile_yaml",
+                    "shell:compile_yaml",
+                    "less:default",
+                    "haml:default",
+                    "inlinecss:default",
+                    "compass:default",
+                    "coffee:default"]
+  grunt.registerTask "dev", common_actions
+  grunt.registerTask "prod", common_actions.concat ["cssmin:all",
+                                                    "uglify:all"]
   grunt.registerTask "lint", ["shell:flake8", "coffeelint"]
   grunt.registerTask "flake8", ["shell:flake8"]
   grunt.registerTask "test", ["shell:test"]
