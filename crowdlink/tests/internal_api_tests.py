@@ -1,9 +1,7 @@
 from flask.ext.login import current_user, logout_user
-from pprint import pprint
 
-from crowdlink.tests import BaseTest, ThinTest
-from crowdlink.models import Issue, Project, Solution, Email, User, Thing
-from crowdlink.mail import TestEmail
+from crowdlink.tests import ThinTest
+from crowdlink.models import Project, Email, User
 
 import datetime
 
@@ -26,11 +24,6 @@ class ProjectTests(ThinTest):
 
 class EmailTests(ThinTest):
     """ Email internal API """
-    def test_email_send(self):
-        self.new_user(login=True)
-        assert TestEmail().send(self.app.config['email_test_address'],
-                                force_send=False)
-
     def test_activate_email(self):
         user = self.new_user(login=True)
         addr = "this.test.unique@testingdsflkjgsdfg.com"

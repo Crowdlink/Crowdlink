@@ -1,10 +1,7 @@
-git+https://github.com/jarus/flask-testing.git#egg=Flask-Testing
 flask-debugtoolbar
-mock
 nose
 nose-progressive
 coverage
-selenium
 flake8
 pylint
 uwsgi

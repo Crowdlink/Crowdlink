@@ -1,0 +1,44 @@
+{
+"private":
+  {
+  "SECRET_KEY": "very_secret",
+  "DEBUG_TB_INTERCEPT_REDIRECTS": false,
+  "stripe_secret_key": "",
+  "stripe_transfer_perc": "0.029",
+  "stripe_transfer_flat": 30,
+  "stripe_livemode": false,
+  "base_url": "http://127.0.0.1/",
+  "transfer_fee": "0.05",
+  "minimum_earmark": 50,
+  "minimum_transfer": 51,
+
+  "email_username": "",
+  "email_password": "",
+  "email_server": "email-smtp.us-east-1.amazonaws.com",
+  "email_ehlo": "ibcook.com",
+  "email_send_name": "Crowdlink",
+  "email_send_address": "auto@ibcook.com",
+  "email_test_address": "isaac@simpload.com",
+  "email_port": 587,
+  "email_debug": true,
+  "email_use_tls": true,
+  "send_emails": true,
+
+  "github_consumer_key": "",
+  "github_consumer_secret": "",
+  "twitter_consumer_key": "",
+  "twitter_consumer_secret": "",
+  "google_consumer_key": "",
+  "google_consumer_secret": ""
+  },
+"public":
+  {
+  "DEBUG": true,
+  "static_path": "/static/",
+  "api_path": "/api/",
+  "static_path": "/static/",
+  "stripe_public_key": "",
+  "template_path": "/static/templates/",
+  "production": false
+  }
+}

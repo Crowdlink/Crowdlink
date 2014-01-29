@@ -1,10 +1,7 @@
-import crowdlink
-import json
-import datetime
 
 from flask.ext.login import current_user
 from crowdlink.tests import ThinTest
-from crowdlink.models import Issue, Project, Solution, User
+from crowdlink.models import Project
 from crowdlink.events import IssueNotif
 from pprint import pprint
 
@@ -38,7 +35,7 @@ class EventTests(ThinTest):
         current_user.events = None
         current_user.save()
         # distribute
-        inotif = IssueNotif.generate(issue)
+        IssueNotif.generate(issue)
         # the subscriptions above should have double delivered. Ensure double
         # delivery prevention is tracked
         assert len(user.events) == 1
@@ -49,7 +46,7 @@ class EventTests(ThinTest):
         # clear the users events for easier testing
         user = self.new_user(login_ctx=True)
         project = self.provision_project(user=user)
-        issue = self.provision_issue(project)
+        self.provision_issue(project)
         assert len(current_user.events) == 0
 
         # subscribe our logged in user to many issues
@@ -62,8 +59,7 @@ class EventTests(ThinTest):
         self.new_user(login_ctx=True, login=True)
         project = self.provision_project()
         project.subscribed = True
-        issue = self.provision_issue(project)
-        print current_user.to_dict()
+        self.provision_issue(project)
         # clear the users events for easier testing
         assert len(current_user.events) > 0
 

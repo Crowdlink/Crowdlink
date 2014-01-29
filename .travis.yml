@@ -1,0 +1,18 @@
+language: python
+python:
+    - "3.3"
+# command to install dependencies
+before_script:
+    - cat util/init.sql | psql -d template1 -U postgres
+    # setup our application settings for test mode on travis...
+    - echo '{"private": {"SQLALCHEMY_DATABASE_URI": "postgresql://crowdlink:testing@localhost:5432/crowdlink_testing", "send_emails": false}, "public": {}}' > testing.json
+    - cp application.json.travis application.json
+install:
+    - "pip install . --use-mirrors"
+    - "pip install -r requirements.txt --use-mirrors"
+    - "pip install nose coverage python-coveralls --use-mirrors"
+# command to run tests
+script:
+    - nosetests --exclude=int_tests --with-coverage --cover-package=crowdlink
+after_success:
+    - coveralls

@@ -588,7 +588,7 @@ class Email(base):
 
         # complicated block that allows force send to either force to send or
         # force to not send. None defers to send_emails config value
-        return ActivationEmail(self).send(self.address)
+        return ActivationEmail(self).send(self.address, force_send=force_send)
 
 
 class User(Thing, SubscribableMixin, ReportableMixin):

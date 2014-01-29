@@ -1,6 +1,5 @@
 import crowdlink
 import json
-import os
 import six
 
 from pprint import pprint
@@ -100,7 +99,8 @@ class ThinTest(TestCase):
         self.db.drop_all()
         self.db.create_all()
 
-    def new_user(self, username='velma', active=True, login=False, login_ctx=False):
+    def new_user(self, username='velma', active=True, login=False,
+                 login_ctx=False):
         # create a user for testing
         usr = User.create(username, "testing", username + '@crowdlink.io')
         self.db.session.commit()
