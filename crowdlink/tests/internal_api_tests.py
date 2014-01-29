@@ -1,10 +1,9 @@
 from flask.ext.login import current_user, logout_user
 from pprint import pprint
-from copy import copy
-from sqlalchemy import or_
 
 from crowdlink.tests import BaseTest, login_required_ctx
 from crowdlink.models import Issue, Project, Solution, Email, User, Thing
+from crowdlink.mail import TestEmail
 
 import datetime
 
@@ -25,6 +24,10 @@ class ProjectTests(BaseTest):
 
 class EmailTests(BaseTest):
     """ Email internal API """
+    @login_required_ctx()
+    def test_email_send(self):
+        assert TestEmail().send(self.app.config['email_test_address'],
+                                force_send=False)
 
     @login_required_ctx()
     def test_activate_email(self):

@@ -47,30 +47,58 @@ class ThinTest(TestCase):
         self.db.session.remove()
         self.db.drop_all()
 
-    def json_post(self, url, data):
-        return self.client.post(
-            url,
-            data=json.dumps(data),
+    def post(self, uri, status_code, params=None, has_data=True, headers=None,
+             success=True, typ='post'):
+        if headers is None:
+            headers = {}
+        response = getattr(self.client, typ)(
+            uri,
+            data=json.dumps(params),
+            headers=headers,
             content_type='application/json')
+        print(response.status_code)
+        print(response.data)
+        j = json.loads(response.data.decode('utf8'))
+        pprint(j)
+        assert response.status_code == status_code
+        if has_data:
+            assert response.data
+        if success and status_code == 200:
+            assert j['success']
+        else:
+            assert not j['success']
+        return j
 
-    def json_get(self, url, data):
-        return self.client.get(
-            url,
-            query_string=data,
-            content_type='application/json')
+    def patch(self, uri, status_code, **kwargs):
+        return self.post(uri, status_code, typ='patch', **kwargs)
 
-    def json_put(self, url, data):
-        return self.client.put(
-            url,
-            data=json.dumps(data),
-            content_type='application/json')
+    def put(self, uri, status_code, **kwargs):
+        return self.post(uri, status_code, typ='put', **kwargs)
 
-    def json_patch(self, url, data):
-        return self.client.open(
-            url,
-            method='PATCH',
-            data=json.dumps(data),
-            content_type='application/json')
+    def delete(self, uri, status_code, **kwargs):
+        return self.post(uri, status_code, typ='delete', **kwargs)
+
+    def get(self, uri, status_code, params=None, has_data=True, success=True,
+            headers=None):
+        if params:
+            for p in params:
+                if isinstance(params[p], dict) or isinstance(params[p], list):
+                    params[p] = json.dumps(params[p])
+        if headers is None:
+            headers = {}
+        response = self.client.get(uri, query_string=params, headers=headers)
+        print(response.status_code)
+        print(response.data)
+        if has_data:
+            assert response.data
+        j = json.loads(response.data.decode('utf8'))
+        pprint(j)
+        assert response.status_code == status_code
+        if success and status_code == 200:
+            assert j['success']
+        else:
+            assert not j['success']
+        return j
 
     def setUp(self):
         app = crowdlink.create_app()
@@ -115,12 +143,11 @@ class BaseTest(ThinTest):
             '__action': 'login',
             '__cls': True
         }
-        ret = self.json_patch('/api/user', data=data).json
+        ret = self.patch('/api/user', 200, params=data)
         pprint(ret)
-        assert ret['success']
         return ret
 
     def logout(self):
-        ret = self.client.get('/api/logout', follow_redirects=True)
-        assert ret.json['access_denied']
-        return ret.json
+        ret = self.get('/api/logout', 200)
+        assert ret['access_denied']
+        return ret

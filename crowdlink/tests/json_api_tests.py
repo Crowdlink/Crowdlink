@@ -19,9 +19,7 @@ class TestMixinsJSONAPI(BaseTest):
         for cls, key in lst:
             obj = self.db.session.query(cls).first()
             for val in [True, True, False, False]:
-                res = self.json_put('/api/' + key,
-                                    {'id': obj.id, 'vote_status': val}).json
-                assert res['success']
+                self.put('/api/' + key, 200, params={'id': obj.id, 'vote_status': val})
 
     @login_required()
     def test_voting_fail(self):
@@ -31,12 +29,7 @@ class TestMixinsJSONAPI(BaseTest):
         for cls, key in lst:
             obj = self.db.session.query(cls).first()
             for val in [True, False]:
-                res = self.json_put('/api/' + key,
-                                    {'id': obj.id, 'vote_status': val}).json
-                if res['success']:
-                    print(res)
-                    print(obj.to_dict())
-                assert not res['success']
+                self.put('/api/' + key, 403, params={'id': obj.id, 'vote_status': val})
 
     @login_required()
     def test_subscribe(self):
@@ -48,9 +41,7 @@ class TestMixinsJSONAPI(BaseTest):
         for cls, key in lst:
             obj = self.db.session.query(cls).first()
             for val in [True, True, False, False]:
-                res = self.json_put('/api/' + key,
-                                    {'id': obj.id, 'subscribed': val}).json
-                assert res['success']
+                self.put('/api/' + key, 200, params={'id': obj.id, 'subscribed': val})
 
     @login_required()
     def test_subscribe_fail(self):
@@ -59,9 +50,7 @@ class TestMixinsJSONAPI(BaseTest):
         for cls, key in lst:
             obj = self.db.session.query(cls).first()
             for val in [True, False]:
-                res = self.json_put('/api/' + key,
-                                    {'id': obj.id, 'subscribed': val}).json
-                assert not res['success']
+                self.put('/api/' + key, 403, params={'id': obj.id, 'subscribed': val})
 
     @login_required()
     def test_report(self):
@@ -74,12 +63,7 @@ class TestMixinsJSONAPI(BaseTest):
         for cls, key in lst:
             obj = self.db.session.query(cls).first()
             for val in ['Spam', 'Testing', False, True, 12]:
-                res = self.json_put('/api/' + key,
-                                    {'id': obj.id, 'report_status': val}).json
-                if not res['success']:
-                    print(res)
-                    print(obj.to_dict())
-                assert res['success']
+                self.put('/api/' + key, 200, params={'id': obj.id, 'report_status': val})
 
 class TestAnonymousPermissions(BaseTest):
     def test_change_attr_fails(self):
@@ -97,25 +81,14 @@ class TestAnonymousPermissions(BaseTest):
             for key, val in values.items():
                 if key == 'id' or 'event' in key:
                     continue
-                res = self.json_put('/api/' + url_key, {'id': obj.id, key: val})
-                dat = res.json
-                if dat['success']:
-                    print(dat)
-                    print(obj.to_dict())
-                    print("Damn, was able to change {} for obj type {}"
-                          .format(key, url_key))
-                assert not dat['success']
-                assert res.status_code == 403
+                self.put('/api/' + url_key, 403, params={'id': obj.id, key: val})
 
     def test_create_user(self):
         """ can i create a new user with the API? """
         data = {'username': 'doesnt_exist',
                 'password': 'testing',
                 'email_address': 'testing@something.com'}
-        res = self.json_post('/api/user', data)
-        dat = res.json
-        assert dat['success']
-        assert res.status_code == 200
+        self.post('/api/user', 200, params=data)
 
     @login_required(username='fred')
     def test_change_attr_user_no_active_fails(self):

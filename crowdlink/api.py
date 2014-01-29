@@ -82,7 +82,7 @@ def api_error_handler(exc):
 @login_required
 def logout():
     logout_user()
-    return jsonify(access_denied=True)
+    return jsonify(success=True, access_denied=True)
 
 
 @api.route("/oauth", methods=['GET'])
