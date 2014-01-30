@@ -1,0 +1,33 @@
+%h3
+  Tasks
+  %a.button.btn.btn-info.pull-right{:href => "{[{project.get_abs_url}]}new_task"}
+    %i.fa.fa-large.fa-plus
+    Add a new Task
+%hr.feed
+.container
+  .input-group
+    %input.form-control{"ng-model" => "filter", :type => "text"}
+    %span.btn.btn-info.input-group-addon
+      %i.fa.fa-search{"ng-click" => "search()"}
+  / /input-group
+  %table.table.table-hover
+    %tbody
+      %tr.fade{"ng-repeat" => "task in project.tasks | filter:filter"}
+        %td.fit-width
+          %a.btn.btn-xs{"ng-class" => "{'btn-success': task.vote_status, 'btn-info': !task.vote_status}",
+            "ng-click" => "vote(task)"}
+            %span{"ng-hide" => "task.vote_status"}
+              Vote&nbsp;
+              %i.fa.fa-plus
+            %span{"ng-hide" => "!task.vote_status"}
+              Unvote&nbsp;
+              %i.fa.fa-minus
+          \&nbsp;&nbsp;
+          %b
+            %ng-pluralize{:count => "task.votes",
+              :when => "{'0': 'No votes', 'one': '1 vote', 'other': '{} votes'}"}
+        %td
+          %a{:href => "{[{ task.get_abs_url }]}"}
+            %i.fa.fa-puzzle-piece &nbsp;
+            %span{"ng-bind-html" => "task.title | searchFilter:filter"}
+

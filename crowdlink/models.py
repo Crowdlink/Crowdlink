@@ -25,7 +25,7 @@ import os
 import six
 
 
-# our parent table for issues, projects, solutions and users
+# our parent table for tasks, projects and users
 class Thing(base):
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String)
@@ -75,7 +75,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     name = db.Column(db.String(128))
     website = db.Column(db.String(256))
     desc = db.Column(db.String)
-    issue_count = db.Column(db.Integer)  # XXX: Currently not implemented
+    task_count = db.Column(db.Integer)  # XXX: Currently not implemented
 
     # voting
     votes = db.Column(db.Integer, default=0)
@@ -118,7 +118,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                  'get_abs_url',
                  'owner_username']
 
-    issue_page_join = ['__dont_mongo',
+    task_page_join = ['__dont_mongo',
                        'name',
                        'owner_username',
                        'get_abs_url']
@@ -131,7 +131,7 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
                              {'obj': 'maintainers', 'join_prof': 'disp_join'},
                              {'obj': 'owner'},
                              {'obj': 'public_events'},
-                             {'obj': 'issues', 'join_prof': 'disp_join'},
+                             {'obj': 'tasks', 'join_prof': 'disp_join'},
                              ]
                             )
 
@@ -227,11 +227,10 @@ class Project(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
         current_app.logger.debug("Desynchronized repository")
 
 
-class Issue(
-        Thing, SubscribableMixin, VotableMixin, ReportableMixin):
+class Task(Thing, SubscribableMixin, VotableMixin, ReportableMixin):
     id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
     status = db.Column(db.Enum('Completed', 'Discussion', 'Selected', 'Other',
-                               name="issue_status"), default='Discussion')
+                               name="task_status"), default='Discussion')
     title = db.Column(db.String(128))
     desc = db.Column(db.Text)
     creator = db.relationship('User')
@@ -258,9 +257,9 @@ class Issue(
         {})
     project = db.relationship(
         'Project',
-        foreign_keys='[Issue.project_url_key, Issue.project_owner_username]',
-        backref='issues')
-    creator = db.relationship('User', foreign_keys='Issue.creator_id')
+        foreign_keys='[Task.project_url_key, Task.project_owner_username]',
+        backref='tasks')
+    creator = db.relationship('User', foreign_keys='Task.creator_id')
 
     comments = db.relationship(
         'Comment',
@@ -272,9 +271,9 @@ class Issue(
         order_by='Comment.created_at',
         primaryjoin='Comment.thing_id == Thing.id and Comment.banned == False')
 
-    __mapper_args__ = {'polymorphic_identity': 'Issue'}
+    __mapper_args__ = {'polymorphic_identity': 'Task'}
 
-    acl = acl['issue']
+    acl = acl['task']
     standard_join = ['get_abs_url',
                      'title',
                      'vote_status',
@@ -288,8 +287,7 @@ class Issue(
                      ]
     page_join = inherit_lst(standard_join,
                             ['get_project_abs_url',
-                             {'obj': 'project', 'join_prof': 'issue_page_join'},
-                             {'obj': 'solutions', 'join_prof': 'standard_join'},
+                             {'obj': 'project', 'join_prof': 'task_page_join'},
                              {'obj': 'comments', 'join_prof': 'standard_join'},
                              {'obj': 'creator', 'join_prof': 'disp_join'}]
                             )
@@ -305,7 +303,7 @@ class Issue(
                   'join_prof': 'disp_join'}]
 
     def roles(self, user=current_user):
-        roles = Issue.p_roles(project=self.project, user=user)
+        roles = Task.p_roles(project=self.project, user=user)
         if self.creator == user:
             roles.append('creator')
         return roles
@@ -337,7 +335,7 @@ class Issue(
                 '[^0-9a-zA-Z]', '-', self.title[:100]).lower()
 
     def gh_desync(self, flatten=False):
-        """ Used to disconnect an Issue from github. Really just a trickle down
+        """ Used to disconnect an Task from github. Really just a trickle down
         call from de-syncing the project, but nicer to keep the logic in
         here"""
         self.gh_synced = False
@@ -349,138 +347,20 @@ class Issue(
 
     @classmethod
     def create(cls, title, project, desc="", user=current_user):
-        """ Add a new issue to this project """
-        issue = cls(title=title,
+        """ Add a new task to this project """
+        task = cls(title=title,
                     desc=desc,
                     project=project,
                     creator=user.get())
-        issue.create_key()
-        db.session.add(issue)
+        task.create_key()
+        db.session.add(task)
 
         # flush after finishing creation
         db.session.flush()
         # send a notification to all subscribers
-        events.IssueNotif.generate(issue)
+        events.TaskNotif.generate(task)
 
-        return issue
-
-
-class Solution(
-        Thing, SubscribableMixin, VotableMixin, ReportableMixin):
-    """ A composite of the solution table and the thing table.
-
-    Solutions are attributes of Issues that can be voted on, commented on etc
-    """
-
-    id = db.Column(db.Integer, db.ForeignKey('thing.id'), primary_key=True)
-    title = db.Column(db.String(128))
-    desc = db.Column(db.Text)
-    creator = db.relationship('User')
-    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # voting
-    votes = db.Column(db.Integer, default=0)
-
-    # Event log
-    public_events = db.Column(EventJSON, default=list)
-
-    # our project relationship and all keys
-    url_key = db.Column(db.String, unique=True)
-    project_url_key = db.Column(db.String)
-    project_owner_username = db.Column(db.String)
-    issue_url_key = db.Column(db.String)
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            [project_url_key, project_owner_username],
-            [Project.url_key, Project.owner_username]),
-        db.ForeignKeyConstraint(
-            [project_url_key, project_owner_username, issue_url_key],
-            [Issue.project_url_key, Issue.project_owner_username, Issue.url_key]),
-        {})
-
-    project = db.relationship(
-        'Project',
-        foreign_keys='[Solution.project_url_key, Solution.project_owner_username]')
-    issue = db.relationship(
-        'Issue',
-        foreign_keys='[Solution.issue_url_key, Solution.project_url_key, Solution.project_owner_username]',
-        backref='solutions')
-    creator = db.relationship('User', foreign_keys='Solution.creator_id')
-    comments = db.relationship(
-        'Comment',
-        order_by='Comment.created_at',
-        primaryjoin='Comment.thing_id == Thing.id and Comment.banned == False and Comment.hidden == False')
-    __mapper_args__ = {'polymorphic_identity': 'Solution'}
-
-    acl = acl['solution']
-    standard_join = ['get_abs_url',
-                     'title',
-                     'report_status',
-                     'subscribed',
-                     'user_acl',
-                     'created_at',
-                     '-public_events',
-                     'id',
-                     'vote_status',
-                     {'obj': 'creator', 'join_prof': 'disp_join'},
-                     {'obj': 'comments', 'join_prof': 'standard_join'}
-                     ]
-    page_join = inherit_lst(standard_join,
-                            [{'obj': 'issue', 'join_prof': 'page_join'},
-                             'vote_status'
-                             ]
-                            )
-
-    # used for displaying the project in noifications, etc
-    disp_join = ['__dont_mongo',
-                 'title',
-                 'get_abs_url']
-
-    def roles(self, user=current_user):
-        roles = Solution.p_roles(issue=self.issue)
-        if self.creator == user:
-            roles.append('creator')
-        return roles
-
-    @classmethod
-    def p_roles(cls, issue=None, user=current_user, **params):
-        return cls._inherit_roles(issue=issue, user=user)
-
-    @property
-    def get_dur_url(self):
-        return "/s/{id}".format(id=self.id)
-
-    @property
-    def get_abs_url(self):
-        return "/{username}/{purl_key}/{iurl_key}/{url_key}".format(
-            username=self.project_owner_username,
-            purl_key=self.project_url_key,
-            iurl_key=self.issue_url_key,
-            url_key=self.url_key)
-
-    def create_key(self):
-        if self.title:
-            self.url_key = re.sub(
-                '[^0-9a-zA-Z]', '-', self.title[:100]).lower()
-
-    @classmethod
-    def create(cls, title, issue, desc="", user=current_user):
-        """ Add a new issue to this project """
-        sol = cls(title=title,
-                  desc=desc,
-                  issue=issue,
-                  project=issue.project,
-                  creator=user.get())
-        sol.create_key()
-        db.session.add(sol)
-
-        # flush after finishing creation
-        db.session.flush()
-        # send a notification to all subscribers
-        events.NewSolNotif.generate(sol)
-
-        return sol
+        return task
 
 
 class Comment(base):

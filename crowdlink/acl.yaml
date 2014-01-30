@@ -9,41 +9,6 @@ base_private:
     owner:
         view: standard_join
 
-solution:
-    # global context roles
-    anonymous:
-        view:
-            - standard_join
-            - page_join
-            - disp_join
-    noactive_user:
-        inherit: anonymous
-        edit: subscribed
-    usernameless:
-        inherit: noactive_user
-    user:
-        inherit: noactive_user
-        edit:
-            - report_status
-            - vote_status
-        action: create
-    admin:
-        inherit: issue_project_owner
-        class: create_other
-
-    # Object context roles
-    issue_project_maintainer:
-        inherit: user
-        edit:
-            - url_key
-            - title
-            - desc
-    issue_project_owner:
-        inherit: issue_project_maintainer
-    issue_creator:
-    creator:
-        inherit: issue_project_owner
-
 email:
     # global context roles
     anonymous:
@@ -97,7 +62,7 @@ project:
     anonymous:
         view:
             - page_join
-            - issue_page_join
+            - task_page_join
             - disp_join
         action:
             - check_taken
@@ -127,7 +92,7 @@ project:
             - add_maintainer
             - remove_maintainer
 
-issue:
+task:
     # global context roles
     anonymous:
         view:

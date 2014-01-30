@@ -3,6 +3,7 @@ import fnmatch
 import os
 import json
 import argparse
+import six
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -53,8 +54,10 @@ for root, _, filenames in os.walk(args.input):
             tm = 0
         if max(os.path.getctime(infile), config_time) > tm or args.force:
             try:
-                open(outfile, 'w').write(
-                    env.get_template(infile).render(**env_vars))
+                output = env.get_template(infile).render(**env_vars)
+                if not six.PY3:  # specify encoding for python 2.7
+                    output = output.encode('utf8')
+                open(outfile, 'w').write(output)
             except Exception:
                 print("Error parsing file " + outfile)
                 raise

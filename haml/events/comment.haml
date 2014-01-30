@@ -1,10 +1,10 @@
 .clearfix
   %i.pull-left.fa.fa-rocket.fa-2x{style: "padding:20px;"}
   %h5{style: "padding:10px;"}
-    Created an Issue on
+    Created an comment on
     %b.pull-right {[{event.created_at | date_ago}]}
-    %a{href: "{[{event.issue.project.get_abs_url}]}"} {[{event.issue.project.name}]}
+    %a{href: "{[{event.task.project.get_abs_url}]}"} {[{event.task.project.name}]}
     %br/
     %small
       %b
-        %a{href: "{[{event.issue.get_abs_url}]}"} {[{ event.issue.brief }]}
+        %a{href: "{[{event.task.get_abs_url}]}"} {[{ event.task.brief }]}

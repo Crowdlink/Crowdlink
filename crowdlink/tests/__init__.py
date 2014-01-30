@@ -6,7 +6,7 @@ from pprint import pprint
 from unittest import TestCase
 from flask.ext.login import login_user, current_user
 from crowdlink import root
-from crowdlink.models import User, Email, Comment, Solution, Project, Issue
+from crowdlink.models import User, Email, Comment, Project, Task
 
 
 class ThinTest(TestCase):
@@ -130,16 +130,16 @@ class ThinTest(TestCase):
         pprint(ret)
         return ret
 
-    def provision_issue(self, project, user=None):
+    def provision_task(self, project, user=None):
         if user is None:
             user = project.owner
-        new_issue = Issue.create(
+        new_task = Task.create(
             user=user,
             title='testing title..',
             desc='Awesome testing description',
             project=project).save()
         self.db.session.commit()
-        return new_issue
+        return new_task
 
     def provision_project(self, name='Crowdlink', url_key='crowdlink',
                           user=current_user):
@@ -152,17 +152,6 @@ class ThinTest(TestCase):
         self.db.session.commit()
         return proj
 
-    def provision_solution(self, issue, user=None):
-        if user is None:
-            user = issue.creator
-        sol = Solution.create(
-            title='dfgljksdflkj',
-            user=user,
-            issue=issue,
-            desc='sdflgjsldfkjgsdfg').save()
-        self.db.session.commit()
-        return sol
-
     def provision_comment(self, thing, user=current_user):
         comm = Comment.create(
             thing=thing,
@@ -173,9 +162,8 @@ class ThinTest(TestCase):
 
     def provision_many(self, user=current_user):
         project = self.provision_project(user=user)
-        issue = self.provision_issue(project)
-        solution = self.provision_solution(issue)
-        self.provision_comment(solution, user=user)
+        task = self.provision_task(project)
+        self.provision_comment(task, user=user)
 
     def logout(self):
         ret = self.get('/api/logout', 200)

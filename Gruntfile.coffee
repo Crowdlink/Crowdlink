@@ -42,12 +42,10 @@ module.exports = (grunt) ->
           "static/templates/oauth_signup.html": "processed/haml/oauth_signup.haml"
           "static/templates/home.html": "processed/haml/home.haml"
           "static/templates/login.html": "processed/haml/login.haml"
-          "static/templates/issue.html": "processed/haml/issue.haml"
-          "static/templates/solution.html": "processed/haml/solution.haml"
+          "static/templates/task.html": "processed/haml/task.haml"
           "static/templates/error.html": "processed/haml/error.haml"
-          "static/templates/new_issue.html": "processed/haml/new_issue.haml"
+          "static/templates/new_task.html": "processed/haml/new_task.haml"
           "static/templates/new_project.html": "processed/haml/new_project.haml"
-          "static/templates/new_solution.html": "processed/haml/new_solution.haml"
           "static/templates/user_home.html": "processed/haml/user_home.haml"
           "static/templates/psettings.html": "processed/haml/psettings.haml"
           "static/templates/tos.html": "processed/haml/tos.haml"
@@ -66,7 +64,7 @@ module.exports = (grunt) ->
           # Project tabs
           "static/templates/project.html": "processed/haml/project.haml"
           "static/templates/project/recent.html": "processed/haml/project/recent.haml"
-          "static/templates/project/issues.html": "processed/haml/project/issues.haml"
+          "static/templates/project/tasks.html": "processed/haml/project/tasks.haml"
           "static/templates/project/general_info.html": "processed/haml/project/general_info.haml"
           "static/templates/project/settings.html": "processed/haml/project/settings.haml"
           # Profile tabs
@@ -76,10 +74,9 @@ module.exports = (grunt) ->
           "static/templates/profile/general_info.html": "processed/haml/profile/general_info.haml"
           "static/templates/profile/settings.html": "processed/haml/profile/settings.haml"
           # Event templates
-          "static/templates/events/issue.html": "processed/haml/events/issue.haml"
+          "static/templates/events/task.html": "processed/haml/events/task.haml"
           "static/templates/events/comment.html": "processed/haml/events/comment.haml"
           "static/templates/events/fallback.html": "processed/haml/events/fallback.haml"
-          "static/templates/events/new_sol.html": "processed/haml/events/new_sol.haml"
           "static/templates/events/new_comm.html": "processed/haml/events/new_comm.haml"
           "static/templates/events/new_proj.html": "processed/haml/events/new_proj.haml"
 

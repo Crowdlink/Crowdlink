@@ -113,13 +113,13 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
 
   # Primary object views (must be at bottom from root view params)
   # ===========================================================================
-  ).when("/:username/:url_key/new_issue",
-    templateUrl: "{{ template_path }}new_issue.html"
-    controller: "newIssueController"
+  ).when("/:username/:url_key/new_task",
+    templateUrl: "{{ template_path }}new_task.html"
+    controller: "newTaskController"
     resolve:
       login: login_resolver('user')
-      issues: (IssueService, $route) ->
-        IssueService.query(
+      tasks: (TaskService, $route) ->
+        TaskService.query(
           __filter_by:
             project_owner_username: $route.current.params.username
             project_url_key: $route.current.params.url_key
@@ -131,23 +131,23 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
             url_key: $route.current.params.url_key
           __one: true
           join_prof: 'disp_join').$promise
-  ).when("/:username/:url_key/issues",
+  ).when("/:username/:url_key/tasks",
     templateUrl: "{{ template_path }}project.html"
     controller: "projectController"
     resolve:
       project: (ProjectService, $route) ->
-        $route.current.params.subsection = 'issues'
+        $route.current.params.subsection = 'tasks'
         ProjectService.query(
           __filter_by:
             owner_username: $route.current.params.username
             url_key: $route.current.params.url_key
           join_prof: 'page_join').$promise
   ).when("/:username/:purl_key/:url_key",
-    templateUrl: "{{ template_path }}issue.html"
-    controller: "issueController"
+    templateUrl: "{{ template_path }}task.html"
+    controller: "taskController"
     resolve:
-      issue: (IssueService, $route) ->
-        IssueService.query(
+      task: (TaskService, $route) ->
+        TaskService.query(
           __filter_by:
             project_owner_username: $route.current.params.username
             project_url_key: $route.current.params.purl_key
@@ -155,51 +155,11 @@ mainApp.config ["$routeProvider","$locationProvider", ($routeProvider, $location
           __one: true
           join_prof: "page_join").$promise
   ).when("/i/:id",
-    templateUrl: "{{ template_path }}issue.html"
-    controller: "issueController"
+    templateUrl: "{{ template_path }}task.html"
+    controller: "taskController"
     resolve:
-      issue: (IssueService, $route) ->
-        IssueService.query(
-          id: $route.current.params.id
-          join_prof: "page_join").$promise
-  ).when("/:username/:purl_key/:url_key/new_solution",
-    templateUrl: "{{ template_path }}new_solution.html"
-    controller: "newSolutionController"
-    resolve:
-      login: login_resolver('user')
-      solutions: (SolutionService, $route) ->
-        SolutionService.query(
-          __filter_by:
-              project_owner_username: $route.current.params.username
-              project_url_key: $route.current.params.purl_key
-              issue_url_key: $route.current.params.url_key
-          join_prof: 'disp_join').$promise
-      project: (ProjectService, $route) ->
-        ProjectService.query(
-          __filter_by:
-            owner_username: $route.current.params.username
-            url_key: $route.current.params.purl_key
-          __one: true
-          join_prof: 'disp_join').$promise
-  ).when("/:username/:purl_key/:iurl_key/:url_key",
-    templateUrl: "{{ template_path }}solution.html"
-    controller: "solutionController"
-    resolve:
-      solution: (SolutionService, $route) ->
-        SolutionService.query(
-          __filter_by:
-            url_key: $route.current.params.url_key
-            issue_url_key: $route.current.params.iurl_key
-            project_url_key: $route.current.params.purl_key
-            project_owner_username: $route.current.params.username
-          __one: true
-          join_prof: "page_join").$promise
-  ).when("/s/:id",
-    templateUrl: "{{ template_path }}solution.html"
-    controller: "solutionController"
-    resolve:
-      solution: (SolutionService, $route) ->
-        SolutionService.query(
+      task: (TaskService, $route) ->
+        TaskService.query(
           id: $route.current.params.id
           join_prof: "page_join").$promise
   ).when("/:username",

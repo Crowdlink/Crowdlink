@@ -1,17 +1,16 @@
 from crowdlink.tests import ThinTest
-from crowdlink.models import Issue, Project, Solution, User, Comment
+from crowdlink.models import Task, Project, User, Comment
 
 from lever import jsonize
 
 
 class TestMixinsJSONAPI(ThinTest):
     def test_voting(self):
-        """ can i vote on an issue/project/solution? """
+        """ can i vote on an task/project/solution? """
         user = self.new_user(login_ctx=True)
         self.provision_many(user=user)
-        lst = [(Issue, 'issue'),
-               (Project, 'project'),
-               (Solution, 'solution')]
+        lst = [(Task, 'task'),
+               (Project, 'project')]
         for cls, key in lst:
             obj = self.db.session.query(cls).first()
             for val in [True, True, False, False]:
@@ -33,12 +32,11 @@ class TestMixinsJSONAPI(ThinTest):
                          params={'id': obj.id, 'vote_status': val})
 
     def test_subscribe(self):
-        """ can i subscribe to an issue/project/user/solution? """
+        """ can i subscribe to an task/project/user/solution? """
         user = self.new_user(login_ctx=True)
         self.provision_many(user=user)
-        lst = [(Issue, 'issue'),
+        lst = [(Task, 'task'),
                (Project, 'project'),
-               (Solution, 'solution'),
                (User, 'user')]
         for cls, key in lst:
             obj = self.db.session.query(cls).first()
@@ -60,12 +58,11 @@ class TestMixinsJSONAPI(ThinTest):
                          params={'id': obj.id, 'subscribed': val})
 
     def test_report(self):
-        """ can i report an issue/project/user/solution/comment? """
+        """ can i report an task/project/user/solution/comment? """
         user = self.new_user(login_ctx=True)
         self.provision_many(user=user)
-        lst = [(Issue, 'issue'),
+        lst = [(Task, 'task'),
                (Project, 'project'),
-               (Solution, 'solution'),
                (Comment, 'comment'),
                (User, 'user')]
         for cls, key in lst:
@@ -88,9 +85,8 @@ class TestAnonymousPermissions(ThinTest):
         """ Test changing attributes we shouldn't be able to as an anonymous
         user. Runs through and tries to change every column name on each listed
         model and ensures we get a 403 """
-        lst = [(Issue, 'issue'),
+        lst = [(Task, 'task'),
                (Project, 'project'),
-               (Solution, 'solution'),
                (Comment, 'comment'),
                (User, 'user')]
         for cls, url_key in lst:

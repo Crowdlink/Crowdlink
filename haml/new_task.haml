@@ -7,11 +7,11 @@
         %li
           %a{href: "{[{project.get_abs_url}]}"} {[{ project.name }]}
         %li
-          %a{href: ""} Issues
+          %a{href: ""} Tasks
         %li.active {[{title}]}
       .row
         %h3.col-lg-12
-          Create a new Issue
+          Create a new Task
       %br
       .row
         .col-lg-1
@@ -26,29 +26,29 @@
                   %ul{"ng-show" => "errors.length > 1"}
                     %li{"ng-repeat" => "error in errors"} {[{error}]}
                 .form-group{"valid-class" => "form.title"}
-                  %input.form-control{name: "title", type: "text", "raw-ng-model" => "raw_issue_title",
+                  %input.form-control{name: "title", type: "text", "raw-ng-model" => "raw_task_title",
                     "ng-change" => "mod_title()", required: "", "ng-minlength" => "10",
-                    "ng-maxlength" => "64", placeholder: "Title", "ng-model" => "issue_title"}
+                    "ng-maxlength" => "64", placeholder: "Title", "ng-model" => "task_title"}
                   .help-block{"ng-show" => "form.title.$error.required"}
-                    Please enter a title description for your issue
+                    Please enter a title description for your task
                   .help-block{"ng-show" => "form.title.$error.maxlength"}
                     Cannot be longer than 128 characters
                   .help-block{"ng-show" => "form.title.$error.minlength"}
                     Must be longer than 10 characters
                 .form-group{"valid-class" => "form.description"}
                   %textarea.form-control.long-desc{"mark-it-up" => "", name: "description", type: "text",
-                    "ng-model" => "description", placeholder:"Description of the issue. For issues with many potential solutions it is often best to keep the issue description completely separate from the possible solutions"}
+                    "ng-model" => "description", placeholder:"Description of the task."}
                 .form-group
                   %button.btn.btn-info{name: "create", "ng-click" => "submit()", type: "submit",
                     "ng-disabled" => "!form.$valid", type: "submit"}
                     Create
             .col-lg-4
               %div.round-box.inner-pad
-                %b Other Issues on Project '{[{ project.name }]}'
+                %b Other Tasks on Project '{[{ project.name }]}'
                 %hr
                 %ul.list-group.main-list.sub-list
-                  %div.fade{"ng-repeat" => "issue in issues | fuseImpFilter:raw_issue_title"}
+                  %div.fade{"ng-repeat" => "task in tasks | fuseImpFilter:raw_task_title"}
                     %li
-                      %a{:href => "{[{ issue.get_abs_url }]}"}
+                      %a{:href => "{[{ task.get_abs_url }]}"}
                         %i.fa.fa-puzzle-piece &nbsp;
-                        %span{"ng-bind-html" => "issue.title | searchFilter:raw_issue_title"}
+                        %span{"ng-bind-html" => "task.title | searchFilter:raw_task_title"}

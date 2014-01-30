@@ -7,7 +7,7 @@ from lever import API, ModelBasedACL, LeverException, preprocess
 import six
 import sys
 from .oauth import oauth_retrieve, oauth_from_session
-from .models import User, Project, Issue, Solution, Email, Comment, Thing
+from .models import User, Project, Task, Email, Comment, Thing
 
 from . import oauth, db
 
@@ -125,8 +125,8 @@ class ProjectAPI(APIBase):
     model = Project
 
 
-class IssueAPI(APIBase):
-    model = Issue
+class TaskAPI(APIBase):
+    model = Task
     @preprocess(action='create')
     def create_hook(self):
         # do logic to pick out the parent from the database based on parent
@@ -151,35 +151,6 @@ class IssueAPI(APIBase):
         return self.model.can_cls(action, project=self.params['project'])
 
 
-class SolutionAPI(APIBase):
-    model = Solution
-
-    @preprocess(action='create')
-    def create_hook(self):
-        # do logic to pick out the parent from the database based on parent
-        # keys
-        purl_key = self.params.pop('project_url_key', None)
-        puser = self.params.pop('project_owner_username', None)
-        iurl_key = self.params.pop('issue_url_key', None)
-        iid = self.params.pop('issue_id', None)
-        # try this method first, most common
-        if puser and purl_key and iurl_key:
-            issue = Issue.query.filter(
-                Issue.project_owner_username == puser,
-                Issue.project_url_key == purl_key,
-                Issue.url_key == iurl_key).one()
-        elif iid:
-            issue = Issue.query.filter(Issue.id == iid).one()
-        else:
-            raise APISyntaxError(
-                    "Unable to identify parent Issue from information given")
-
-        self.params['issue'] = issue
-
-    def can_cls(self, action):
-        return self.model.can_cls(action, issue=self.params['issue'])
-
-
 class CommentAPI(APIBase):
     model = Comment
 
@@ -201,8 +172,7 @@ class CommentAPI(APIBase):
         return self.model.can_cls(action, thing=self.params['thing'])
 
 
-SolutionAPI.register(api, '/solution')
-IssueAPI.register(api, '/issue')
+TaskAPI.register(api, '/task')
 ProjectAPI.register(api, '/project')
 CommentAPI.register(api, '/comment')
 

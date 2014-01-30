@@ -80,8 +80,8 @@ class Event(BaseMapper):
                         type(arg)))
 
 
-class IssueNotif(Event):
-    template = "events/issue.html"
+class TaskNotif(Event):
+    template = "events/task.html"
     standard_join = [
         '__dont_mongo',
         'time',
@@ -92,13 +92,13 @@ class IssueNotif(Event):
         'pname',
         'proj_p',
         'iname',
-        'issue_p'
+        'task_p'
     ]
 
     @classmethod
-    def generate(cls, issue):
-        user = issue.creator
-        project = issue.project
+    def generate(cls, task):
+        user = task.creator
+        project = task.project
         notif = cls(
             time=datetime.datetime.utcnow(),
             uname=user.username,
@@ -106,52 +106,12 @@ class IssueNotif(Event):
             user_p=user.get_dur_url,
             pname=project.name,
             proj_p=project.get_dur_url,
-            iname=issue.title,
-            issue_p=issue.get_dur_url)
+            iname=task.title,
+            task_p=task.get_dur_url)
 
         notif.send_event((user, 'public_events'),
                          (project, 'public_events'),
                          project.subscribers,
-                         user.subscribers)
-
-
-class NewSolNotif(Event):
-    template = "events/new_sol.html"
-    standard_join = [
-        '__dont_mongo',
-        'time',
-        'template',
-        'uname',
-        'uavatar',
-        'user_p',
-        'pname',
-        'proj_p',
-        'iname',
-        'issue_p',
-        'sname',
-        'sol_p'
-    ]
-
-    @classmethod
-    def generate(cls, new_sol):
-        user = new_sol.creator
-        issue = new_sol.issue
-        project = new_sol.project
-        notif = cls(
-            time=datetime.datetime.utcnow(),
-            uname=user.username,
-            uavatar=user.avatar,
-            user_p=user.get_dur_url,
-            pname=project.name,
-            proj_p=project.get_dur_url,
-            iname=issue.title,
-            issue_p=issue.get_dur_url,
-            sname=new_sol.title,
-            sol_p=new_sol.get_dur_url)
-
-        notif.send_event((user, 'public_events'),
-                         (issue, 'public_events'),
-                         issue.subscribers,
                          user.subscribers)
 
 
@@ -185,15 +145,10 @@ class NewCommentNotif(Event):
             message=trunc(new_comm.message))
 
 
-        if parent.type == 'Issue':
-            # potentially add notifications to the project
-            notif.send_event((user, 'public_events'),
-                             parent.subscribers,
-                             user.subscribers)
-        elif parent.type == 'Solution':
-            notif.send_event((user, 'public_events'),
-                             parent.subscribers,
-                             user.subscribers)
+        # potentially add notifications to the project
+        notif.send_event((user, 'public_events'),
+                         parent.subscribers,
+                         user.subscribers)
 
 
 class NewProjNotif(Event):

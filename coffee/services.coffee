@@ -1,6 +1,6 @@
 mainServices = angular.module("mainServices", ["ngResource"])
-mainServices.factory("IssueService", ($resource) ->
-  $resource "{{ api_path }}issue", {},
+mainServices.factory("TaskService", ($resource) ->
+  $resource "{{ api_path }}task", {},
     update:
       method: "PUT"
       timeout: 10000

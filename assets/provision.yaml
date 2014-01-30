@@ -7,16 +7,13 @@ projects:
       subscribers:
           - crowdlink
           - scrappy
-      issues:
+      tasks:
           - title: Graphing of Improvement popularity
             desc: |
                 Generate simple d3 graphs that show how many votes an
                 Improvement has recieved since its creation. Current thought
                 was a on day to day basis.
             key: pop
-            solutions:
-                - title: Testing
-                  desc: This is a simple test
             comments:
                 - message: This is a simple test message
                   creator: scrappy
@@ -70,14 +67,11 @@ projects:
           - velma
           - shaggy
           - daphne
-      issues:
+      tasks:
           - title: Nowhere to Hyde
             desc: |
                 Who is this guy?
             key: pop
-            solutions:
-                - title: It could be Dr. Jekyll
-                  desc: This is a simple test
             comments:
                 - message: That seems unlikely, Dr. Jekyll is a nice guy!
                   creator: scrappy

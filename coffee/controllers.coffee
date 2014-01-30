@@ -32,8 +32,8 @@ parentFormController = ($scope) ->
         $scope.errors = ["Unkown error interacting with server", ]
 
 # parentEditController ========================================================
-parentEditController = ($scope, $rootScope, $timeout, IssueService,
-ProjectService, SolutionService, UserService) ->
+parentEditController = ($scope, $rootScope, $timeout, TaskService,
+ProjectService, UserService) ->
 
   $scope.toggle = (s) ->
     $scope.$eval("prev.#{s} = #{s}; editing.#{s} = !editing.#{s}")
@@ -65,12 +65,10 @@ ProjectService, SolutionService, UserService) ->
 
     # determine the service to use to save
     cls = object._cls
-    if cls == 'Issue'
-      service = IssueService
+    if cls == 'Task'
+      service = TaskService
     else if cls == 'Project'
       service = ProjectService
-    else if cls == 'Solution'
-      service = SolutionService
     else if cls == 'User'
       service = UserService
 
@@ -248,46 +246,9 @@ mainControllers.controller('rootController',
   )
 )
 
-# SolutionController ==========================================================
-mainControllers.controller('solutionController',
-  ($scope, $routeParams, $rootScope, $injector, solution, $timeout)->
-
-    $injector.invoke(parentEditController, this, {$scope: $scope})
-    $scope.sol = solution.objects[0]
-    $scope.prev =
-      sol: $.extend({}, solution.objects[0])
-    $scope.editing =
-      sol:
-        title: false
-        desc: false
-    $scope.saving =
-      sol:
-        title: false
-        desc: false
-
-    $scope.build_data = (frag) ->
-      data =
-        id: $scope.sol.id
-      if frag == 'title'
-        data.title = $scope.sol.title
-      if frag == 'desc'
-        data.desc = $scope.sol.desc
-
-      return data
-
-    $scope.$watch('sol.title', (val) ->
-      if val
-        $rootScope.title =
-          "Solution #{$scope.sol.title} for Issues #{$scope.sol.issue.title}"
-      else
-        $rootScope.title = "Solution"
-    )
-
-)
-
-# IssueController =============================================================
-mainControllers.controller('issueController',
-($scope, $routeParams, $rootScope, issue, $injector, $timeout, CommentService, $location, $anchorScroll) ->
+# TaskController =============================================================
+mainControllers.controller('taskController',
+($scope, $routeParams, $rootScope, task, $injector, $timeout, CommentService, $location, $anchorScroll) ->
 
   $scope.toggle_comments = (s) ->
     $scope.$eval("view_comments.#{s} = !view_comments.#{s}")
@@ -301,40 +262,28 @@ mainControllers.controller('issueController',
     $location.hash old
 
   $injector.invoke(parentEditController, this, {$scope: $scope})
-  $scope.issue = issue.objects[0]
+  $scope.task = task.objects[0]
   $scope.prev =
-    issue: $.extend({}, issue.objects[0])
+    task: $.extend({}, task.objects[0])
   $scope.editing =
-    issue:
+    task:
       title: false
       desc: false
-      solutions: []
 
   $scope.saving =
-    issue:
+    task:
       title: false
       desc: false
       status: false
       vote_status: false
       subscribed: false
       report_status: false
-      solutions: []
 
-  for solution in $scope.issue.solutions
-    $scope.editing.issue.solutions.push(
-      desc: false
-      title: false
-    )
-    $scope.saving.issue.solutions.push(
-      desc: false
-      title: false
-    )
-
-  $scope.$watch('issue.title',(val) ->
+  $scope.$watch('task.title',(val) ->
     if val
-      $rootScope.title = "Issue '" + $scope.issue.title + "'"
+      $rootScope.title = "Task '" + $scope.task.title + "'"
     else
-      $rootScope.title = "Issue"
+      $rootScope.title = "Task"
   )
 
   $scope.comment = (message, object) ->
@@ -352,13 +301,13 @@ mainControllers.controller('issueController',
 
   $scope.build_data = (frag) ->
     data =
-      id: $scope.issue.id
+      id: $scope.task.id
     if frag == 'title'
-      data.title = $scope.issue.title
+      data.title = $scope.task.title
     if frag == 'desc'
-      data.desc = $scope.issue.desc
+      data.desc = $scope.task.desc
     if frag == 'open'
-      data.open = $scope.issue.open
+      data.open = $scope.task.open
 
     return data
 )
@@ -418,12 +367,12 @@ mainControllers.controller('projectController',
       vote_status: false
       name: false
 
-  $scope.vote = (issue) ->
-    issue.vote_status = !issue.vote_status
-    if issue.vote_status
-      issue.votes += 1
+  $scope.vote = (task) ->
+    task.vote_status = !task.vote_status
+    if task.vote_status
+      task.votes += 1
     else
-      issue.votes -= 1
+      task.votes -= 1
 
   $scope.build_data = (frag) ->
     data =
@@ -586,7 +535,7 @@ mainControllers.controller('oauthSignupController',
     for mail in providerData.data.emails
       if mail.verified
         $scope.primary = mail.email
-    console.log(providerData)
+
     if providerData.data.emails.length == 0
       $scope.emailRequired = true
     else
@@ -696,56 +645,28 @@ mainControllers.controller('newProjController',
     , $scope.error_report)
 )
 
-# newIssueController ==========================================================
-mainControllers.controller('newIssueController',
-($scope, $rootScope, $routeParams, $location, $injector, issues, project,
-IssueService)->
+# newTaskController ==========================================================
+mainControllers.controller('newTaskController',
+($scope, $rootScope, $routeParams, $location, $injector, tasks, project,
+TaskService)->
 
   $injector.invoke(parentFormController, this, {$scope: $scope})
-  $scope.issues = issues['objects']
+  $scope.tasks = tasks['objects']
   $scope.project = project['objects'][0]
-  $rootScope.title = "New Issue"
+  $rootScope.title = "New Task"
 
   $scope.submit = ->
     $scope.error_header = ""
     $scope.errors = []
-    IssueService.create(
+    TaskService.create(
       project_url_key: $routeParams.url_key
       project_owner_username: $routeParams.username
       desc: $scope.description
-      title: $scope.issue_title
+      title: $scope.task_title
     ,(value) ->
       if 'success' of value and value.success
-        issue = value.objects[0]
-        $location.path(issue.get_abs_url)
-      else
-        $scope.error_report(value)
-    , $scope.error_report)
-)
-
-# newSolutionController =======================================================
-mainControllers.controller('newSolutionController',
-($scope, $rootScope, $routeParams, $location, $injector, solutions, project, SolutionService)->
-
-  $injector.invoke(parentFormController, this, {$scope: $scope})
-  $scope.sols = solutions.objects
-  $scope.project = project['objects'][0]
-  $scope.issue = $routeParams.url_key
-  $rootScope.title = "New Solution"
-
-  $scope.submit = ->
-    $scope.error_header = ""
-    $scope.errors = []
-    SolutionService.create(
-      project_owner_username: $routeParams.username
-      project_url_key: $routeParams.purl_key
-      issue_url_key: $routeParams.url_key
-      desc: $scope.description
-      title: $scope.sol_title
-    ,(value) ->
-      if 'success' of value and value.success
-        sol = value.objects[0]
-        $location.path(sol.get_abs_url)
+        task = value.objects[0]
+        $location.path(task.get_abs_url)
       else
         $scope.error_report(value)
     , $scope.error_report)
