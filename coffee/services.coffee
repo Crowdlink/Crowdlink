@@ -30,7 +30,7 @@ mainServices.factory("SolutionService", ($resource) ->
 mainServices.factory("UserService", ($resource) ->
   $resource "{{ api_path }}user", {},
     action:
-      method: "PATCH"
+      method: "POST"
       timeout: 10000
       isArray: false
     create:
@@ -54,7 +54,7 @@ mainServices.factory("ProjectService", ($resource) ->
       method: "PUT"
       timeout: 10000
     action:
-      method: "PATCH"
+      method: "POST"
       timeout: 10000
     create:
       method: "POST"

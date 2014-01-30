@@ -104,8 +104,6 @@ project:
     noactive_user:
         inherit: anonymous
         edit: subscribed
-    usernameless:
-        inherit: noactive_user
     user:
         inherit: noactive_user
         edit:

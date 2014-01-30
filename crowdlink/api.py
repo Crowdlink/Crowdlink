@@ -33,6 +33,7 @@ def api_error_handler(exc):
         msg = str(e)
         end_user = e.end_user
         extra = e.extra
+        del extra['tb']
 
     # OAuth Exceptions
     except oauth.OAuthAlreadyLinked:

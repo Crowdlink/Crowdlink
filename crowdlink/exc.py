@@ -1,2 +1,0 @@
-class FundingException(Exception):
-    pass

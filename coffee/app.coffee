@@ -435,7 +435,7 @@ mainApp.directive "uniqueServerside",
       # everything is fine -> do nothing
       $http(
         url: '{{api_path}}' + attrs.uniqueServerside,
-        method: 'PATCH'
+        method: 'POST'
         data:
           value: elem.val()
           __action: 'check_taken'

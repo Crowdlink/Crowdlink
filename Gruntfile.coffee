@@ -115,7 +115,7 @@ module.exports = (grunt) ->
         stdout: true
         stderr: true
       reload:
-        command: 'uwsgi --stop uwsgi.pid; sleep 1.5; uwsgi --ini uwsgi.ini'
+        command: 'uwsgi --stop uwsgi.pid; sleep 1.5; uwsgi --ini uwsgi.ini; sleep 1; tail uwsgi.log'
       clean:
         command: 'find . -name "*.pyc" -delete; find . -name "*.swo" -delete; find . -name "*.swp" -delete; echo "" > uwsgi.log'
       flake8:
@@ -152,7 +152,7 @@ module.exports = (grunt) ->
         tasks: ['shell:proc_less']
       less:
         files: ['processed/less/**/*.less']
-        tasks: ['less:default']
+        tasks: ['less:default', 'cssmin:all']
       haml_pre:
         files: ['haml/**/*.haml']
         tasks: ['shell:proc_haml']
@@ -164,24 +164,37 @@ module.exports = (grunt) ->
         tasks: ['shell:proc_sass']
       compass:
         files: ['processed/scss/**/*.scss']
-        tasks: ['compass']
+        tasks: ['newer:compass', 'cssmin:all']
       dev_server:
-        files: ['**/*.py', '*.ini', '*.json']
+        files: ['crowdlink/**/*.py', 'crowdlink/acl.yaml']
         tasks: ['shell:reload']
+        options:
+          atBegin: true
+      config_file:
+        files: ['application.json']
+        tasks: ['shell:reload',
+                'shell:proc_sass',
+                'shell:proc_haml',
+                'shell:proc_less',
+                'shell:proc_coffee']
       coffee_pre:
         files: ['coffee/**/*.coffee']
         tasks: ['shell:proc_coffee']
       coffee:
         files: ['processed/coffee/**/*.coffee']
-        tasks: ['newer:coffee']
+        tasks: ['newer:coffee', 'uglify:all']
       email:
         files: ['processed/email/*.html']
         tasks: ['inlinecss:default']
       yaml:
-        files: ['assets/help/*.yaml']
+        files: ['assets/**/*.yaml']
         tasks: ['shell:compile_yaml']
       static:
-        files: ['static/**/*.css', 'static/**/*.html', 'static/**/*.js']
+        files: ['static/**/*.json',
+                'static/**/*.css',
+                'static/**/*.html',
+                'static/**/*.js',
+                'templates/**/*.html']
         options:
           livereload: true
 
