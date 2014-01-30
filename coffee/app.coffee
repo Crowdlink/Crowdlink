@@ -512,3 +512,25 @@ mainApp.directive "twitter", ->
     ),
       text: attr.text
       hashtags: 'crowdlink'
+
+isEmpty = (value) ->
+  angular.isUndefined(value) or value is "" or value is null or value isnt value
+
+mainApp.directive "ngMax", ->
+  restrict: "A"
+  require: "ngModel"
+  link: (scope, elem, attr, ctrl) ->
+    scope.$watch attr.ngMax, ->
+      ctrl.$setViewValue ctrl.$viewValue
+
+    maxValidator = (value) ->
+      max = scope.$eval(attr.ngMax) or Infinity
+      if not isEmpty(value) and value > max
+        ctrl.$setValidity "ngMax", false
+        value
+      else
+        ctrl.$setValidity "ngMax", true
+        value
+
+    ctrl.$parsers.push maxValidator
+    ctrl.$formatters.push maxValidator

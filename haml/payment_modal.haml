@@ -1,0 +1,63 @@
+.modal.fade{"role" => "dialog", "aria-labelledby" => "PaymentModalTitle"}
+  .modal-dialog{"ng-init" => "init()"}
+    .modal-content
+      .modal-header{style:"padding-bottom:0px;border-bottom:0px;"}
+        %button.close{"aria-hidden" => "true", "ng-click" => "close()", type: "button"} ×
+        %h4.modal-title{id: "PaymentModalTitle"}
+          %ul.nav.nav-tabs
+            %li{"ng-class" => "{true: 'active'}[payment_type=='pledge']"}
+              %a{"ng-click" => "change_payment_type('pledge')"} Pledge
+            %li{"ng-class" => "{true: 'active'}[payment_type=='donation']"}
+              %a{"ng-click" => "change_payment_type('donation')"} Donation
+      .modal-body
+        .row
+          .col-md-10.col-md-offset-1
+            %ul.nav.nav-pills.nav-justified
+              %li{"ng-repeat" => "range in ranges"}
+                %button.btn.btn-default.btn-large{"tooltip-placement" => "top",
+                "tooltip-html-unsafe" => "{[{ range['amount'] }]}", type: "button",
+                "ng-click" => "change_payment_amt(range['amount'])",
+                "ng-class" => "{true: 'active'}[payment_amt==range['amount']]"}
+                  %i.fa{"ng-class" => "range['icon']"}
+            %hr
+        .row
+          .col-md-5.col-md-offset-1
+            %form.form-horizontal.ng-pristine.ng-valid{method: "post", "ng-submit" => "submit()",
+            name: "form", novalidate: ""}
+              .form-group
+                %label
+                  %input{type: "checkbox"} Make anonymous
+              .form-group{"valid-class" => "form.amount"}
+                %input.form-control{name:"amount", placeholder:"Amount",
+                "ng-model" => "payment_amt",
+                required: "", type:"number", "ng-max" => "balance"}
+              .form-group
+                %button.btn.btn-info{name: "submit", "ng-click" => "submit()",
+                    "ng-disabled" => "!form.$valid", type: "submit"}
+                  Give!
+          .col-md-5.col-md-offset-1
+            .panel.panel-warning{style:"border-color:#faebcc;"}
+              .panel-heading{style:"background-color:#fcf8e3;border-color:#faebcc;border-bottom:1px solid transparent;"}
+                %h3.panel-title{style:"color:#8a6d3b"}
+                  Account
+              .panel-body
+                .row
+                  .col-md-8
+                    Current Balance:
+                  .col-md-4.text-right
+                    {[{ balance }]}
+                .row
+                  .col-md-8
+                    Payment Amount:
+                  .col-md-4.text-right
+                    {[{ payment_amt | number:2 }]}
+                    %hr{style:"margin-top:0px;margin-bottom:4px;border-color:#000;"}
+                .row
+                  .col-md-8
+                    Remaining Balance:
+                  .col-md-4.text-right{"ng-class" => "{true: 'red'}[(balance - payment_amt)<0]"}
+                    {[{ balance - payment_amt | number:2 }]}
+
+
+      .modal-footer
+        %button.btn.btn-info{"ng-click" => "close()"} Close

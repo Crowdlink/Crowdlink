@@ -61,6 +61,7 @@ module.exports = (grunt) ->
           # Modals
           "static/templates/help_modal.html": "processed/haml/help_modal.haml"
           "static/templates/confirm_modal.html": "processed/haml/confirm_modal.haml"
+          "static/templates/payment_modal.html": "processed/haml/payment_modal.haml"
           # Project tabs
           "static/templates/project.html": "processed/haml/project.haml"
           "static/templates/project/recent.html": "processed/haml/project/recent.haml"
@@ -134,7 +135,7 @@ module.exports = (grunt) ->
       proc_sass:
         command: './util/preprocess.py scss scss -v'
       compile_yaml:
-        command: 'yaml2json ./assets/help/faq.yaml > ./static/faq.json'
+        command: 'yaml2json ./assets/help/faq.yaml > ./static/faq.json && yaml2json ./assets/payment/ranges.yaml > ./static/payment_ranges.json'
 
     inlinecss:
       default:
@@ -184,7 +185,7 @@ module.exports = (grunt) ->
         files: ['processed/email/*.html']
         tasks: ['inlinecss:default']
       yaml:
-        files: ['assets/**/*.yaml']
+        files: ['assets/help/*.yaml', 'assets/payment/*.yaml']
         tasks: ['shell:compile_yaml']
       static:
         files: ['static/**/*.json',
