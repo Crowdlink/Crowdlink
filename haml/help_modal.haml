@@ -1,22 +1,19 @@
-.modal.fade{"role" => "dialog", "aria-labelledby" => "HelpModalTitle"}
-  .modal-dialog{"ng-init" => "init()"}
-    .modal-content
-      .modal-header
-        %button.close{"aria-hidden" => "true", "ng-click" => "close()", type: "button"} ×
-        %h4.modal-title{id: "HelpModalTitle"} FAQ
-      .modal-body.row
-        .col-md-4
-          %span
-            %div{"ng-repeat" => "cat in cats"}
-              %h5 {[{ cat['name'] }]}
-              %ul.nav.nav-pills.nav-stacked
-                %li{"ng-class" => "{true: 'active'}[curr_topic==topics[topic]]", "ng-repeat" => "topic in cat['keys']"}
-                  %a{"ng-click" => "update(topics[topic])"} {[{ topics[topic]['title'] }]}
-        .col-md-8
-          %span
-            %h3 {[{ curr_topic['title'] }]}
-            %hr
-            %div.body-text{"ng-bind-html" => "curr_topic['body']"}
+.modal-header{"ng-init" => "init()"}
+  %button.close{"aria-hidden" => "true", "ng-click" => "close()", type: "button"} ×
+  %h4.modal-title{id: "HelpModalTitle"} FAQ
+.modal-body.row
+  .col-md-4
+    %span
+      %div{"ng-repeat" => "cat in cats"}
+        %h5 {[{ cat['name'] }]}
+        %ul.nav.nav-pills.nav-stacked
+          %li{"ng-class" => "{true: 'active'}[curr_topic==topics[topic]]", "ng-repeat" => "topic in cat['keys']"}
+            %a{"ng-click" => "update(topics[topic])"} {[{ topics[topic]['title'] }]}
+  .col-md-8
+    %span
+      %h3 {[{ curr_topic['title'] }]}
+      %hr
+      %div.body-text{"ng-bind-html" => "curr_topic['body']"}
 
-      .modal-footer
-        %button.btn.btn-info{"ng-click" => "close()"} Close
+.modal-footer
+  %button.btn.btn-info{"ng-click" => "close()"} Close

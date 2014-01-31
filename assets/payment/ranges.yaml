@@ -1,0 +1,13 @@
+ranges:
+    - icon: fa-thumbs-up
+      amount: 0.25
+    - icon: fa-coffee
+      amount: 1.00
+    - icon: fa-beer
+      amount: 5.00
+    - icon: fa-ticket
+      amount: 10.00
+    - icon: fa-star
+      amount: 25.00
+    - icon: fa-rocket
+      amount: 100.00
