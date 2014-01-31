@@ -1,10 +1,8 @@
-.modal-dialog
-  .modal-content
-    .modal-header
-      %button.close{"aria-hidden" => "true", "ng-click" => "$dismiss()", type: "button"} ×
-      %h4.modal-title {[{ title }]}
-      %br
-      .pull-right
-        %button.btn.btn-primary{"ng-click" => "$close()"} Confirm
-        %button.btn.btn-danger{"ng-click" => "$dismiss()"} Cancel
-      .clearfix
+.modal-header
+  %button.close{"aria-hidden" => "true", "ng-click" => "$dismiss()", type: "button"} ×
+  %h4.modal-title {[{ title }]}
+  %br
+  .pull-right
+    %button.btn.btn-primary{"ng-click" => "$close()"} Confirm
+    %button.btn.btn-danger{"ng-click" => "$dismiss()"} Cancel
+  .clearfix
