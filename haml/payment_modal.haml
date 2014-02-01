@@ -11,13 +11,12 @@
     .col-md-10.col-md-offset-1
       %ul.nav.nav-pills.nav-justified
         %li{"ng-repeat" => "range in ranges"}
-          %button.btn.btn-default.btn-large{"tooltip-placement" => "top",
+          %button.btn.btn-default.btn-lg{"tooltip-placement" => "top",
           "tooltip-html-unsafe" => "{[{ range['amount'] }]}", type: "button",
           "tooltip-animation" => "false",
-          "tooltip-popup-delay" => "0",
           "ng-click" => "change_payment_amt(range['amount'])",
           "ng-class" => "{true: 'active'}[payment_amt==range['amount']]"}
-            %i.fa{"ng-class" => "range['icon']"}
+            %i.fa.fa-lg{"ng-class" => "range['icon']"}
       %hr
   .row
     .col-md-5.col-md-offset-1

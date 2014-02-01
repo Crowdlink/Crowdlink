@@ -101,13 +101,6 @@ module.exports = (grunt) ->
           sassDir: ["processed/scss"]
           cssDir: ["static/css"]
 
-    less:
-      default:
-        options:
-          paths: ["less"]
-        files:
-          "static/css/bootstrap.css": "processed/less/bootstrap/bootstrap.less"
-
     shell:
       options:
         stdout: true
@@ -214,7 +207,6 @@ module.exports = (grunt) ->
                     "shell:proc_sass",
                     "shell:compile_yaml",
                     "shell:compile_yaml",
-                    "less:default",
                     "haml:default",
                     "inlinecss:default",
                     "compass:default",

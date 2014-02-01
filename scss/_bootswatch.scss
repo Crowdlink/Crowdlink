@@ -2,24 +2,24 @@
 // Bootswatch
 // -----------------------------------------------------
 
-.btn-shadow(@color) {
-	#gradient > .vertical-three-colors(lighten(@color, 8%), @color, 60%, darken(@color, 4%));
+@mixin btn-shadow($color) {
+    @include gradient-vertical-three-colors(lighten($color, 8%), $color, 60%, darken($color, 4%));
 	filter: none;
-	border-bottom: 1px solid darken(@color, 10%);
+	border-bottom: 1px solid darken($color, 10%);
 }
 
 // Wells
 .well {
-  .box-shadow(0px 1px 5px 1px lighten(@well-bg, 2%));
-  border-top: 1px solid darken(@well-bg, 20%);
+  box-shadow: 0px 1px 5px 1px lighten($well-bg, 2%);
+  border-top: 1px solid darken($well-bg, 20%);
 }
 
 // Navbar =====================================================================
 
 .navbar {
-  border-bottom: 2px solid @gray-lighter;
+  border-bottom: 2px solid $gray-lighter;
   font-size: 18px;
-  font-family: @font-family-sans-serif;
+  font-family: $font-family-sans-serif;
   font-weight:bold;
   color: #000;
 }
@@ -47,6 +47,10 @@
   text-transform: uppercase;
 }
 
+.breadcrumb {
+  padding: 15px 15px 8px 0px;
+}
+
 // Buttons ====================================================================
 .btn {
 
@@ -59,52 +63,105 @@
 
 .btn-default {
 
-  .btn-shadow(@btn-default-bg);
+  @include btn-shadow($btn-default-bg);
 
   .caret {
-    border-top-color: @text-color;
+    border-top-color: $text-color;
   }
 }
 
 .btn-default {
-  .btn-shadow(@btn-default-bg);
+  @include btn-shadow($btn-default-bg);
 }
 
 .btn-primary {
-  .btn-shadow(@btn-primary-bg);
+  @include btn-shadow($btn-primary-bg);
 }
 
 .btn-success {
-  .btn-shadow(@btn-success-bg);
+  @include btn-shadow($btn-success-bg);
 }
 
 .btn-info {
-  .btn-shadow(@btn-info-bg);
+  @include btn-shadow($btn-info-bg);
 }
 
 .btn-warning {
-  .btn-shadow(@btn-warning-bg);
+  @include btn-shadow($btn-warning-bg);
 }
 
 .btn-danger {
-  .btn-shadow(@btn-danger-bg);
+  @include btn-shadow($btn-danger-bg);
+}
+
+.btn-group-vertical {
+  > .btn {
+    text-align: left;
+  }
 }
 
 // Typography =================================================================
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: @font-family-sans-serif;
+  font-family: $font-family-sans-serif;
   font-weight: 400;
   color: #000;
 }
 
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  small {
+    margin-left:8px;
+  }
+}
+
 pre {
-  font-family: @font-family-base;
+  font-family: $font-family-base;
 }
 
 // Tables =====================================================================
 
+.table {
+  thead,
+  tbody,
+  tfoot {
+    > tr {
+      > th,
+      > td {
+        vertical-align: middle;
+      }
+    }
+  }
+}
+
+
+// Generate the contextual variants
+@include table-row-variant(success, lighten($state-success-bg, 25%));
+@include table-row-variant(danger, lighten($state-danger-bg, 25%));
+@include table-row-variant(warning, lighten($state-warning-bg, 25%));
+
 // Forms ======================================================================
+
+.form-control {
+  @include box-shadow(0 0px 0px);
+}
+
+// Warning
+.has-warning {
+  @include form-control-validation($state-warning-text, $state-warning-border, $state-warning-bg);
+}
+// Error
+.has-error {
+  @include form-control-validation($state-danger-text, $state-danger-border, $state-danger-bg);
+}
+// Success
+.has-success {
+  @include form-control-validation($state-success-text, $state-success-border, $state-success-bg);
+}
+
+.help-block {
+  display: none; // account for any element using help-block
+}
 
 
 // Navs =======================================================================
@@ -169,7 +226,7 @@ pre {
 .jumbotron {
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: @font-family-sans-serif;
+    font-family: $font-family-sans-serif;
     font-weight: 400;
     color: #000;
   }

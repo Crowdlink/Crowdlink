@@ -8,6 +8,7 @@
   "private": true,
   "dependencies": {
     "noty": "~2.1.2",
-    "fuse.js": "*"
+    "fuse.js": "*",
+    "bootstrap-sass": "git://github.com/twbs/bootstrap-sass.git#v3.1.0"
   }
 }
