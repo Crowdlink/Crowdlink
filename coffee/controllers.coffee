@@ -825,17 +825,12 @@ mainControllers.controller('helpModalController', ($sce, $scope, $modalInstance,
 mainControllers.controller('paymentModalController', ($sce, $scope, $modalInstance, $rootScope, $http, payment_type) ->
   $scope.init = () ->
     $rootScope.loading = true
-    $http.get('{{ static_path }}payment_ranges.json').success((data) ->
-      $scope.ranges = data['ranges']
-      $scope.payment_type = payment_type
-      $scope.payment_amt = 1.0
-      $scope.balance = 8.73
-    )
+    $scope.payment_type = payment_type
+    $scope.balance = 8.73
+    $scope.payment_amt = 0.00
     $rootScope.loading = false
   $scope.close = ->
     $modalInstance.dismiss "close"
   $scope.change_payment_type = (new_payment_type) ->
     $scope.payment_type = new_payment_type
-  $scope.change_payment_amt = (new_payment_amt) ->
-    $scope.payment_amt = new_payment_amt
 )

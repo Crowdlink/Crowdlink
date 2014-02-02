@@ -159,10 +159,6 @@ pre {
   @include form-control-validation($state-success-text, $state-success-border, $state-success-bg);
 }
 
-.help-block {
-  display: none; // account for any element using help-block
-}
-
 
 // Navs =======================================================================
 
@@ -244,7 +240,7 @@ pre {
 
 @media screen and (min-width: 768px) {
   .modal-dialog {
-    width: 800px;
+    width: 600px;
   }
 }
 

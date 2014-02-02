@@ -1,61 +1,78 @@
-.modal-header{style:"padding-bottom:0px;border-bottom:0px;", "ng-init" => "init()"}
+{% set buttons = [('0.25', 'fa-thumbs-up'), ('1.00', 'fa-coffee'), ('5.00', 'fa-beer'), ('10.00', 'fa-ticket'), ('25.00', 'fa-star'), ('100.00', 'fa-rocket')] %}
+.modal-header{style:"", "ng-init" => "init()", "ng-class" => "{true: 'modal-pledge'}[payment_type=='pledge']"}
   %button.close{"aria-hidden" => "true", "ng-click" => "close()", type: "button"} ×
   %h4.modal-title{id: "PaymentModalTitle"}
-    %ul.nav.nav-tabs.modal-nav
-      %li{"ng-class" => "{true: 'active'}[payment_type=='pledge']"}
-        %a{"ng-click" => "change_payment_type('pledge')"} Pledge
-      %li{"ng-class" => "{true: 'active'}[payment_type=='donation']"}
-        %a{"ng-click" => "change_payment_type('donation')"} Donation
-.modal-body
+    %div.text-center.payment-modal-title{"ng-show" => "payment_type=='pledge'"}
+      %span.fa-stack.fa-lg
+        %i.fa.fa-circle.fa-stack-2x{style:"color:#3A9C4A;"}
+        %i.fa.fa-flag.fa-stack-1x
+      %span.payment-type Make a Pledge
+    %div.text-center.payment-modal-title{"ng-show" => "payment_type=='donation'"}
+      %span.fa-stack.fa-lg
+        %i.fa.fa-circle.fa-stack-2x{style:"color:#3A9C4A;"}
+        %i.fa.fa-flag.fa-stack-1x
+      %span.payment-type Make a Donation
+.modal-body.modal-payment
   .row
     .col-md-10.col-md-offset-1
       %ul.nav.nav-pills.nav-justified
-        %li{"ng-repeat" => "range in ranges"}
-          %button.btn.btn-default.btn-lg{"tooltip-placement" => "top",
-          "tooltip-html-unsafe" => "{[{ range['amount'] }]}", type: "button",
-          "tooltip-animation" => "false",
-          "ng-click" => "change_payment_amt(range['amount'])",
-          "ng-class" => "{true: 'active'}[payment_amt==range['amount']]"}
-            %i.fa.fa-lg{"ng-class" => "range['icon']"}
+      {% for amount, icon in buttons %}
+        %li
+          %button.btn.btn-default{"buttoncontrol" => "", "amount" => "{{ amount }}", "ng-model" => "payment_amt"}
+            %i.fa.{{ icon }}
+      {% endfor %}
+        %li
+          %button.btn.btn-default{"buttoncontrol" => "", "amount" => "{[{ balance }]}", "ng-model" => "payment_amt"}
+            All
       %hr
   .row
-    .col-md-5.col-md-offset-1
-      %form.form-horizontal.ng-pristine.ng-valid{method: "post", "ng-submit" => "submit()",
-      name: "form", novalidate: ""}
-        .form-group
-          %label
-            %input{type: "checkbox"} Make anonymous
-        .form-group{"valid-class" => "form.amount"}
-          %input.form-control{name:"amount", placeholder:"Amount",
-          "ng-model" => "payment_amt",
-          required: "", type:"number", "ng-max" => "balance"}
-        .form-group
-          %button.btn.btn-info{name: "submit", "ng-click" => "submit()",
-              "ng-disabled" => "!form.$valid", type: "submit"}
-            Give!
-    .col-md-5.col-md-offset-1
-      .panel.panel-warning{style:"border-color:#faebcc;"}
-        .panel-heading{style:"background-color:#fcf8e3;border-color:#faebcc;border-bottom:1px solid transparent;"}
-          %h3.panel-title{style:"color:#8a6d3b"}
-            Account
-        .panel-body
-          .row
-            .col-md-8
-              Current Balance:
-            .col-md-4.text-right
-              {[{ balance }]}
-          .row
-            .col-md-8
-              Payment Amount:
-            .col-md-4.text-right
-              {[{ payment_amt | number:2 }]}
-              %hr{style:"margin-top:0px;margin-bottom:4px;border-color:#000;"}
-          .row
-            .col-md-8
-              Remaining Balance:
-            .col-md-4.text-right{"ng-class" => "{true: 'red'}[(balance - payment_amt)<0]"}
-              {[{ balance - payment_amt | number:2 }]}
+    .col-md-10.col-md-offset-1
+      %form.form-horizontal{name: "f", novalidate: ""}
+
+        .form-group.text-muted
+          %label.control-label.col-sm-3.no-gutter Balance:
+          .col-sm-7.col-sm-offset-2
+            %span.currency
+              $
+            %div{style:"padding-top:10px;padding-left:15px;"}
+              {[{ balance | currency:'' }]} available
 
 
-.modal-footer
-  %button.btn.btn-info{"ng-click" => "close()"} Close
+        .form-group.has-feedback{"valid-class" => "f.amount", style:"margin-bottom:0;"}
+          %label.control-label.col-sm-3.no-gutter Amount:
+          .col-sm-7.col-sm-offset-2
+            %span.currency
+              $
+            %input.form-control{name:"amount", placeholder:"Balance: {[{ balance | currency:'$' }]}",
+            "ng-model" => "payment_amt", required: "", type: "number", "ng-max" => "balance", "ng-min" => "0.01",
+            "format-float" => "2", "ng-blur" => "tmp()"}
+            %i.fa.fa-check.fa-lg.form-control-feedback{"ng-show" => "f.amount.$dirty && f.amount.$valid"}
+            %i.fa.fa-times.fa-lg.form-control-feedback{"ng-show" => "f.amount.$dirty && f.amount.$invalid"}
+            .help-block{"ng-show" => "f.amount.$dirty && f.amount.$error.required"}
+              Must input a number
+            .help-block{"ng-show" => "f.amount.$dirty && f.amount.$error.ngMax"}
+              Only {[{ balance | currency:'$' }]} available
+            .help-block{"ng-show" => "f.amount.$dirty && f.amount.$error.ngMin"}
+              Minimum is $0.01
+            -#%p.text-right.text-muted{"ng-show" => "f.amount.$dirty && f.amount.$valid", style:"padding-top:4px;margin-bottom:0px;font-size:14px;"}
+            -#  {[{ balance - payment_amt | currency:"$" }]} remaining
+
+        .form-group.text-muted
+          %label.control-label.col-sm-3.no-gutter New balance:
+          .col-sm-7.col-sm-offset-2
+            %span.currency
+              $
+            %div{style:"padding-top:10px;padding-left:15px;"}
+              {[{ balance - payment_amt | currency:'' }]} remaining
+
+        .form-group
+          .col-sm-7.col-sm-offset-5
+            .checkbox
+              %label
+                %input{type: "checkbox"} Make anonymous
+
+.modal-footer.modal-payment
+  %button.btn.btn-info{name: "submit", "ng-click" => "submit()",
+      "ng-disabled" => "!f.$valid", type: "submit"}
+    Give!
+  %button.btn.btn-default{"ng-click" => "close()"} Close

@@ -522,8 +522,10 @@ mainApp.directive "ngMax", ->
   link: (scope, elem, attr, ctrl) ->
     scope.$watch attr.ngMax, ->
       ctrl.$setViewValue ctrl.$viewValue
+      ctrl.$setPristine()
 
     maxValidator = (value) ->
+      return value if not ctrl.$dirty
       max = scope.$eval(attr.ngMax) or Infinity
       if not isEmpty(value) and value > max
         ctrl.$setValidity "ngMax", false
@@ -534,3 +536,54 @@ mainApp.directive "ngMax", ->
 
     ctrl.$parsers.push maxValidator
     ctrl.$formatters.push maxValidator
+
+mainApp.directive "ngMin", ->
+  restrict: "A"
+  require: "ngModel"
+  link: (scope, elem, attr, ctrl) ->
+    scope.$watch attr.ngMin, ->
+      ctrl.$setViewValue ctrl.$viewValue
+      ctrl.$setPristine()
+
+    minValidator = (value) ->
+      return value if not ctrl.$dirty
+      min = scope.$eval(attr.ngMin) or Infinity
+      if not isEmpty(value) and value < min
+        ctrl.$setValidity "ngMin", false
+        value
+      else
+        ctrl.$setValidity "ngMin", true
+        value
+
+    ctrl.$parsers.push minValidator
+    ctrl.$formatters.push minValidator
+
+mainApp.directive "buttoncontrol", ->
+  restrict: "A" # only activate on element attribute
+  require: "ngModel"
+  link: (scope, element, attrs, ngModel) ->
+
+    scope.$watch 'payment_amt', (payment_amt) ->
+      if payment_amt == (parseFloat(attrs.amount))
+        $(element).addClass "active"
+      else
+        $(element).removeClass "active"
+
+    element.bind "click", ->
+      scope.payment_amt = parseFloat(attrs.amount)
+      scope.f.amount.$dirty = true
+
+mainApp.directive "formatFloat", ->
+  require: "^ngModel"
+  priority: -100
+  link: (scope, element, attrs, ngModelCtrl) ->
+    ngModelCtrl.$formatters.push((viewValue) ->
+      if viewValue
+        return parseFloat(viewValue).toFixed(attrs.formatFloat)
+      else
+        return viewValue
+    )
+    scope.$watch 'payment_amt', (payment_amt) ->
+      after = parseFloat(parseFloat(payment_amt).toFixed(attrs.formatFloat))
+      if payment_amt != after
+        scope.payment_amt = after

@@ -128,7 +128,7 @@ module.exports = (grunt) ->
       proc_sass:
         command: './util/preprocess.py scss scss -v'
       compile_yaml:
-        command: 'yaml2json ./assets/help/faq.yaml > ./static/faq.json && yaml2json ./assets/payment/ranges.yaml > ./static/payment_ranges.json'
+        command: 'yaml2json ./assets/help/faq.yaml > ./static/faq.json'
 
     inlinecss:
       default:
@@ -155,7 +155,7 @@ module.exports = (grunt) ->
         tasks: ['shell:proc_sass']
       compass:
         files: ['processed/scss/**/*.scss']
-        tasks: ['newer:compass', 'cssmin:all']
+        tasks: ['compass', 'cssmin:all']
       dev_server:
         files: ['crowdlink/**/*.py', 'crowdlink/acl.yaml']
         tasks: ['shell:reload']
@@ -178,7 +178,7 @@ module.exports = (grunt) ->
         files: ['processed/email/*.html']
         tasks: ['inlinecss:default']
       yaml:
-        files: ['assets/help/*.yaml', 'assets/payment/*.yaml']
+        files: ['assets/help/*.yaml']
         tasks: ['shell:compile_yaml']
       static:
         files: ['static/**/*.json',
@@ -189,7 +189,6 @@ module.exports = (grunt) ->
         options:
           livereload: true
 
-  grunt.loadNpmTasks('grunt-contrib-less')    # compiled bootstrap
   grunt.loadNpmTasks('grunt-contrib-watch')   # watches for changes
   grunt.loadNpmTasks('grunt-contrib-haml')    # compiles our haml
   grunt.loadNpmTasks('grunt-contrib-compass') # compiles our compass
@@ -202,7 +201,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-newer')           # only compiles newer files
 
   common_actions = ["shell:proc_coffee",
-                    "shell:proc_less",
                     "shell:proc_haml",
                     "shell:proc_sass",
                     "shell:compile_yaml",
