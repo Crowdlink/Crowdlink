@@ -1,15 +1,15 @@
-%div{style:"background-color:#EEE;"}
+%div
   .container
     .row{style:"padding-top:15px;"}
-      .col-md-2.text-center.no-gutter
-        %img.project-logo{src: "{{ static_path }}img/logo.svg"}
-      .col-md-10
-        .row
-          .col-md-7
+      .col-md-12
+        .col-md-7
+          %div.pull-left
+            %img.project-logo{src: "{{ static_path }}img/logo.svg"}
+          %div.pull-left{style:"padding-left:10px;"}
             %h2{style:"margin-top:0px;"}
               %span{"ng-show" => "project.user_acl.edit_name"}
                 %span{"ng-show" => "editing.project.name"}
-                  .input-group
+                  .input-group{style:"max-width:400px;"}
                     %input.form-control{"ng-model" => "project.name", type: "text"}/
                     %span.btn.btn-info.input-group-addon{"ng-click" => "save('project.name')"}
                       %i.fa.fa-save{"ng-hide" => "saving.project.name"}
@@ -21,29 +21,35 @@
                   %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('project.name')"}
               %span{"ng-hide" => "project.user_acl.edit_name"}
                 {[{ project.name }]}
-            %h5
-              %small{style:"margin-left:0px;"}
-                Maintained by
-                %img{src:"\{[{ project.owner.avatar }]}&s=20"}
-                %a{:href => "/{[{ project.owner_username }]}"} {[{ project.owner_username }]}
-          .col-md-5.text-right
-            .project-buttons
-              %a.btn.button.btn-default{"toggle-button" => "project.subscribed",
-                on: "active", off: "",
-                "ng-click" => "swap_save('project.subscribed')"}
-                %i{on: "fa-eye", off: "fa-eye"}
-                .in-button.hidden-xs.hidden-sm.hidden-md{on: "Watch", off: "Watch"}
-              %a.btn.button.btn-default{"toggle-button" => "project.vote_status",
-                on: "active", off: "",
-                "ng-click" => "swap_save('project.vote_status')"}
-                %i{on: "fa-thumbs-up", off: "fa-thumbs-up"}
-                .in-button.hidden-xs.hidden-sm.hidden-md{off: "Props", on: "Props"}
-              %a.button.btn.btn-default{:href => ""}
-                %i.fa.fa-large.fa-heart
-                .in-button.hidden-xs.hidden-sm.hidden-md Donate
-        .row
-          .col-md-12
-            {[{ project.desc }]}
+            %h4
+              {[{ project.desc }]}
+
+        %span.col-md-5.text-right
+          .project-buttons
+            %a.btn.button.btn-default{"toggle-button" => "project.subscribed",
+              on: "active", off: "",
+              "ng-click" => "swap_save('project.subscribed')"}
+              %i{on: "fa-eye", off: "fa-eye"}
+              .in-button.hidden-xs.hidden-sm{on: "Watch", off: "Watch"}
+            %a.btn.button.btn-default{"toggle-button" => "project.vote_status",
+              on: "active", off: "",
+              "ng-click" => "swap_save('project.vote_status')"}
+              %i{on: "fa-thumbs-up", off: "fa-thumbs-up"}
+              .in-button.hidden-xs.hidden-sm{off: "Props", on: "Props"}
+            %a.button.btn.btn-default{:href => ""}
+              %i.fa.fa-large.fa-heart
+              .in-button.hidden-xs.hidden-sm Donate
+          %h4
+            %small{style:"margin-left:0px;"}
+              Maintained by
+              %img{src:"\{[{ project.owner.avatar }]}&s=20"}
+              %a{:href => "/{[{ project.owner_username }]}"} {[{ project.owner_username }]}
+
+
+
+
+
+
 
     %br
     .row
@@ -65,8 +71,6 @@
             %i.fa.fa-gear
             Project Settings
 
-%div{style:"box-shadow:0px -2px 0px #DDD;background-color:#fff;"}
-  .container
-    .row.inner-pad.tab-content{"ng-include" => "'{{template_path}}project/' + view + '.html'"}
-    %br
-%hr{style:"margin:0px;box-shadow:2px 2px 2px #DDD;"}
+.container
+  .row.main-content
+    .tab-content{"ng-include" => "'{{template_path}}project/' + view + '.html'"}

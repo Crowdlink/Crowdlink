@@ -1,7 +1,6 @@
 %h3 Events
-.container
-  %div{"ng-repeat" => "event in project.public_events"}
-    %hr.feed
-    %div.row.feed{"ng-include" => "'{{template_path}}' + event.template"}
-  %span{"ng-show" => "project.public_events.length == 0"}
-    There's nothing to see here right now... This project has not yet had any public events
+%div{"ng-repeat" => "event in project.public_events"}
+  %hr.feed
+  %div.row.feed{"ng-include" => "'{{template_path}}' + event.template"}
+%span{"ng-show" => "project.public_events.length == 0"}
+  There's nothing to see here right now... This project has not yet had any public events

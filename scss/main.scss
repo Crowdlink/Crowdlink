@@ -129,8 +129,8 @@ a.col {
   }
 }
 .project-logo {
-  width:128px;
-  height:128px;
+  width:100px;
+  height:100px;
 }
 .profile-logo {
   width:128px;
@@ -207,6 +207,18 @@ ul.main-list.sub-list {
   padding: 8px 8px 8px 8px;
   background-color:#FFFFFF;
 }
+.main-content {
+  border:1px solid #E0E4DD;
+  border-top:none;
+  box-shadow:2px -2px 0px 1px rgba(208, 213, 203, 0.3);
+  background-color:#fff;
+  border-radius: 4px;
+  .tab-content {
+    padding:25px;
+  }
+}
+
+
 /* Homepage styling */
 .hr-header {
   text-align:center;
@@ -507,6 +519,8 @@ hr.feed {
 html,
 body {
   height: 100%;
+  background-color:#f8f8f8;
+
   /* The html and body elements cannot have any padding or margin. */
 }
 
@@ -535,6 +549,7 @@ body {
 .share-padding {
   padding-top:20px;
   padding-bottom:15px;
+  background-color:#fff;
 }
 .share-container {
   max-height:35px;

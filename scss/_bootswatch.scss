@@ -100,6 +100,10 @@
   }
 }
 
+.input-group-addon {
+  color:#fff;
+}
+
 // Typography =================================================================
 
 h1, h2, h3, h4, h5, h6 {
@@ -177,6 +181,9 @@ pre {
   &.modal-nav {
     width:97%;
   }
+  >li:first-child {
+   margin-left:20px;
+  }
   >li {
     cursor: pointer;
     margin-left:10px;
@@ -187,7 +194,7 @@ pre {
       border-left:1px solid #EEE;
       border-right:1px solid #EEE;
       border-bottom:4px solid white;
-      box-shadow: 2px -2px 2px #DDD;
+      box-shadow: 2px -2px 2px #EEE;
       color:#000;
       &:hover {
         color: inherit;

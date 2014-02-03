@@ -10,19 +10,7 @@
           %a{href: "tasks"} Tasks
         %li.active {[{task.title}]}
 
-    .row
-      .col-lg-2
-        .bs-sidebar.hidden-print.affix{style: "position: fixed; top: 100px;"}
-          %ul.nav.bs-sidenav
-            %li
-              %a{"ng-click" =>"scrollTo('task')"} Task
-              %ul.nav
-                %li
-                  %a{"ng-click" =>"scrollTo('task-new-comment')"} Add comment
-                %li
-                  %a{"ng-show"=> "task.comments", "ng-click" =>"scrollTo('task-comments')"} Task Comments
-
-      .col-lg-10
+      .col-lg-10.col-lg-offset-1
         .row
           %h4.col-lg-6
             %i.fa.fa-puzzle-piece
