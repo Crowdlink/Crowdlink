@@ -1,0 +1,42 @@
+-# Tasks comments container
+.comments-heading
+  .row.inner-pad
+    .col-lg-1
+      %img{src:"\{[{ user.avatar }]}&s=36"}
+    .col-lg-11
+      .row{"ng-show" => "logged_in", id:"task-new-comment"}
+        %textarea.new-comment-text{"ng-model" => "new_comment"}
+        %a.btn.btn-info.btn-sm{"ng-click" => "comment(new_comment, task)"}
+          Comment
+  %div{"ng-show" => "task.comments.length > 0", id:"task-comments"}
+    .row.comments-row{"ng-repeat" => "comment in task.comments | limitTo: 3"}
+      .col-lg-1.no-gutter.text-center
+        %img{src:"\{[{ comment.user.avatar }]}&s=36"}
+      .col-lg-11
+        .row
+          %h5.no-margin{style:"font-weight:500"}
+            %a{href: "{[{ comment.user.get_abs_url }]}"}
+              {[{ comment.user.username }]}
+            %small.pull-right
+              %em.text-muted {[{ comment.created_at | date_ago }]}
+          %small
+            {[{ comment.message }]}
+    -# if more than 5 comments show a div to toggle more comments display
+    .row{"ng-show" => "task.comments.length > 3"}
+      .col-lg-12.text-center.inner-pad{"ng-hide" => "view_comments.more_comments", style:"background:#EEE"}
+        %a.text-muted.cursor{"ng-click" => "toggle_comments('more_comments')"}
+          show {[{ task.comments.length-3 }]} more comments
+    -# Extra comments contained here
+    .row.extra-comments-row{"ng-show" => "view_comments.more_comments",
+    "ng-repeat" => "comment in task.comments | limitTo: -(task.comments.length-3)"}
+      .col-lg-1.no-gutter.text-center
+        %img{src:"{[{ comment.user.avatar }]}&s=32"}
+      .col-lg-11
+        .row
+          %h5.no-margin{style:"font-weight:500"}
+            %a{href: "{[{ comment.user.get_abs_url }]}"}
+              {[{ comment.user.username }]}
+            %small.pull-right
+              %em.text-muted {[{ comment.created_at | date_ago }]}
+          %small
+            {[{ comment.message }]}

@@ -257,18 +257,12 @@ mainControllers.controller('rootController',
 
 # TaskController =============================================================
 mainControllers.controller('taskController',
-($scope, $routeParams, $rootScope, task, $injector, $timeout, CommentService, $location, $anchorScroll) ->
+($scope, $routeParams, $rootScope, task, $injector, $timeout, CommentService) ->
+
+  $scope.view = 'home'
 
   $scope.toggle_comments = (s) ->
     $scope.$eval("view_comments.#{s} = !view_comments.#{s}")
-
-  $scope.scrollTo = (id) ->
-    old = $location.hash()
-    $location.hash id
-    $anchorScroll()
-
-    #reset to old to keep any additional routing logic from kicking in
-    $location.hash old
 
   $injector.invoke(parentEditController, this, {$scope: $scope})
   $scope.task = task.objects[0]

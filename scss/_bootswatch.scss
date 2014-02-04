@@ -178,6 +178,7 @@ pre {
   border:0px;
   position:relative;
   top:-1px;
+  z-index:2;
   &.modal-nav {
     width:97%;
   }
@@ -223,6 +224,15 @@ pre {
 // Indicators =================================================================
 
 // Progress bars ==============================================================
+
+.progress {
+  height:25px;
+  background-color:lightgray;
+  margin-bottom:4px;
+  > .progress-bar > span {
+    line-height:24px;
+  }
+}
 
 // Containers =================================================================
 

@@ -42,7 +42,6 @@ module.exports = (grunt) ->
           "static/templates/oauth_signup.html": "processed/haml/oauth_signup.haml"
           "static/templates/home.html": "processed/haml/home.haml"
           "static/templates/login.html": "processed/haml/login.haml"
-          "static/templates/task.html": "processed/haml/task.haml"
           "static/templates/error.html": "processed/haml/error.haml"
           "static/templates/new_task.html": "processed/haml/new_task.haml"
           "static/templates/new_project.html": "processed/haml/new_project.haml"
@@ -68,6 +67,11 @@ module.exports = (grunt) ->
           "static/templates/project/tasks.html": "processed/haml/project/tasks.haml"
           "static/templates/project/general_info.html": "processed/haml/project/general_info.haml"
           "static/templates/project/settings.html": "processed/haml/project/settings.haml"
+          # Task tabs
+          "static/templates/task.html": "processed/haml/task.haml"
+          "static/templates/task/home.html": "processed/haml/task/home.haml"
+          "static/templates/task/share.html": "processed/haml/task/share.haml"
+          "static/templates/task/comments.html": "processed/haml/task/comments.haml"
           # Profile tabs
           "static/templates/profile.html": "processed/haml/profile.haml"
           "static/templates/profile/feed.html": "processed/haml/profile/feed.haml"

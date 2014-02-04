@@ -18,6 +18,14 @@ $red:                   #BB463E;
 
 $img-lib-url: "/static/lib/img/";
 
+.info {
+  color:$brand-info;
+}
+
+.warning {
+  color:$brand-warning;
+}
+
 .help {
   color:$brand-warning;
   &:hover {
@@ -128,6 +136,23 @@ a.col {
     }
   }
 }
+
+.share-button {
+  padding-top:5px;
+  a {
+    color:#CCC;
+  }
+  &.fb-button a:hover {
+    color: #3B5998;
+  }
+  &.twitter-button a:hover {
+    color: #26ACEF;
+  }
+  &.g-button a:hover {
+    color: #D34836;
+  }
+}
+
 .project-logo {
   width:100px;
   height:100px;
@@ -519,7 +544,7 @@ hr.feed {
 html,
 body {
   height: 100%;
-  background-color:#f8f8f8;
+  background-color:#EEEEEE;
 
   /* The html and body elements cannot have any padding or margin. */
 }

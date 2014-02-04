@@ -1,0 +1,21 @@
+%span
+  %span
+    -# twitter share button
+    %span.share-button.twitter-button
+      %a{:href => "https://twitter.com/intent/tweet?url=https://crowdlink.io{[{ task.get_abs_url }]}&text={[{ task.title }]}", :title => "Share on Twitter"}
+        %span.fa-stack.fa-lg
+          %i.fa.fa-square-o.fa-stack-2x
+          %i.fa.fa-twitter.fa-stack-1x
+  %span
+    -# facebook share button
+    %span.share-button.fb-button
+      %a.share-fb{:href => "http://www.facebook.com/sharer/sharer.php?s=100&p[url]=https://crowdlink.io{[{ task.get_abs_url }]}&p[images][0]=https://crowdlink.io{[{ static_path }]}img/logo.png&p[title]={[{ task.title }]}&p[summary]={[{ task.desc }]}", :target => "_blank", :title => "Share on Facebook"}
+        %span.fa-stack.fa-lg
+          %i.fa.fa-square-o.fa-stack-2x
+          %i.fa.fa-facebook.fa-stack-1x
+  %span
+    %span.share-button.g-button
+      %a.share-icon.googleplus{:href => "https://plus.google.com/share?url=https://crowdlink.io{[{ task.get_abs_url }]}", :target => "_blank", :title => "Share on Google Plus"}
+        %span.fa-stack.fa-lg
+          %i.fa.fa-square-o.fa-stack-2x
+          %i.fa.fa-google-plus.fa-stack-1x

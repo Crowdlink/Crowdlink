@@ -1,124 +1,72 @@
-.container
-  %div
+%div
+  .container.jumbotron
+    .row{style:"padding-top:15px;"}
+      .col-lg-7
+        %h3.header.hidden-md.hidden-lg
+          {[{task.title}]}
+        %h2.hidden-sm.hidden-xs
+          {[{task.title}]}
+        %h4
+          {[{ task.desc }]}
+        %h4
+          Est. start date 10/10/1000
+      .col-lg-5
+        .row
+          .col-lg-12.text-right
+            %div{"tooltip-html-unsafe" => "<div class=\"text-left\"><i class=\"fa fa-square info\"></i> $500 in Pledges <br><i class=\"fa fa-square warning\"></i> $300 in Donations </div>", "tooltip-placement" => "top"}
+              %progress
+                %bar{:type => "info", :value => "25"}
+                  %span{} 25%
+                %bar{:type => "warning", :value => "15"}
+                  %span 15%
+            %span.text-muted $2000 goal
+        %hr.feed
+        .row
+          .col-sm-12
+            %div.text-center
+              %h3
+                100 backers have raised $800
+
+
+        -#.row{style:"padding-top:8px;"}
+        -#  .col-sm-6
+        -#    %div.text-center
+        -#      %span.text-muted
+        -#        $500 in 43 pledges
+        -#  .col-sm-6
+        -#    %div.text-center
+        -#      %span.text-muted
+        -#        $300 in 20 donations
+
+        .row{style:"padding-top:18px;"}
+          .col-sm-6.text-center
+            %a.btn.btn-success{"ng-click" => "payment('pledge')"}
+              %i.fa.fa-large.fa-exchange
+              .in-button{style:"display:inline-block;"} Pledge
+
+          .col-sm-6.text-center
+            %a.btn.btn-success{"ng-click" => "payment('donation')"}
+              %i.fa.fa-large.fa-gift
+              .in-button{style:"display:inline-block;"} Donate
+
+  .container{style:"padding-top:20px"}
     .row
-      %ol.breadcrumb
-        %li
-          %a{href: "/{[{task.project_owner_username}]}"} {[{task.project_owner_username}]}
-        %li
-          %a{href: "{[{task.get_project_abs_url}]}"} {[{ task.project.name }]}
-        %li
-          %a{href: "tasks"} Tasks
-        %li.active {[{task.title}]}
-
-      .col-lg-10.col-lg-offset-1
-        .row
-          %h4.col-lg-6
+      %ul.nav.nav-tabs
+        %li{"ng-class" => "{true: 'active'}[view=='home']"}
+          %a{"ng-click" => "view='home'"}
+            %i.fa.fa-rss
+            Task home
+        %li{"ng-class" => "{true: 'active'}[view=='comments']"}
+          %a{"ng-click" => "view='comments'"}
             %i.fa.fa-puzzle-piece
-            %span{id:"task"}
-              Task #21
-
-          .col-lg-6.no-gutter
-            %a.btn.button.btn-default.pull-right{"toggle-button" => "task.subscribed",
-            on: "active", off: "",
-            "ng-click" => "swap_save('task.subscribed')"}
-              %i{off: "fa-eye", on: "fa-eye"}
-              .in-button{off: "Watch", on: "Watch"}
-            %a.btn.button.btn-default.pull-right{"toggle-button" => "task.vote_status",
-            on: "active", off: "",
-            "ng-click" => "swap_save('task.vote_status')"}
-              %i{on: "fa-thumbs-up", off: "fa-thumbs-up"}
-              .in-button{off: "Props", on: "Props"}
-            %a.btn.button.btn-default.pull-right{:href => "n"}
-              %i.fa.fa-large.fa-exclamation
-              \ Report
-            %br
-        .row
-          .col-lg-1.text-right
-            %img{src:"http://placehold.it/48x48"}
-          .col-lg-11.no-gutter
-            -#Task container
-            .round-box
-              .task-heading
-                .col-lg-1.no-gutter
-                  %img{src:"\{[{ task.creator.avatar }]}&s=38", style:"padding-left:12px;"}
-                .col-lg-11
-                %small
-                  .text-muted
-                    %b{style:"color:#000"}
-                      %a{href: "{[{ task.creator.get_abs_url }]}"}
-                        {[{ task.creator.username }]}
-                    \ tagline
-                    .pull-right
-                      \ {[{ task.created_at | date:'medium' }]}
-                      %i.fa.fa-edit.cursor{"ng-click" => "toggle('task.desc')",
-                  "ng-show" => "task.user_acl.edit_desc"}
-                  %h4.no-margin
-                    %span{"ng-show" => "task.user_acl.edit_title"}
-                      %span{"ng-show" => "editing.task.title"}
-                        .input-group
-                          %input.form-control{"ng-model" => "task.title", type: "text"}/
-                          %span.btn.btn-info.input-group-addon{"ng-click" => "save('task.title')"}
-                            %i.fa.fa-save{"ng-hide" => "saving.task.title"}
-                            %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.task.title"}
-                          %span.btn.btn-primary.input-group-addon{"ng-click" => "revert('task.title')"}
-                            %i.fa.fa-times-circle
-                      %span{"ng-hide" => "editing.task.title"}
-                        {[{ task.title }]} 
-                        %small.fa.fa-edit.icon-hover{"ng-click" => "toggle('task.title')"}
-                    %span{"ng-hide" => "task.user_acl.edit_title"}
-                      {[{ task.title }]}
-              %hr.no-margin
-              .row.center-margin{style:"padding:8px;"}
-                .row.col-lg-12.no-margin{"ng-show" => "editing.task.desc"}
-                  %textarea{"mark-it-up" => "", "ng-model" => "task.desc"}
-                  %span.btn.btn-info{"ng-click" => "save('task.desc')", "ng-disabled" => "saving.task.desc"}
-                    %i.fa.fa-save{"ng-hide" => "saving.task.desc"}
-                    %i.fa.fa-spinner.fa-spin{"ng-show" => "saving.task.desc"}
-                    \ Save
-                  %span.btn.btn-primary{"ng-click" => "revert('task.desc')", "ng-disabled" => "saving.task.desc"}
-                    %i.fa.fa-times-circle
-                    \ Discard
-                %div{"ng-hide" => "editing.task.desc"}
-                  %span{"btf-markdown" => "task.desc"}
-            -# Tasks comments container
-            .comments-heading
-              .row.inner-pad
-                .col-lg-1
-                  %img{src:"\{[{ user.avatar }]}&s=36"}
-                .col-lg-11
-                  .row{"ng-show" => "logged_in", id:"task-new-comment"}
-                    %textarea.new-comment-text{"ng-model" => "new_comment"}
-                    %a.btn.btn-info.btn-sm{"ng-click" => "comment(new_comment, task)"}
-                      Comment
-              %div{"ng-show" => "task.comments.length > 0", id:"task-comments"}
-                .row.comments-row{"ng-repeat" => "comment in task.comments | limitTo: 3"}
-                  .col-lg-1.no-gutter.text-center
-                    %img{src:"\{[{ comment.user.avatar }]}&s=36"}
-                  .col-lg-11
-                    .row
-                      %h5.no-margin{style:"font-weight:500"}
-                        %a{href: "{[{ comment.user.get_abs_url }]}"}
-                          {[{ comment.user.username }]}
-                        %small.pull-right
-                          %em.text-muted {[{ comment.created_at | date_ago }]}
-                      %small
-                        {[{ comment.message }]}
-                -# if more than 5 comments show a div to toggle more comments display
-                .row{"ng-show" => "task.comments.length > 3"}
-                  .col-lg-12.text-center.inner-pad{"ng-hide" => "view_comments.more_comments", style:"background:#EEE"}
-                    %a.text-muted.cursor{"ng-click" => "toggle_comments('more_comments')"}
-                      show {[{ task.comments.length-3 }]} more comments
-                -# Extra comments contained here
-                .row.extra-comments-row{"ng-show" => "view_comments.more_comments",
-                "ng-repeat" => "comment in task.comments | limitTo: -(task.comments.length-3)"}
-                  .col-lg-1.no-gutter.text-center
-                    %img{src:"{[{ comment.user.avatar }]}&s=32"}
-                  .col-lg-11
-                    .row
-                      %h5.no-margin{style:"font-weight:500"}
-                        %a{href: "{[{ comment.user.get_abs_url }]}"}
-                          {[{ comment.user.username }]}
-                        %small.pull-right
-                          %em.text-muted {[{ comment.created_at | date_ago }]}
-                      %small
-                        {[{ comment.message }]}
+            Comments
+        %li{"ng-class" => "{true: 'active'}[view=='settings']"}
+          %a{"ng-click" => "view='settings'"}
+            %i.fa.fa-gear
+            Task Settings
+.container
+  .col-sm-11.main-content
+    .tab-content{"ng-include" => "'{{template_path}}task/' + view + '.html'"}
+  .col-sm-1.no-gutter
+    .col-sm-8.text-center
+      %span{"ng-include" => "'{{template_path}}task/share.html'"}
